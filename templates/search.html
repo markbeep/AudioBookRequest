@@ -24,7 +24,7 @@
       preload
       href="/search/manual"
       title="Manually add request"
-      class="btn flex items-center justify-center"
+      class="btn btn- flex items-center justify-center"
     >
       Manual {% include 'icons/plus.html' %}
     </a>
@@ -106,11 +106,14 @@
           {{ book.title }}
         </div>
         {% if book.subtitle %}
-        <div class="text-neutral/60 font-semibold text-xs" title="Subtitle">
+        <div
+          class="text-neutral-content/60 font-semibold text-xs"
+          title="Subtitle"
+        >
           {{ book.subtitle }}
         </div>
         {% endif %}
-        <div class="text-xs text-neutral font-semibold" title="Authors">
+        <div class="text-xs text-neutral-content font-semibold" title="Authors">
           {{ book.authors | join(", ") }}
         </div>
       </div>
@@ -139,14 +142,16 @@
     >
       {% if search_term %}
       <span class="text-xl font-semibold">No results found</span>
-      <span class="text-sm text-neutral"
+      <span class="text-sm text-neutral-content"
         >No audiobooks were found. Do note, that internally Audible is used for
         searching. If the book doesn't exist on Audible it'll have to be added
         <a class="link" preload href="/search/manual">manually</a>.</span
       >
       {% else %}
       <span class="text-xl font-semibold">Perform a search</span>
-      <span class="text-sm text-neutral">Nothing has been searched yet.</span>
+      <span class="text-sm text-neutral-content"
+        >Nothing has been searched yet.</span
+      >
       {% endif %}
     </div>
     {% endif %}

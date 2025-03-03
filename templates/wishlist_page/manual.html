@@ -19,7 +19,18 @@
 
     {% block book_wishlist %}
     <tbody id="book-table-body">
-      {% for book in books %}
+      {% if not books %}
+      <div role="alert" class="alert my-2">
+        <span class="stroke-info h-6 w-6 shrink-0"
+          >{% include 'icons/info-circle.html' %}</span
+        >
+        <span>
+          No manual book requests on your wishlist. Add some books by heading to
+          the
+          <a preload class="link" href="/search/manual">search</a> tab.
+        </span>
+      </div>
+      {% endif %} {% for book in books %}
       <tr class="text-xs lg:text-sm" id="{{ book.asin }}">
         <th>{{ loop.index }}</th>
 
