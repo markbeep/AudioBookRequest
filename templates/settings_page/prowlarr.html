@@ -111,5 +111,54 @@
     </button>
   </form>
   {% endblock %}
+
+  <h2 class="text-lg">MyAnonamouse integration</h2>
+
+  <!-- {% if mam_misconfigured %}
+  <p class="text-red-400">MAM is misconfigured. Please configure it.</p>
+  {% endif %} -->
+  {% if mam_active %}
+  <form
+    class="join w-full"
+    hx-put="/settings/mam/deactivate"
+  >
+    <!-- prettier-ignore -->
+    <button id="mam-toggle-button" class="join-item btn">
+      Disable mam integration
+    </button>
+  </form>
+  <label for="mam-id">mam_id</label>
+  <form
+    class="join w-full"
+    hx-put="/settings/mam/mam_id"
+    hx-disabled-elt="#mam-id-button"
+  >
+    <!-- prettier-ignore -->
+    <input
+     id="mam-id"
+     name="mam_id"
+     type="password"
+     {% if mam_id %}placeholder="●●●●●●●●●●●●●●●●●"{% endif %}
+     class="input join-item w-full"
+     minlength="1"
+     required
+   />
+    <button id="mam-id-button" class="join-item btn">
+      {% if mam_id %} Update {% else %} Add {% endif %}
+    </button>
+  </form>
+
+  {% else %}
+  <form
+    class="join w-full"
+    hx-put="/settings/mam/activate"
+    hx-disabled-elt="#mam-id-button"
+  >
+    <!-- prettier-ignore -->
+    <button id="mam-toggle-button" class="join-item btn">
+      Activate mam integration
+    </button>
+  </form>
+  {% endif %}
 </div>
 {% endblock %}

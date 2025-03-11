@@ -26,6 +26,7 @@ from app.internal.prowlarr.prowlarr import (
     prowlarr_config,
     start_download,
 )
+from app.internal.indexers.mam import mam_config
 from app.internal.query import query_sources
 from app.internal.ranking.quality import quality_config
 from app.util.auth import DetailedUser, get_authenticated_user
@@ -199,6 +200,7 @@ async def list_sources(
         {
             "book": result.book,
             "sources": result.sources,
+            "mam_active": mam_config.is_active(session),
         },
     )
 

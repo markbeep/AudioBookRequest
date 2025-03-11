@@ -28,6 +28,10 @@
         <tr>
           <th></th>
           <th>title</th>
+          {% if mam_active %}
+          <th>author(s)</th>
+          <th>narrator(s)</th>
+          {% endif %}
           <th>indexer</th>
           <th>flags</th>
           <th>seed / leech (or grabs)</th>
@@ -46,6 +50,10 @@
           <td>
             <a href="{{ source.info_url }}" class="link">{{ source.title }}</a>
           </td>
+          {% if mam_active %}
+          <td>{{ source.authors|join(', ') }}</td>
+          <td>{{ source.narrators|join(', ') }} </td>
+          {% endif %}
           <td>{{ source.indexer }}</td>
           <td>{{ source.indexer_flags|join(', ') }}</td>
           {% if source.protocol == "torrent" %}

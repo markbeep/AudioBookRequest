@@ -127,6 +127,8 @@ class BaseSource(BaseModel):
     indexer_id: int
     indexer: str
     title: str
+    authors: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    narrators: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     size: int  # in bytes
     publish_date: datetime
     info_url: str
