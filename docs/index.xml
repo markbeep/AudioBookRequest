@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Overview on AudioBookRequest Docs</title>
+    <link>https://markbeep.github.io/docs/</link>
+    <description>Recent content in Overview on AudioBookRequest Docs</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <atom:link href="https://markbeep.github.io/docs/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Contribution Guidelines</title>
+      <link>https://markbeep.github.io/docs/contribution-guidelines/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://markbeep.github.io/docs/contribution-guidelines/</guid>
+      <description>&lt;p&gt;We use &lt;a href=&#34;https://gohugo.io/&#34;&gt;Hugo&lt;/a&gt; to format and generate our website, the&#xA;&lt;a href=&#34;https://github.com/google/docsy&#34;&gt;Docsy&lt;/a&gt; theme for styling and site structure,&#xA;and &lt;a href=&#34;https://pages.github.com/&#34;&gt;Github Pages&lt;/a&gt; to manage the deployment of the&#xA;site. Hugo is an open-source static site generator that provides us with&#xA;templates, content organisation in a standard directory structure, and a website&#xA;generation engine. You write the pages in Markdown (or HTML if you want), and&#xA;Hugo wraps them up into a website.&lt;/p&gt;&#xA;&lt;p&gt;All submissions require review. We use GitHub pullas requests for this purpose.&#xA;Consult &lt;a href=&#34;https://help.github.com/articles/about-pull-requests/&#34;&gt;GitHub Help&lt;/a&gt; for&#xA;more information on using pull requests.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

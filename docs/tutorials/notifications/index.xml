@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Notifications on AudioBookRequest Docs</title>
+    <link>https://markbeep.github.io/docs/tutorials/notifications/</link>
+    <description>Recent content in Notifications on AudioBookRequest Docs</description>
+    <generator>Hugo</generator>
+    <language>en</language>
+    <lastBuildDate>Mon, 09 Jun 2025 17:21:43 +0200</lastBuildDate>
+    <atom:link href="https://markbeep.github.io/docs/tutorials/notifications/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Discord</title>
+      <link>https://markbeep.github.io/docs/tutorials/notifications/discord/</link>
+      <pubDate>Mon, 09 Jun 2025 13:46:58 +0200</pubDate>
+      <guid>https://markbeep.github.io/docs/tutorials/notifications/discord/</guid>
+      <description>&lt;div class=&#34;alert alert-primary&#34; role=&#34;alert&#34;&gt;&#xA;&lt;h4 class=&#34;alert-heading&#34;&gt;Todo&lt;/h4&gt;&#xA;&#xA;    &#xA;&#xA;&lt;/div&gt;</description>
+    </item>
+  </channel>
+</rss>
