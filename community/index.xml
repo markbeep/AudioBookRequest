@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Community on AudioBookRequest Docs</title>
-    <link>https://markbeep.github.io/community/</link>
+    <link>https://markbeep.github.io/AudioBookRequest/community/</link>
     <description>Recent content in Community on AudioBookRequest Docs</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <atom:link href="https://markbeep.github.io/community/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://markbeep.github.io/AudioBookRequest/community/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

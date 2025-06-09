@@ -6410,7 +6410,7 @@ limitations under the License.
           }
 
           var query = $(this).val();
-          var searchPage = 'https://markbeep.github.io/search/?q=' + query;
+          var searchPage = 'https://markbeep.github.io/AudioBookRequest/search/?q=' + query;
           document.location = searchPage;
 
           return false;

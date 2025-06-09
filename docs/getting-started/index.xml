@@ -2,16 +2,16 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Getting Started on AudioBookRequest Docs</title>
-    <link>https://markbeep.github.io/docs/getting-started/</link>
+    <link>https://markbeep.github.io/AudioBookRequest/docs/getting-started/</link>
     <description>Recent content in Getting Started on AudioBookRequest Docs</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <atom:link href="https://markbeep.github.io/docs/getting-started/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://markbeep.github.io/AudioBookRequest/docs/getting-started/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Docs</title>
-      <link>https://markbeep.github.io/docs/getting-started/docs/</link>
+      <link>https://markbeep.github.io/AudioBookRequest/docs/getting-started/docs/</link>
       <pubDate>Mon, 09 Jun 2025 13:52:47 +0200</pubDate>
-      <guid>https://markbeep.github.io/docs/getting-started/docs/</guid>
+      <guid>https://markbeep.github.io/AudioBookRequest/docs/getting-started/docs/</guid>
       <description></description>
     </item>
   </channel>

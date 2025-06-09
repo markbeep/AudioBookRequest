@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Development on AudioBookRequest Docs</title>
-    <link>https://markbeep.github.io/tags/development/</link>
+    <link>https://markbeep.github.io/AudioBookRequest/tags/development/</link>
     <description>Recent content in Development on AudioBookRequest Docs</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Mon, 09 Jun 2025 17:21:43 +0200</lastBuildDate>
-    <atom:link href="https://markbeep.github.io/tags/development/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://markbeep.github.io/AudioBookRequest/tags/development/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Bare Metal</title>
-      <link>https://markbeep.github.io/docs/getting-started/running-the-app/bare-metal/</link>
+      <link>https://markbeep.github.io/AudioBookRequest/docs/getting-started/running-the-app/bare-metal/</link>
       <pubDate>Mon, 09 Jun 2025 13:03:35 +0200</pubDate>
-      <guid>https://markbeep.github.io/docs/getting-started/running-the-app/bare-metal/</guid>
-      <description>&lt;div class=&#34;alert alert-warning&#34; role=&#34;alert&#34;&gt;&#xA;&lt;h4 class=&#34;alert-heading&#34;&gt;Warning&lt;/h4&gt;&#xA;&#xA;    &lt;p&gt;The bare metal approach should&#xA;only be the last option. Try to get it working with Docker or get support on the&#xA;Discord server before trying to set ABR up for a bare metal deployment.&lt;/p&gt;&#xA;&lt;p&gt;There are no guarantees that if one version works locally that it won&amp;rsquo;t suddenly&#xA;break in the next because of a new dependency, new file structure or something&#xA;else.&lt;/p&gt;&#xA;&#xA;&#xA;&lt;/div&gt;&#xA;&#xA;&lt;p&gt;To run ABR locally without Docker, the same steps as for the&#xA;&lt;a href=&#34;https://markbeep.github.io/docs/local-development/&#34;&gt;local development&lt;/a&gt; have to be followed. First, follow&#xA;the instructions to get local development working.&lt;/p&gt;</description>
+      <guid>https://markbeep.github.io/AudioBookRequest/docs/getting-started/running-the-app/bare-metal/</guid>
+      <description>&lt;div class=&#34;alert alert-warning&#34; role=&#34;alert&#34;&gt;&#xA;&lt;h4 class=&#34;alert-heading&#34;&gt;Warning&lt;/h4&gt;&#xA;&#xA;    &lt;p&gt;The bare metal approach should&#xA;only be the last option. Try to get it working with Docker or get support on the&#xA;Discord server before trying to set ABR up for a bare metal deployment.&lt;/p&gt;&#xA;&lt;p&gt;There are no guarantees that if one version works locally that it won&amp;rsquo;t suddenly&#xA;break in the next because of a new dependency, new file structure or something&#xA;else.&lt;/p&gt;&#xA;&#xA;&#xA;&lt;/div&gt;&#xA;&#xA;&lt;p&gt;To run ABR locally without Docker, the same steps as for the&#xA;&lt;a href=&#34;https://markbeep.github.io/AudioBookRequest/docs/local-development/&#34;&gt;local development&lt;/a&gt; have to be followed. First, follow&#xA;the instructions to get local development working.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>

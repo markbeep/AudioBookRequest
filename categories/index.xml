@@ -2,24 +2,24 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Categories on AudioBookRequest Docs</title>
-    <link>https://markbeep.github.io/categories/</link>
+    <link>https://markbeep.github.io/AudioBookRequest/categories/</link>
     <description>Recent content in Categories on AudioBookRequest Docs</description>
     <generator>Hugo</generator>
     <language>en</language>
     <lastBuildDate>Mon, 09 Jun 2025 17:21:43 +0200</lastBuildDate>
-    <atom:link href="https://markbeep.github.io/categories/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://markbeep.github.io/AudioBookRequest/categories/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Setup</title>
-      <link>https://markbeep.github.io/categories/setup/</link>
+      <link>https://markbeep.github.io/AudioBookRequest/categories/setup/</link>
       <pubDate>Mon, 09 Jun 2025 13:03:35 +0200</pubDate>
-      <guid>https://markbeep.github.io/categories/setup/</guid>
+      <guid>https://markbeep.github.io/AudioBookRequest/categories/setup/</guid>
       <description></description>
     </item>
     <item>
       <title>Development</title>
-      <link>https://markbeep.github.io/categories/development/</link>
+      <link>https://markbeep.github.io/AudioBookRequest/categories/development/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>https://markbeep.github.io/categories/development/</guid>
+      <guid>https://markbeep.github.io/AudioBookRequest/categories/development/</guid>
       <description></description>
     </item>
   </channel>

@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Setup on AudioBookRequest Docs</title>
-    <link>https://markbeep.github.io/tags/setup/</link>
+    <link>https://markbeep.github.io/AudioBookRequest/tags/setup/</link>
     <description>Recent content in Setup on AudioBookRequest Docs</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <atom:link href="https://markbeep.github.io/tags/setup/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://markbeep.github.io/AudioBookRequest/tags/setup/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Getting Started</title>
-      <link>https://markbeep.github.io/docs/getting-started/</link>
+      <link>https://markbeep.github.io/AudioBookRequest/docs/getting-started/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>https://markbeep.github.io/docs/getting-started/</guid>
-      <description>&lt;h2 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;a class=&#34;td-heading-self-link&#34; href=&#34;#prerequisites&#34; aria-label=&#34;Heading self-link&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&#xA;&lt;p&gt;AudioBookRequest has been packaged as a &lt;a href=&#34;https://www.docker.com/&#34;&gt;Docker&lt;/a&gt; image&#xA;to make it easy to deploy and run on servers. While it is possible to run ABR&#xA;without Docker, that option should be avoided if possible and only used for&#xA;local development, as a lot of things can change from version to version.&lt;/p&gt;&#xA;&lt;h2 id=&#34;setup&#34;&gt;Setup&lt;a class=&#34;td-heading-self-link&#34; href=&#34;#setup&#34; aria-label=&#34;Heading self-link&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&#xA;&lt;p&gt;Head to &lt;a href=&#34;https://markbeep.github.io/docs/getting-started/running-the-app/&#34;&gt;Running the app&lt;/a&gt; for&#xA;instructions on how to run ABR.&lt;/p&gt;</description>
+      <guid>https://markbeep.github.io/AudioBookRequest/docs/getting-started/</guid>
+      <description>&lt;h2 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;a class=&#34;td-heading-self-link&#34; href=&#34;#prerequisites&#34; aria-label=&#34;Heading self-link&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&#xA;&lt;p&gt;AudioBookRequest has been packaged as a &lt;a href=&#34;https://www.docker.com/&#34;&gt;Docker&lt;/a&gt; image&#xA;to make it easy to deploy and run on servers. While it is possible to run ABR&#xA;without Docker, that option should be avoided if possible and only used for&#xA;local development, as a lot of things can change from version to version.&lt;/p&gt;&#xA;&lt;h2 id=&#34;setup&#34;&gt;Setup&lt;a class=&#34;td-heading-self-link&#34; href=&#34;#setup&#34; aria-label=&#34;Heading self-link&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&#xA;&lt;p&gt;Head to &lt;a href=&#34;https://markbeep.github.io/AudioBookRequest/docs/getting-started/running-the-app/&#34;&gt;Running the app&lt;/a&gt; for&#xA;instructions on how to run ABR.&lt;/p&gt;</description>
     </item>
   </channel>
 </rss>
