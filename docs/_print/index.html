@@ -30,7 +30,7 @@
 
   <meta itemprop="name" content="Documentation">
   <meta itemprop="description" content="Welcome to the documentation for AudioBookRequest.">
-  <meta itemprop="dateModified" content="2025-06-09T21:24:39+02:00">
+  <meta itemprop="dateModified" content="2025-07-01T19:53:36+02:00">
   <meta itemprop="wordCount" content="245">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Documentation">
@@ -221,9 +221,20 @@ This is the multi-page printable view of this section.
     
     
 	
-<li>1.2: <a href="#pg-8ffc8d8bd205c00f1325b16be7b94513">Docs</a></li>
+<li>1.2: <a href="#pg-adb41a14461f8e9f8c644d46e6993994">First Login</a></li>
 
 
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+
+    </ul>
     
   
 
@@ -267,6 +278,25 @@ This is the multi-page printable view of this section.
 
 
     
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>2.2: <a href="#pg-70cac3f21ec9ace937ed903becc9f4ca">OpenID Connect</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
   
 
     </ul>
@@ -638,21 +668,66 @@ set in there.</li>
 
 <div class="td-content" style="page-break-before: always">
     
-	<h1 id="pg-8ffc8d8bd205c00f1325b16be7b94513">1.2 - Docs</h1>
-    
-	
+	<h1 id="pg-adb41a14461f8e9f8c644d46e6993994">1.2 - First Login</h1>
+    <div class="lead">Logging in the first time</div>
+	<p>Once you get AudioBookRequest running, you&rsquo;ll be greeted with an initialization
+page when you visit the website.</p>
+<p><img src="/AudioBookRequest/docs/getting-started/first-login/login.png" alt="Login Page"></p>
+<p>On this page you have to set the type of login you want to use for the app and
+then create the login details for the root admin. You can choose from 3 login
+types on this page:</p>
+<ul>
+<li><strong>Basic Auth:</strong> This is the most simple form of login. Your browser will show
+a popup login dialog which will then be used to log in to the site. Password
+managers usually don&rsquo;t work for this type of login, but because it is very
+simple you can also easily send authenticated requests in scripts.
+<a href="https://en.wikipedia.org/wiki/Basic_access_authentication">Read more here</a>.</li>
+<li><strong>Forms:</strong> This is the standard type of login where you fill out a login-form.
+Password managers usually work with this.</li>
+<li><strong>None:</strong> This turns off all authentication. This is best if you have a proxy
+and are the only user or you don&rsquo;t mind everyone having root access to the
+site.</li>
+</ul>
+
 
 <div class="alert alert-primary" role="alert">
-<h4 class="alert-heading">Todo</h4>
+<h4 class="alert-heading">OpenID Connect</h4>
+
+    AudioBookRequest supports logging in with
+OpenID Connect. You&rsquo;ll have to first select one of the login-types above to be
+able to adjust the OIDC settings. Head to the
+<a href="../../tutorials/oidc">OIDC Tutorial</a> for more info.
+
+</div>
+
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading">Warning</h4>
+
+    Even if you intend to turn off all
+authentication or want to later use OIDC, you should take note of the
+username/password you set. You&rsquo;ll need them once you decide to ever change the
+login type.
+
+</div>
+
+
+</div>
+
+
 
     
+      
+  
+  
+  
+  
 
-</div>
+  
+  
 
-
-</div>
-
-
+  
 
     
 	
@@ -745,6 +820,131 @@ set in there.</li>
 
     
 	
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-70cac3f21ec9ace937ed903becc9f4ca">2.2 - OpenID Connect</h1>
+    <div class="lead">Setting up OIDC login</div>
+	<p>OIDC allows you to use the same login across multiple apps. This guide will show
+you how to set up OIDC with Authentik, but the concepts are the same or similar
+for other providers.</p>
+<h2 id="setup-a-provider-on-authentik">Setup a provider on Authentik<a class="td-heading-self-link" href="#setup-a-provider-on-authentik" aria-label="Heading self-link"></a></h2>
+<ol>
+<li>
+<p>You want to first create an application on Authentik. The settings here
+don&rsquo;t play a role for AudioBookRequest though.</p>
+</li>
+<li>
+<p>You then want to create an OAuth2/OpenID Provider:</p>
+<p><img src="/AudioBookRequest/docs/tutorials/oidc/authentik-oidc.png" alt="Authentik OIDC"></p>
+</li>
+<li>
+<p>Configure the settings as preferred. The important two values are the
+<code>Client ID</code> and <code>Client Secret</code>. Take note of those. You should also set the
+redirect URL that the OIDC provider will redirect you to after a succesful
+login. This has to be the domain of your ABR instance with <code>/auth/oidc</code>
+appended.</p>
+<p><img src="/AudioBookRequest/docs/tutorials/oidc/authentik-provider.png" alt="Authentik Provider"></p>
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading">Warning</h4>
+
+    Make sure you correctly set
+<code>http</code> or <code>https</code> in the redirect URL. This depends on how you access
+AudioBookRequest.
+
+</div>
+
+</li>
+<li>
+<p>Set the scopes that ABR can get access to. You should always allow for the
+<code>openid</code> scope. Any other scopes are optional. You&rsquo;ll have to check with
+your OIDC provider to see what what scopes are required to get a
+name/username and groups. &ldquo;Subject mode&rdquo; is a unique identifier for the
+user. This can be used as the username on ABR.</p>
+<p><img src="/AudioBookRequest/docs/tutorials/oidc/authentik-scopes.png" alt="Authentik Scopes"></p>
+</li>
+<li>
+<p>Assign your newly created provider to the ABR application.</p>
+</li>
+</ol>
+<h2 id="setup-settings-in-abr">Setup settings in ABR<a class="td-heading-self-link" href="#setup-settings-in-abr" aria-label="Heading self-link"></a></h2>
+<ol>
+<li>On AudioBookRequest, head to <code>Settings&gt;Security</code> and set the &ldquo;Login Type&rdquo; to
+&ldquo;OpenID Connect&rdquo;.</li>
+<li>Paste the &ldquo;Client ID&rdquo; and &ldquo;Client Secret&rdquo; into the respective fields.</li>
+<li>Your &ldquo;OIDC Configuration Endpoint&rdquo; depends on the OIDC provider you use. For
+Authentik, it&rsquo;s usually along the lines of
+<a href="https://domain.com/application/o/audiobookrequest/.well-known/openid-configuration">https://domain.com/application/o/audiobookrequest/.well-known/openid-configuration</a>.
+You&rsquo;ll have to find that for your own provider. Visiting the url should give
+you a JSON-formatted object with different endpoints and details given.</li>
+<li>The &ldquo;OIDC Scopes&rdquo; are the ones defined above separated by a space. <code>openid</code>
+is always required. Any other scopes like <code>email</code> or <code>group</code> are only
+required if you intend to use the email for the username or respectively
+extract the group of the user.</li>
+<li>&ldquo;OIDC Username Claim&rdquo; <strong>has to be a unique identifier</strong> which is used as the
+username for the user. <code>sub</code> is always available, but you might prefere to
+use <code>email</code> or <code>username</code> (with the correctly added scope).</li>
+<li>Depending on what you used above for the redirect URL, set <code>http</code> or <code>https</code>.
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading">Warning</h4>
+
+    <code>http/s</code> has to match-up with
+what protocol your redirect-url uses. Providers <em>will</em> reject logins if this
+does not match up.
+
+</div>
+</li>
+<li><em>Optional</em>: The &ldquo;OIDC Logout URL&rdquo; is where you&rsquo;re redirected if you select to
+log out in ABR. OIDC Providers allow you to invalidate the session on this
+URL. While this value is optional, not adding it might break logging out
+slightly because the session can&rsquo;t properly be invalidated.</li>
+</ol>
+<h2 id="groups">Groups<a class="td-heading-self-link" href="#groups" aria-label="Heading self-link"></a></h2>
+<p>&ldquo;OIDC Group Claim&rdquo; is optional, but allows you to handle the role distribution
+of users in your OIDC provider instead of in ABR. The exact claim that sends
+along the information depends on your OIDC provider. The OIDC provider can
+provide a single string or list of strings.</p>
+<p>The groups have to be named exactly one of <code>untrusted</code>, <code>trusted</code>, or <code>admin</code>.
+The letter case does not matter.</p>
+
+
+<div class="alert alert-primary" role="alert">
+
+
+    For Authentik, the group claim name is <code>groups</code> and requires the
+<code>profile</code> scope. If you assign a user to a group named <code>trusted</code>, that user will
+receive the <code>Trusted</code> role once they login to AudioBookRequest.
+
+</div>
+
+
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
   
 
     

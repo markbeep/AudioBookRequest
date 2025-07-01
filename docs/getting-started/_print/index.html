@@ -30,7 +30,7 @@
 
   <meta itemprop="name" content="Getting Started">
   <meta itemprop="description" content="What does your user need to know to try your project?">
-  <meta itemprop="dateModified" content="2025-06-09T21:24:39+02:00">
+  <meta itemprop="dateModified" content="2025-07-01T19:53:36+02:00">
   <meta itemprop="wordCount" content="65">
   <meta itemprop="keywords" content="Setup">
   <meta name="twitter:card" content="summary">
@@ -207,9 +207,20 @@ This is the multi-page printable view of this section.
     
     
 	
-<li>2: <a href="#pg-8ffc8d8bd205c00f1325b16be7b94513">Docs</a></li>
+<li>2: <a href="#pg-adb41a14461f8e9f8c644d46e6993994">First Login</a></li>
 
 
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+
+    </ul>
     
   
 
@@ -460,21 +471,66 @@ set in there.</li>
 
 <div class="td-content" style="page-break-before: always">
     
-	<h1 id="pg-8ffc8d8bd205c00f1325b16be7b94513">2 - Docs</h1>
-    
-	
+	<h1 id="pg-adb41a14461f8e9f8c644d46e6993994">2 - First Login</h1>
+    <div class="lead">Logging in the first time</div>
+	<p>Once you get AudioBookRequest running, you&rsquo;ll be greeted with an initialization
+page when you visit the website.</p>
+<p><img src="/AudioBookRequest/docs/getting-started/first-login/login.png" alt="Login Page"></p>
+<p>On this page you have to set the type of login you want to use for the app and
+then create the login details for the root admin. You can choose from 3 login
+types on this page:</p>
+<ul>
+<li><strong>Basic Auth:</strong> This is the most simple form of login. Your browser will show
+a popup login dialog which will then be used to log in to the site. Password
+managers usually don&rsquo;t work for this type of login, but because it is very
+simple you can also easily send authenticated requests in scripts.
+<a href="https://en.wikipedia.org/wiki/Basic_access_authentication">Read more here</a>.</li>
+<li><strong>Forms:</strong> This is the standard type of login where you fill out a login-form.
+Password managers usually work with this.</li>
+<li><strong>None:</strong> This turns off all authentication. This is best if you have a proxy
+and are the only user or you don&rsquo;t mind everyone having root access to the
+site.</li>
+</ul>
+
 
 <div class="alert alert-primary" role="alert">
-<h4 class="alert-heading">Todo</h4>
+<h4 class="alert-heading">OpenID Connect</h4>
+
+    AudioBookRequest supports logging in with
+OpenID Connect. You&rsquo;ll have to first select one of the login-types above to be
+able to adjust the OIDC settings. Head to the
+<a href="../../tutorials/oidc">OIDC Tutorial</a> for more info.
+
+</div>
+
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading">Warning</h4>
+
+    Even if you intend to turn off all
+authentication or want to later use OIDC, you should take note of the
+username/password you set. You&rsquo;ll need them once you decide to ever change the
+login type.
+
+</div>
+
+
+</div>
+
+
 
     
+      
+  
+  
+  
+  
 
-</div>
+  
+  
 
-
-</div>
-
-
+  
 
     
 	
