@@ -43,13 +43,6 @@
       <description>&lt;p&gt;We use &lt;a href=&#34;https://gohugo.io/&#34;&gt;Hugo&lt;/a&gt; to format and generate our website, the&#xA;&lt;a href=&#34;https://github.com/google/docsy&#34;&gt;Docsy&lt;/a&gt; theme for styling and site structure,&#xA;and &lt;a href=&#34;https://pages.github.com/&#34;&gt;Github Pages&lt;/a&gt; to manage the deployment of the&#xA;site. Hugo is an open-source static site generator that provides us with&#xA;templates, content organisation in a standard directory structure, and a website&#xA;generation engine. You write the pages in Markdown (or HTML if you want), and&#xA;Hugo wraps them up into a website.&lt;/p&gt;&#xA;&lt;p&gt;All submissions require review. We use GitHub pullas requests for this purpose.&#xA;Consult &lt;a href=&#34;https://help.github.com/articles/about-pull-requests/&#34;&gt;GitHub Help&lt;/a&gt; for&#xA;more information on using pull requests.&lt;/p&gt;</description>
     </item>
     <item>
-      <title>Discord</title>
-      <link>https://markbeep.github.io/AudioBookRequest/docs/tutorials/notifications/discord/</link>
-      <pubDate>Mon, 09 Jun 2025 13:46:58 +0200</pubDate>
-      <guid>https://markbeep.github.io/AudioBookRequest/docs/tutorials/notifications/discord/</guid>
-      <description>&lt;div class=&#34;alert alert-primary&#34; role=&#34;alert&#34;&gt;&#xA;&lt;h4 class=&#34;alert-heading&#34;&gt;Todo&lt;/h4&gt;&#xA;&#xA;    &#xA;&#xA;&lt;/div&gt;</description>
-    </item>
-    <item>
       <title>Environment Variables</title>
       <link>https://markbeep.github.io/AudioBookRequest/docs/concepts/environment-variables/</link>
       <pubDate>Mon, 09 Jun 2025 13:46:33 +0200</pubDate>

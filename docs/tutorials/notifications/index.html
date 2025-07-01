@@ -31,8 +31,8 @@
   <meta itemprop="name" content="Notifications">
   <meta itemprop="description" content="How to send notifications.">
   <meta itemprop="datePublished" content="2025-06-09T13:47:04+02:00">
-  <meta itemprop="dateModified" content="2025-07-01T19:53:36+02:00">
-  <meta itemprop="wordCount" content="1">
+  <meta itemprop="dateModified" content="2025-07-01T22:47:28+02:00">
+  <meta itemprop="wordCount" content="160">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Notifications">
   <meta name="twitter:description" content="How to send notifications.">
@@ -159,13 +159,8 @@
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-audiobookrequestdocstutorials-li">
   <a href="/AudioBookRequest/docs/tutorials/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-audiobookrequestdocstutorials"><span class="">Tutorials</span></a>
   <ul class="ul-2 foldable">
-    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-audiobookrequestdocstutorialsnotifications-li">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id="m-audiobookrequestdocstutorialsnotifications-li">
   <a href="/AudioBookRequest/docs/tutorials/notifications/" class="align-left ps-0 active td-sidebar-link td-sidebar-link__section" id="m-audiobookrequestdocstutorialsnotifications"><span class="td-sidebar-nav-active-item">Notifications</span></a>
-  <ul class="ul-3 foldable">
-    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-audiobookrequestdocstutorialsnotificationsdiscord-li">
-  <a href="/AudioBookRequest/docs/tutorials/notifications/discord/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-audiobookrequestdocstutorialsnotificationsdiscord"><span class="">Discord</span></a>
-</li>
-  </ul>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-audiobookrequestdocstutorialsoidc-li">
   <a href="/AudioBookRequest/docs/tutorials/oidc/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-audiobookrequestdocstutorialsoidc"><span class="">OpenID Connect</span></a>
 </li>
@@ -200,7 +195,17 @@
 
 </div>
 
-            
+            <div class="td-toc">
+        <nav id="TableOfContents">
+  <ul>
+    <li><a href="#apprise">Apprise</a></li>
+    <li><a href="#gotify">Gotify</a></li>
+    <li><a href="#ntfy">Ntfy</a></li>
+    <li><a href="#discord">Discord</a></li>
+  </ul>
+</nav>
+      </div>
+    
             <div class="taxonomy taxonomy-terms-cloud taxo-tags">
       <h5 class="taxonomy-title">Tag Cloud</h5>
       <ul class="taxonomy-terms">
@@ -240,27 +245,39 @@
 	<header class="article-meta">
 		
   </header>
-	
-
-<div class="alert alert-primary" role="alert">
-<h4 class="alert-heading">Todo</h4>
-
-    
-
-</div>
-
+	<p>Notifications allow you to send a POST request/webhook wherever you want. ABR
+works with all major notification systems like apprise, gotify, ntfy, and
+discord.</p>
+<p>Here are a few examples for how the notifications body looks for different
+notification systems:</p>
+<h2 id="apprise">Apprise<a class="td-heading-self-link" href="#apprise" aria-label="Heading self-link"></a></h2>
+<p>For apprise you&rsquo;ll want to have the title in <code>&quot;title&quot;</code> and the message body in
+<code>&quot;body&quot;</code>.</p>
+<p><img src="/AudioBookRequest/docs/tutorials/notifications/apprise.png" alt="Apprise"></p>
+<h2 id="gotify">Gotify<a class="td-heading-self-link" href="#gotify" aria-label="Heading self-link"></a></h2>
+<p>For gotify you&rsquo;ll want to have the title in <code>&quot;title&quot;</code> and the message body in
+<code>&quot;message&quot;</code>. Gotify also requires you to pass in your authorization token in the
+header.</p>
+<p><img src="/AudioBookRequest/docs/tutorials/notifications/gotify.png" alt="Gotify"></p>
+<h2 id="ntfy">Ntfy<a class="td-heading-self-link" href="#ntfy" aria-label="Heading self-link"></a></h2>
+<p>Ntfy does not differentiate between title and body. You&rsquo;ll want to select the
+<code>text</code> body type and then add your message.</p>
+<p><img src="/AudioBookRequest/docs/tutorials/notifications/ntfy.png" alt="ntfy"></p>
+<h2 id="discord">Discord<a class="td-heading-self-link" href="#discord" aria-label="Heading self-link"></a></h2>
+<p>You can send notifications to discord by using webhooks. Discord allows you to
+send plain messages or create bigger messages with embeds.</p>
+<p>To make better looking webhook messages you can also use a message builder like
+one of the following pages:</p>
+<ul>
+<li><a href="https://message.style/app/editor">https://message.style/app/editor</a> (Copy the JSON code)</li>
+<li><a href="https://discohook.app">https://discohook.app</a> (<code>Options&gt;JSON Editor</code> to export)</li>
+</ul>
+<p><img src="/AudioBookRequest/docs/tutorials/notifications/discord.png" alt="Discord"></p>
 
 	<div class="section-index">
     
     
-    <hr class="panel-line">
-        <div class="entry">
-                <h5>
-                    <a href="/AudioBookRequest/docs/tutorials/notifications/discord/">Discord</a>
-                </h5>
-                <p>Sending notifications to Discord.</p>
-            </div>
-        </div>
+    </div>
 <style>
   .feedback--answer {
     display: inline-block;
@@ -318,7 +335,7 @@
 </script>
 <br />
 <div class="td-page-meta__lastmod">
-  Last modified July 1, 2025: <a data-proofer-ignore href="https://github.com/markbeep/AudioBookRequest/commit/31c62f6ad4aac8da2632167af686054215e7339c">add docs for login/oidc (31c62f6)</a>
+  Last modified July 1, 2025: <a data-proofer-ignore href="https://github.com/markbeep/AudioBookRequest/commit/693669f94d5b9fde8aae44807d0e5f8f3b1d0ce5">Merge pull request #115 from markbeep/114-feature-abr-x-ntfy-notification (693669f)</a>
 </div>
 </div>
 
