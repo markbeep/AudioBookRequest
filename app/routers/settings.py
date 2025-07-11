@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from app.internal.auth.authentication import (
     DetailedUser,
+    create_api_key,
     create_user,
     get_authenticated_user,
     is_correct_password,
@@ -20,6 +21,7 @@ from app.internal.indexers.abstract import SessionContainer
 from app.internal.indexers.configuration import indexer_configuration_cache
 from app.internal.indexers.indexer_util import IndexerContext, get_indexer_contexts
 from app.internal.models import (
+    ApiKey,
     NotificationBodyTypeEnum,
     EventEnum,
     GroupEnum,
@@ -48,12 +50,14 @@ router = APIRouter(prefix="/settings")
 def read_account(
     request: Request,
     user: Annotated[DetailedUser, Depends(get_authenticated_user())],
+    session: Annotated[Session, Depends(get_session)],
 ):
+    api_keys = session.exec(select(ApiKey).where(ApiKey.user_username == user.username)).all()
     return template_response(
         "settings_page/account.html",
         request,
         user,
-        {"page": "account", "version": Settings().app.version},
+        {"page": "account", "version": Settings().app.version, "api_keys": api_keys},
     )
 
 
@@ -85,6 +89,101 @@ def change_password(
         user,
         {"page": "account", "success": "Password changed"},
         block_name="content",
+    )
+
+
+@router.post("/account/api-key")
+def create_new_api_key(
+    request: Request,
+    name: Annotated[str, Form()],
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Depends(get_authenticated_user())],
+):
+    if not name or not name.strip():
+        raise ToastException("API key name cannot be empty", "error")
+    
+    api_key, key = create_api_key(session, user, name.strip())
+    
+    return template_response(
+        "settings_page/account.html",
+        request,
+        user,
+        {
+            "page": "account", 
+            "success": f"API key created: {key}",
+            "show_api_key": True,
+            "new_api_key": key,
+        },
+        block_name="content",
+    )
+
+
+@router.delete("/account/api-key/{api_key_id}")
+def delete_api_key(
+    request: Request,
+    api_key_id: uuid.UUID,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Depends(get_authenticated_user())],
+):
+    api_key = session.exec(
+        select(ApiKey).where(
+            ApiKey.id == api_key_id,
+            ApiKey.user_username == user.username
+        )
+    ).first()
+    
+    if not api_key:
+        raise ToastException("API key not found", "error")
+    
+    session.delete(api_key)
+    session.commit()
+    
+    api_keys = session.exec(select(ApiKey).where(ApiKey.user_username == user.username)).all()
+    return template_response(
+        "settings_page/account.html",
+        request,
+        user,
+        {
+            "page": "account",
+            "api_keys": api_keys,
+            "success": "API key deleted",
+        },
+        block_name="api_keys_block",
+    )
+
+
+@router.patch("/account/api-key/{api_key_id}/toggle")
+def toggle_api_key(
+    request: Request,
+    api_key_id: uuid.UUID,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Depends(get_authenticated_user())],
+):
+    api_key = session.exec(
+        select(ApiKey).where(
+            ApiKey.id == api_key_id,
+            ApiKey.user_username == user.username
+        )
+    ).first()
+    
+    if not api_key:
+        raise ToastException("API key not found", "error")
+    
+    api_key.enabled = not api_key.enabled
+    session.add(api_key)
+    session.commit()
+    
+    api_keys = session.exec(select(ApiKey).where(ApiKey.user_username == user.username)).all()
+    return template_response(
+        "settings_page/account.html",
+        request,
+        user,
+        {
+            "page": "account",
+            "api_keys": api_keys,
+            "success": f"API key {'enabled' if api_key.enabled else 'disabled'}",
+        },
+        block_name="api_keys_block",
     )
 
 

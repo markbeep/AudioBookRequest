@@ -216,3 +216,26 @@ class Notification(BaseModel, table=True):
     @property
     def serialized_headers(self):
         return json.dumps(self.headers)
+
+
+class ApiKey(BaseModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_username: str = Field(foreign_key="user.username", ondelete="CASCADE")
+    name: str
+    key_hash: str
+    created_at: datetime = Field(
+        default_factory=datetime.now,
+        sa_column=Column(
+            server_default=func.now(),
+            type_=DateTime,
+            nullable=False,
+        ),
+    )
+    last_used: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(
+            type_=DateTime,
+            nullable=True,
+        ),
+    )
+    enabled: bool = True
