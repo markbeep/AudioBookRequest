@@ -14,6 +14,7 @@ class LoginTypeEnum(str, Enum):
     basic = "basic"
     forms = "forms"
     oidc = "oidc"
+    api_key = "api_key"
     none = "none"
 
     def is_basic(self):
