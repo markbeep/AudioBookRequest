@@ -19,7 +19,7 @@ from app.routers import auth, root, search, settings, wishlist
 from app.util.db import open_session
 from app.util.fetch_js import fetch_scripts
 from app.util.redirect import BaseUrlRedirectResponse
-from app.util.templates import templates
+from app.util.templates import TemplateResponse, templates
 from app.util.toast import ToastException
 
 # intialize js dependencies or throw an error if not in debug mode
@@ -44,6 +44,24 @@ app.include_router(root.router)
 app.include_router(search.router)
 app.include_router(settings.router)
 app.include_router(wishlist.router)
+
+
+@app.middleware("http")
+async def add_templates_middleware(request: Request, call_next: Any):
+    response = await call_next(request)
+    print(
+        request.headers.get("Accept"),
+        request.headers.get("Accept") == "application/json",
+        response,
+    )
+    # TODO: we don't actually get the TemplateResponse object here
+    if request.headers.get("Accept") == "application/json" and isinstance(
+        response, TemplateResponse
+    ):
+        print("Setting response to JSON")
+        response.set_json()
+    return response
+
 
 user_exists = False
 

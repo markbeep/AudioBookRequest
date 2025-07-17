@@ -1,3 +1,4 @@
+import json
 from typing import Any, Mapping, overload
 
 from fastapi import Request, Response
@@ -19,6 +20,56 @@ templates.env.globals["json_regexp"] = (  # pyright: ignore[reportUnknownMemberT
     r'^\{\s*(?:"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*(?:,\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*)*)?\}$'
 )
 templates.env.globals["base_url"] = Settings().app.base_url.rstrip("/")  # pyright: ignore[reportUnknownMemberType]
+
+
+class TemplateResponse(Response):
+    def __init__(
+        self,
+        name: str,
+        context: dict[str, Any],
+        request: Request,
+        user: DetailedUser,
+        status_code: int = 200,
+        headers: Mapping[str, str] | None = None,
+        background: BackgroundTask | None = None,
+        **kwargs: Any,
+    ):
+        copy = context.copy()
+        copy.update({"request": request, "user": user})
+
+        self.context = context
+        self.response_type = "html"
+        self.template_response = templates.TemplateResponse(
+            name=name,
+            context=copy,
+            status_code=status_code,
+            headers=headers,
+            background=background,
+            **kwargs,
+        )
+
+        self.background = background
+        self.status_code = status_code
+        self.body = self.render(self.context)
+        super().init_headers(headers)
+
+    def set_html(self):
+        self.response_type = "html"
+        self.media_type = "text/html"
+        self.body = self.render(self.context)
+
+    def set_json(self):
+        self.response_type = "json"
+        self.media_type = "application/json"
+        self.body = self.render(self.context)
+
+    def render(self, content: Any) -> bytes | memoryview:
+        if self.response_type == "html":
+            return self.template_response.body
+        elif self.response_type == "json":
+            return json.dumps(content, ensure_ascii=False).encode("utf-8")
+        else:
+            return b""
 
 
 @overload
@@ -63,12 +114,11 @@ def template_response(
     **kwargs: Any,
 ) -> Response:
     """Template response wrapper to make sure required arguments are passed everywhere"""
-    copy = context.copy()
-    copy.update({"request": request, "user": user})
-
-    return templates.TemplateResponse(
+    return TemplateResponse(
         name=name,
-        context=copy,
+        context=context,
+        request=request,
+        user=user,
         status_code=status_code,
         headers=headers,
         media_type=media_type,
