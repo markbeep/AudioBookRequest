@@ -20,6 +20,7 @@ If you've heard of Overseer, Ombi, or Jellyseer; this is in the similar vein, <i
     - [OpenID Connect](#openid-connect)
       - [Getting locked out](#getting-locked-out)
     - [Environment Variables](#environment-variables)
+- [Easy Mode (ElfHosted)](#easy-mode-elfhosted)
 - [Contributing](#contributing)
   - [Local Development](#local-development)
   - [Initialize Database](#initialize-database)
@@ -96,6 +97,18 @@ In the case of an OIDC misconfiguration, i.e. changing a setting like your clien
 | `ABR_DB__SQLITE_PATH`      | If relative, path and name of the sqlite database in relation to `ABR_APP__CONFIG_DIR`. If absolute (path starts with `/`), the config dir is ignored and only the absolute path is used. | db.sqlite |
 
 ---
+
+# Easy Mode (ElfHosted)
+
+❤️ AudioBookRequest is proudly "elf-illiated" with ElfHosted (*along with many more excellent [open-source projects](https://docs.elfhosted.com/sponsorship/)*!)
+
+What is ElfHosted? [ElfHosted](https://store.elfhosted.com/elf/markbeep/) is "easy mode" for self-hosting - an [open-source](https://docs.elfhosted.com/open/) PaaS which runs runs over 100 popular self-hostable apps for you, reliably and securely. They take responsibility for the painful stuff (*hardware, security, configuration, automation and updates*), so you sit back and enjoy the fun stuff! (*actually **using** your applications!*)
+
+Popular [streaming bundles](https://store.elfhosted.com/product-category/streaming-bundles/elf/markbeep/) are available with Plex, Jellyfin, or Emby, integrated with cloud storage like RealDebrid, Premiumize, etc, and this same debrid functionality can now be used to fully download (*or just symlink*) audiobooks with [AudioBookRequest](https://store.elfhosted.com/product/audiobookrequest/).
+
+ElfHosted have an ["excellent" ⭐️⭐️⭐️⭐️⭐️ rating on TrustPilot](https://www.trustpilot.com/review/elfhosted.com), a well-moderated [Discord](https://discord.elfhosted.com) community (*[highly praised](https://docs.elfhosted.com/testimonials/) for support and friendliness*), and [comprehensive documentation and guides](https://docs.elfhosted.com) resource.
+
+Grab a [7-day trial for only $1](https://store.elfhosted.com/elf/markbeep/), and experience ElfHosted for yourself! 🎉
 
 # Contributing
 
