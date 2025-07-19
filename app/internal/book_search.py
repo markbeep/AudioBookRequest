@@ -8,6 +8,7 @@ import pydantic
 from aiohttp import ClientSession
 from sqlmodel import Session, col, select
 
+from app.internal.env_settings import Settings
 from app.internal.models import BookRequest
 from app.util.log import logger
 
@@ -39,6 +40,13 @@ audible_regions: dict[audible_region_type, str] = {
     "es": ".es",
     "br": ".com.br",
 }
+
+
+def get_region_from_settings() -> audible_region_type:
+    region = Settings().app.default_region
+    if region not in audible_regions:
+        return "us"
+    return region
 
 
 async def _get_audnexus_book(
@@ -108,7 +116,7 @@ async def _get_audimeta_book(
 async def get_book_by_asin(
     session: ClientSession,
     asin: str,
-    audible_region: audible_region_type = "us",
+    audible_region: audible_region_type = get_region_from_settings(),
 ) -> Optional[BookRequest]:
     book = await _get_audimeta_book(session, asin, audible_region)
     if book:
@@ -139,7 +147,7 @@ search_suggestions_cache: dict[str, CacheResult[list[str]]] = {}
 async def get_search_suggestions(
     client_session: ClientSession,
     query: str,
-    audible_region: audible_region_type = "us",
+    audible_region: audible_region_type = get_region_from_settings(),
 ) -> list[str]:
     cache_result = search_suggestions_cache.get(query)
     if cache_result and time.time() - cache_result.timestamp < REFETCH_TTL:
@@ -182,7 +190,7 @@ async def list_audible_books(
     query: str,
     num_results: int = 20,
     page: int = 0,
-    audible_region: audible_region_type = "us",
+    audible_region: audible_region_type = get_region_from_settings(),
 ) -> list[BookRequest]:
     """
     https://audible.readthedocs.io/en/latest/misc/external_api.html#get--1.0-catalog-products

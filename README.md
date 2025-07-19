@@ -96,6 +96,7 @@ In the case of an OIDC misconfiguration, i.e. changing a setting like your clien
 | `ABR_APP__LOG_LEVEL`       | One of `DEBUG`, `INFO`, `WARN`, `ERROR`.                                                                                                                                                  | INFO      |
 | `ABR_APP__BASE_URL`        | Defines the base url the website is hosted at. If the website is accessed at `example.org/abr/`, set the base URL to `/abr/`                                                              |           |
 | `ABR_DB__SQLITE_PATH`      | If relative, path and name of the sqlite database in relation to `ABR_APP__CONFIG_DIR`. If absolute (path starts with `/`), the config dir is ignored and only the absolute path is used. | db.sqlite |
+| `ABR_APP__DEFAULT_REGION`  | Default audible region to use for the search. Has to be one of `us, ca, uk, au, fr, de, jp, it, in, es, br`.                                                                              | us        |
 
 ---
 

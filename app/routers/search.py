@@ -18,6 +18,7 @@ from app.internal.book_search import (
     audible_region_type,
     audible_regions,
     get_book_by_asin,
+    get_region_from_settings,
     list_audible_books,
 )
 from app.internal.models import (
@@ -74,7 +75,7 @@ async def read_search(
     query: Annotated[Optional[str], Query(alias="q")] = None,
     num_results: int = 20,
     page: int = 0,
-    region: audible_region_type = "us",
+    region: audible_region_type = get_region_from_settings(),
 ):
     if audible_regions.get(region) is None:
         raise HTTPException(status_code=400, detail="Invalid region")
@@ -118,7 +119,7 @@ async def search_suggestions(
     request: Request,
     user: Annotated[DetailedUser, Depends(get_authenticated_user())],
     query: Annotated[str, Query(alias="q")],
-    region: audible_region_type = "us",
+    region: audible_region_type = get_region_from_settings(),
 ):
     async with ClientSession() as client_session:
         suggestions = await book_search.get_search_suggestions(

@@ -16,6 +16,7 @@ class ApplicationSettings(BaseModel):
     version: str = "local"
     log_level: str = "INFO"
     base_url: str = ""
+    default_region: str = "us"
 
 
 class Settings(BaseSettings):

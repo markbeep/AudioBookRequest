@@ -31,7 +31,7 @@
     <div class="flex flex-col gap-4 justify-start items-center">
       <form class="flex items-start w-full join" onsubmit="onSearch();">
         <input name="q"
-               class="input join-item"
+               class="input join-item focus:z-10"
                placeholder="Book name..."
                {% if not search_term %}autofocus{% endif %}
                value="{{ search_term }}"
@@ -47,7 +47,7 @@
             {% for suggestion in (suggestions or [])[:3] %}<option value="{{ suggestion }}"></option>{% endfor %}
           </datalist>
         {% endblock search_suggestions %}
-        <select class="select join-item max-w-[4rem] sm:max-w-[5rem]" name="region">
+        <select class="select join-item max-w-[4rem] sm:max-w-[5rem] focus:z-10" name="region">
           {% for region in regions.keys() %}
             <option value="{{ region }}"
                     {% if region.__eq__(selected_region) %}selected="selected"{% endif %}>{{ region }}</option>
