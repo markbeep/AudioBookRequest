@@ -41,8 +41,6 @@ docker run -p 8000:8000 -v $(pwd)/config:/config markbeep/audiobookrequest:1
 
 Then head to http://localhost:8000.
 
-The Docker container includes built-in health checks for monitoring and container orchestration. Health status is available at `/api/v1/health`.
-
 ## Basic Usage
 
 1. Logging in the first time the login-type and root admin user has to be configured.

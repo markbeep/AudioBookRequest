@@ -30,12 +30,8 @@ with open_session() as session:
 
 app = FastAPI(
     title="AudioBookRequest",
-    description="Your tool for handling audiobook requests on a Plex/Audiobookshelf/Jellyfin instance",
-    version="1.3.0",
     debug=Settings().app.debug,
     openapi_url="/openapi.json" if Settings().app.openapi_enabled else None,
-    docs_url="/docs" if Settings().app.openapi_enabled else None,
-    redoc_url="/redoc" if Settings().app.openapi_enabled else None,
     middleware=[
         Middleware(DynamicSessionMiddleware, auth_secret, middleware_linker),
         Middleware(GZipMiddleware),

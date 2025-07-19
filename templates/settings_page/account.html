@@ -32,7 +32,8 @@
     </form>
     <hr class="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded-sm md:my-10 dark:bg-gray-700">
 
-    <div id="api-keys-section">
+    {% block api_keys %}
+    <div id="api_keys">
       <h2 class="text-lg mb-2">API Keys</h2>
       <p class="text-sm text-gray-600 mb-4">
         API keys allow external applications to access your account.
@@ -41,7 +42,7 @@
       <form id="create-api-key-form"
             class="flex flex-col gap-2 mb-4"
             hx-post="{{ base_url }}/settings/account/api-key"
-            hx-target="#api-keys-section">
+            hx-target="#api_keys">
         <div class="flex gap-2">
           <input name="name"
                  type="text"
@@ -53,11 +54,11 @@
       </form>
 
       {% if show_api_key %}
-        <div class="alert alert-info mb-4">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
           <div class="flex flex-col gap-2">
             <p><strong>Your new API key:</strong></p>
             <div class="flex gap-2">
-              <code class="bg-gray-100 p-2 rounded flex-1">{{ new_api_key }}</code>
+              <code class="bg-gray-200 p-2 rounded flex-1">{{ new_api_key }}</code>
               <button onclick="navigator.clipboard.writeText('{{ new_api_key }}')" class="btn btn-sm">Copy</button>
             </div>
             <p class="text-sm text-warning">
@@ -67,58 +68,82 @@
         </div>
       {% endif %}
 
-      <div id="api_keys_block">
-        {% if api_keys %}
-          <div class="overflow-x-auto">
-            <table class="table w-full">
-              <thead>
+      {% if api_keys %}
+        <div class="overflow-x-auto">
+          <table class="table w-full">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Created</th>
+                <th>Last Used</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for api_key in api_keys %}
                 <tr>
-                  <th>Name</th>
-                  <th>Created</th>
-                  <th>Last Used</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <td>{{ api_key.name }}</td>
+                  <td>{{ api_key.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                  <td>
+                    {% if api_key.last_used %}
+                      {{ api_key.last_used.strftime('%Y-%m-%d %H:%M') }}
+                    {% else %}
+                      Never
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge {% if api_key.enabled %}badge-success{% else %}badge-error{% endif %}">
+                      {% if api_key.enabled %}Enabled{% else %}Disabled{% endif %}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="flex gap-2">
+                      <button hx-patch="{{ base_url }}/settings/account/api-key/{{ api_key.id }}/toggle"
+                              hx-target="#api_keys"
+                              class="btn btn-sm">
+                        {% if api_key.enabled %}Disable{% else %}Enable{% endif %}
+                      </button>
+                      <button onclick="delete_api_key_modal_{{ loop.index }}.showModal()"
+                              class="btn btn-sm btn-error">Delete</button>
+                      <dialog id="delete_api_key_modal_{{ loop.index }}" class="modal">
+                        <div class="modal-box">
+                          <h3 class="text-lg font-bold">Are you sure you want to delete this API key?</h3>
+                          <div class="grid grid-cols-2 py-4">
+                            <span class="font-semibold mr-2">Name</span><span class="font-mono">{{ api_key.name }}</span>
+                            <span class="font-semibold mr-2">Created</span><span class="font-mono">{{ api_key.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                            <span class="font-semibold mr-2">Last Used</span>
+                            <span class="font-mono">
+                              {% if api_key.last_used %}
+                                {{ api_key.last_used.strftime('%Y-%m-%d %H:%M') }}
+                              {% else %}
+                                Never
+                              {% endif %}
+                            </span>
+                          </div>
+                          <form method="dialog" class="flex justify-between">
+                            <button class="btn">Cancel</button>
+                            <button class="btn bg-primary"
+                                    hx-delete="{{ base_url }}/settings/account/api-key/{{ api_key.id }}"
+                                    hx-disabled-elt="this"
+                                    hx-target="#api_keys">Delete</button>
+                          </form>
+                        </div>
+                        <form method="dialog" class="modal-backdrop">
+                          <button>close</button>
+                        </form>
+                      </dialog>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {% for api_key in api_keys %}
-                  <tr>
-                    <td>{{ api_key.name }}</td>
-                    <td>{{ api_key.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>
-                      {% if api_key.last_used %}
-                        {{ api_key.last_used.strftime('%Y-%m-%d %H:%M') }}
-                      {% else %}
-                        Never
-                      {% endif %}
-                    </td>
-                    <td>
-                      <span class="badge {% if api_key.enabled %}badge-success{% else %}badge-error{% endif %}">
-                        {% if api_key.enabled %}Enabled{% else %}Disabled{% endif %}
-                      </span>
-                    </td>
-                    <td>
-                      <div class="flex gap-2">
-                        <button hx-patch="{{ base_url }}/settings/account/api-key/{{ api_key.id }}/toggle"
-                                hx-target="#api_keys_block"
-                                class="btn btn-sm">
-                          {% if api_key.enabled %}Disable{% else %}Enable{% endif %}
-                        </button>
-                        <button hx-delete="{{ base_url }}/settings/account/api-key/{{ api_key.id }}"
-                                hx-target="#api_keys_block"
-                                hx-confirm="Are you sure you want to delete this API key?"
-                                class="btn btn-sm btn-error">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <p class="text-gray-600">No API keys created yet.</p>
-        {% endif %}
-      </div>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-gray-600">No API keys created yet.</p>
+      {% endif %}
     </div>
+    {% endblock api_keys %}
   </div>
 {% endblock content %}

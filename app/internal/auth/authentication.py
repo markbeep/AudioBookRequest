@@ -11,7 +11,7 @@ from fastapi.security import HTTPBasic, HTTPBearer, OAuth2PasswordBearer, OpenId
 from sqlmodel import Session, select
 
 from app.internal.auth.config import LoginTypeEnum, auth_config
-from app.internal.models import ApiKey, GroupEnum, User
+from app.internal.models import APIKey, GroupEnum, User
 from app.util.db import get_session
 from app.util.log import logger
 
@@ -91,11 +91,11 @@ def create_api_key(
     session: Session,
     user: User,
     name: str,
-) -> tuple[ApiKey, str]:
+) -> tuple[APIKey, str]:
     key = generate_api_key()
     key_hash = ph.hash(key)
     
-    api_key = ApiKey(
+    api_key = APIKey(
         user_username=user.username,
         name=name,
         key_hash=key_hash,
@@ -108,7 +108,7 @@ def create_api_key(
 
 
 def authenticate_api_key(session: Session, key: str) -> Optional[User]:
-    api_keys = session.exec(select(ApiKey).where(ApiKey.enabled)).all()
+    api_keys = session.exec(select(APIKey).where(APIKey.enabled)).all()
     
     for api_key in api_keys:
         try:
@@ -118,6 +118,11 @@ def authenticate_api_key(session: Session, key: str) -> Optional[User]:
             session.commit()
             
             user = session.get(User, api_key.user_username)
+            if not user:
+                # User has been deleted but API key still exists
+                # This shouldn't happen with CASCADE, but handle it gracefully
+                logger.warning(f"API key {api_key.id} references non-existent user {api_key.user_username}")
+                continue
             return user
         except VerifyMismatchError:
             continue

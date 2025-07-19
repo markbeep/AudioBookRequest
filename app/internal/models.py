@@ -218,7 +218,7 @@ class Notification(BaseModel, table=True):
         return json.dumps(self.headers)
 
 
-class ApiKey(BaseModel, table=True):
+class APIKey(BaseModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_username: str = Field(foreign_key="user.username", ondelete="CASCADE")
     name: str

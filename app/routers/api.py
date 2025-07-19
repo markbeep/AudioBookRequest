@@ -1,8 +1,8 @@
 import time
 from datetime import datetime
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select, func
 
@@ -12,12 +12,11 @@ from app.internal.auth.authentication import (
     get_api_authenticated_user,
     raise_for_invalid_password,
 )
-from app.internal.env_settings import Settings
-from app.internal.models import ApiKey, BookRequest, GroupEnum, User
+from app.internal.models import GroupEnum, User
 from app.util.db import get_session
 
 router = APIRouter(
-    prefix="/api/v1", 
+    prefix="/api", 
     tags=["API"],
     responses={
         401: {"description": "Unauthorized - Invalid or missing API key"},
@@ -71,16 +70,6 @@ class HealthResponse(BaseModel):
     uptime: float = Field(..., description="Uptime in seconds")
 
 
-class StatusResponse(BaseModel):
-    """System status response model"""
-    status: str = Field(..., description="System status")
-    version: str = Field(..., description="Application version")
-    database: str = Field(..., description="Database status")
-    users_count: int = Field(..., description="Total number of users")
-    requests_count: int = Field(..., description="Total number of book requests")
-    api_keys_count: int = Field(..., description="Total number of active API keys")
-    timestamp: datetime = Field(..., description="Current timestamp")
-
 
 class VersionResponse(BaseModel):
     """Version information response model"""
@@ -92,145 +81,12 @@ class VersionResponse(BaseModel):
     fastapi_version: str = Field(..., description="FastAPI version")
 
 
-class MetricsResponse(BaseModel):
-    """System metrics response model"""
-    users: Dict[str, int] = Field(..., description="User statistics by group")
-    requests: Dict[str, int] = Field(..., description="Request statistics")
-    api_keys: Dict[str, int] = Field(..., description="API key statistics")
-    timestamp: datetime = Field(..., description="Current timestamp")
+
 
 
 @router.get("/health", response_model=HealthResponse, tags=["System"])
 def health_check():
-    """
-    Health check endpoint for monitoring systems.
-    
-    **Requires:** No authentication
-    
-    Returns basic health status and uptime information.
-    Useful for load balancers, monitoring systems, and container orchestration.
-    """
-    return HealthResponse(
-        status="healthy",
-        timestamp=datetime.now(),
-        uptime=time.time() - startup_time,
-    )
-
-
-@router.get("/status", response_model=StatusResponse, tags=["System"])
-def get_status(
-    session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[
-        DetailedUser, Depends(get_api_authenticated_user(GroupEnum.admin))
-    ],
-):
-    """
-    Get detailed system status information.
-    
-    **Requires:** Admin privileges
-    
-    **Authentication:** Bearer token (API key)
-    
-    Returns comprehensive system status including database health,
-    user counts, request counts, and version information.
-    """
-    try:
-        # Test database connection
-        users_count = session.exec(select(func.count()).select_from(User)).one()
-        requests_count = session.exec(select(func.count()).select_from(BookRequest)).one()
-        api_keys_count = session.exec(select(func.count()).select_from(ApiKey).where(ApiKey.enabled)).one()
-        database_status = "healthy"
-    except Exception:
-        database_status = "error"
-        users_count = 0
-        requests_count = 0
-        api_keys_count = 0
-    
-    return StatusResponse(
-        status="healthy" if database_status == "healthy" else "degraded",
-        version=Settings().app.version,
-        database=database_status,
-        users_count=users_count,
-        requests_count=requests_count,
-        api_keys_count=api_keys_count,
-        timestamp=datetime.now(),
-    )
-
-
-@router.get("/version", response_model=VersionResponse, tags=["System"])
-def get_version():
-    """
-    Get application version and build information.
-    
-    **Requires:** No authentication
-    
-    Returns detailed version information including dependencies.
-    Useful for debugging and compatibility checking.
-    """
-    import sys
-    import fastapi
-    
-    return VersionResponse(
-        name="AudioBookRequest",
-        version=Settings().app.version,
-        description="Your tool for handling audiobook requests on a Plex/Audiobookshelf/Jellyfin instance",
-        repository="https://github.com/markbeep/AudioBookRequest",
-        python_version=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-        fastapi_version=fastapi.__version__,
-    )
-
-
-@router.get("/metrics", response_model=MetricsResponse, tags=["System"])
-def get_metrics(
-    session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[
-        DetailedUser, Depends(get_api_authenticated_user(GroupEnum.admin))
-    ],
-):
-    """
-    Get system metrics and statistics.
-    
-    **Requires:** Admin privileges
-    
-    **Authentication:** Bearer token (API key)
-    
-    Returns detailed metrics about users, requests, and API keys.
-    Useful for monitoring, analytics, and capacity planning.
-    """
-    # User statistics by group
-    user_stats: Dict[str, int] = {}
-    for group in GroupEnum:
-        count = session.exec(
-            select(func.count()).select_from(User).where(User.group == group)
-        ).one()
-        user_stats[group.value] = count
-    
-    # Request statistics
-    total_requests = session.exec(select(func.count()).select_from(BookRequest)).one()
-    downloaded_requests = session.exec(
-        select(func.count()).select_from(BookRequest).where(BookRequest.downloaded)
-    ).one()
-    
-    # API key statistics
-    total_api_keys = session.exec(select(func.count()).select_from(ApiKey)).one()
-    enabled_api_keys = session.exec(
-        select(func.count()).select_from(ApiKey).where(ApiKey.enabled)
-    ).one()
-    
-    return MetricsResponse(
-        users=user_stats,
-        requests={
-            "total": total_requests,
-            "downloaded": downloaded_requests,
-            "pending": total_requests - downloaded_requests,
-        },
-        api_keys={
-            "total": total_api_keys,
-            "enabled": enabled_api_keys,
-            "disabled": total_api_keys - enabled_api_keys,
-        },
-        timestamp=datetime.now(),
-    )
+    return Response(status_code=200)
 
 
 @router.get("/users", response_model=UsersListResponse, tags=["Users"])
@@ -259,6 +115,22 @@ def list_users(
         users=[UserResponse.from_user(user) for user in users],
         total=total,
     )
+
+
+@router.get("/users/me", response_model=UserResponse, tags=["Users"])
+def get_current_user(
+    current_user: Annotated[DetailedUser, Depends(get_api_authenticated_user())],
+):
+    """
+    Get current user's information.
+    
+    **Requires:** Any authenticated user
+    
+    **Authentication:** Bearer token (API key)
+    
+    Returns information about the user associated with the provided API key.
+    """
+    return UserResponse.from_user(current_user)
 
 
 @router.get("/users/{username}", response_model=UserResponse, tags=["Users"])
@@ -426,19 +298,3 @@ def delete_user(
     
     session.delete(user)
     session.commit()
-
-
-@router.get("/users/me", response_model=UserResponse, tags=["Users"])
-def get_current_user(
-    current_user: Annotated[DetailedUser, Depends(get_api_authenticated_user())],
-):
-    """
-    Get current user's information.
-    
-    **Requires:** Any authenticated user
-    
-    **Authentication:** Bearer token (API key)
-    
-    Returns information about the user associated with the provided API key.
-    """
-    return UserResponse.model_validate(current_user)

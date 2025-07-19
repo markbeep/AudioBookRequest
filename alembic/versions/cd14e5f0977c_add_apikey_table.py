@@ -1,4 +1,4 @@
-"""add api keys table
+"""add apikey table
 
 Revision ID: cd14e5f0977c
 Revises: 63489e50e337

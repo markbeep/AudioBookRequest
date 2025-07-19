@@ -41,9 +41,5 @@ ENV ABR_APP__PORT=8000
 ARG VERSION
 ENV ABR_APP__VERSION=$VERSION
 
-# Add health check using our API health endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:$ABR_APP__PORT/api/v1/health || exit 1
-
 CMD /app/.venv/bin/alembic upgrade heads && /app/.venv/bin/fastapi run --port $ABR_APP__PORT
 

@@ -21,7 +21,7 @@ from app.internal.indexers.abstract import SessionContainer
 from app.internal.indexers.configuration import indexer_configuration_cache
 from app.internal.indexers.indexer_util import IndexerContext, get_indexer_contexts
 from app.internal.models import (
-    ApiKey,
+    APIKey,
     NotificationBodyTypeEnum,
     EventEnum,
     GroupEnum,
@@ -52,7 +52,7 @@ def read_account(
     user: Annotated[DetailedUser, Depends(get_authenticated_user())],
     session: Annotated[Session, Depends(get_session)],
 ):
-    api_keys = session.exec(select(ApiKey).where(ApiKey.user_username == user.username)).all()
+    api_keys = session.exec(select(APIKey).where(APIKey.user_username == user.username)).all()
     return template_response(
         "settings_page/account.html",
         request,
@@ -99,10 +99,12 @@ def create_new_api_key(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Depends(get_authenticated_user())],
 ):
-    if not name or not name.strip():
+    if not name.strip():
         raise ToastException("API key name cannot be empty", "error")
     
     api_key, key = create_api_key(session, user, name.strip())
+    
+    api_keys = session.exec(select(APIKey).where(APIKey.user_username == user.username)).all()
     
     return template_response(
         "settings_page/account.html",
@@ -110,11 +112,12 @@ def create_new_api_key(
         user,
         {
             "page": "account", 
+            "api_keys": api_keys,
             "success": f"API key created: {key}",
             "show_api_key": True,
             "new_api_key": key,
         },
-        block_name="content",
+        block_name="api_keys",
     )
 
 
@@ -126,9 +129,9 @@ def delete_api_key(
     user: Annotated[DetailedUser, Depends(get_authenticated_user())],
 ):
     api_key = session.exec(
-        select(ApiKey).where(
-            ApiKey.id == api_key_id,
-            ApiKey.user_username == user.username
+        select(APIKey).where(
+            APIKey.id == api_key_id,
+            APIKey.user_username == user.username
         )
     ).first()
     
@@ -138,7 +141,7 @@ def delete_api_key(
     session.delete(api_key)
     session.commit()
     
-    api_keys = session.exec(select(ApiKey).where(ApiKey.user_username == user.username)).all()
+    api_keys = session.exec(select(APIKey).where(APIKey.user_username == user.username)).all()
     return template_response(
         "settings_page/account.html",
         request,
@@ -148,7 +151,7 @@ def delete_api_key(
             "api_keys": api_keys,
             "success": "API key deleted",
         },
-        block_name="api_keys_block",
+        block_name="api_keys",
     )
 
 
@@ -160,9 +163,9 @@ def toggle_api_key(
     user: Annotated[DetailedUser, Depends(get_authenticated_user())],
 ):
     api_key = session.exec(
-        select(ApiKey).where(
-            ApiKey.id == api_key_id,
-            ApiKey.user_username == user.username
+        select(APIKey).where(
+            APIKey.id == api_key_id,
+            APIKey.user_username == user.username
         )
     ).first()
     
@@ -173,7 +176,7 @@ def toggle_api_key(
     session.add(api_key)
     session.commit()
     
-    api_keys = session.exec(select(ApiKey).where(ApiKey.user_username == user.username)).all()
+    api_keys = session.exec(select(APIKey).where(APIKey.user_username == user.username)).all()
     return template_response(
         "settings_page/account.html",
         request,
@@ -183,7 +186,7 @@ def toggle_api_key(
             "api_keys": api_keys,
             "success": f"API key {'enabled' if api_key.enabled else 'disabled'}",
         },
-        block_name="api_keys_block",
+        block_name="api_keys",
     )
 
 
