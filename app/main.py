@@ -15,7 +15,7 @@ from app.internal.auth.session_middleware import (
 )
 from app.internal.env_settings import Settings
 from app.internal.models import User
-from app.routers import auth, root, search, settings, wishlist
+from app.routers import api, auth, root, search, settings, wishlist
 from app.util.db import open_session
 from app.util.fetch_js import fetch_scripts
 from app.util.redirect import BaseUrlRedirectResponse
@@ -39,6 +39,7 @@ app = FastAPI(
     root_path=Settings().app.base_url.rstrip("/"),
 )
 
+app.include_router(api.router)
 app.include_router(auth.router)
 app.include_router(root.router)
 app.include_router(search.router)
