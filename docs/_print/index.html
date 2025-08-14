@@ -30,7 +30,7 @@
 
   <meta itemprop="name" content="Documentation">
   <meta itemprop="description" content="Welcome to the documentation for AudioBookRequest.">
-  <meta itemprop="dateModified" content="2025-07-18T09:16:45+02:00">
+  <meta itemprop="dateModified" content="2025-08-14T10:43:41+02:00">
   <meta itemprop="wordCount" content="245">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Documentation">
@@ -278,7 +278,26 @@ This is the multi-page printable view of this section.
     
     
 	
-<li>2.2: <a href="#pg-70cac3f21ec9ace937ed903becc9f4ca">OpenID Connect</a></li>
+<li>2.2: <a href="#pg-eb0b8b2f51c3e22c9b2de4770486ca52">API</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>2.3: <a href="#pg-70cac3f21ec9ace937ed903becc9f4ca">OpenID Connect</a></li>
 
 
     
@@ -817,7 +836,75 @@ one of the following pages:</p>
 
 <div class="td-content" style="page-break-before: always">
     
-	<h1 id="pg-70cac3f21ec9ace937ed903becc9f4ca">2.2 - OpenID Connect</h1>
+	<h1 id="pg-eb0b8b2f51c3e22c9b2de4770486ca52">2.2 - API</h1>
+    <div class="lead">How to use the AudioBookRequest API</div>
+	<h2 id="overview">Overview<a class="td-heading-self-link" href="#overview" aria-label="Heading self-link"></a></h2>
+<p>AudioBookRequest provides a RESTful API for managing users and audiobook requests. The API uses Bearer token authentication with API keys that can be generated through the web interface.</p>
+<h2 id="how-to-create-an-api-key">How to Create an API Key<a class="td-heading-self-link" href="#how-to-create-an-api-key" aria-label="Heading self-link"></a></h2>
+<p>Follow these steps to create an API key for accessing the AudioBookRequest API:</p>
+<h3 id="step-1-access-the-web-interface">Step 1: Access the Web Interface<a class="td-heading-self-link" href="#step-1-access-the-web-interface" aria-label="Heading self-link"></a></h3>
+<ol>
+<li>Open your web browser and navigate to your AudioBookRequest instance</li>
+<li>Log in with your username and password</li>
+</ol>
+<h3 id="step-2-navigate-to-account-settings">Step 2: Navigate to Account Settings<a class="td-heading-self-link" href="#step-2-navigate-to-account-settings" aria-label="Heading self-link"></a></h3>
+<ol>
+<li>Once logged in, click on the <strong>Settings</strong> menu</li>
+<li>Select <strong>Account</strong> from the settings options</li>
+</ol>
+<h3 id="step-3-create-a-new-api-key">Step 3: Create a New API Key<a class="td-heading-self-link" href="#step-3-create-a-new-api-key" aria-label="Heading self-link"></a></h3>
+<ol>
+<li>In the Account settings page, look for the <strong>API Keys</strong> section</li>
+<li>Click on <strong>Create New API Key</strong> or similar button</li>
+<li>Enter a descriptive name for your API key (e.g., &ldquo;Mobile App&rdquo;, &ldquo;Automation Script&rdquo;, &ldquo;Home Assistant Integration&rdquo;)</li>
+<li>Click <strong>Generate</strong> or <strong>Create</strong></li>
+</ol>
+<h3 id="step-4-copy-and-store-your-api-key">Step 4: Copy and Store Your API Key<a class="td-heading-self-link" href="#step-4-copy-and-store-your-api-key" aria-label="Heading self-link"></a></h3>
+<ol>
+<li><strong>Important</strong>: The API key will only be displayed once for security reasons</li>
+<li>Copy the generated API key immediately and store it in a secure location</li>
+<li>If you lose the key, you&rsquo;ll need to generate a new one</li>
+</ol>
+<h3 id="step-5-use-your-api-key">Step 5: Use Your API Key<a class="td-heading-self-link" href="#step-5-use-your-api-key" aria-label="Heading self-link"></a></h3>
+<p>Include your API key in the Authorization header of your API requests:</p>
+<pre tabindex="0"><code>Authorization: Bearer &lt;your-api-key&gt;
+</code></pre><p><strong>Example using cURL:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -H <span style="color:#63c381">&#34;Authorization: Bearer your-api-key-here&#34;</span> <span style="color:#d26464;font-weight:bold">\
+</span></span></span><span style="display:flex;"><span><span style="color:#d26464;font-weight:bold"></span>  http://localhost:8000/api/users/me
+</span></span></code></pre></div><h2 id="api-documentation">API Documentation<a class="td-heading-self-link" href="#api-documentation" aria-label="Heading self-link"></a></h2>
+<p>For a SwaggerUI documentation with interactive testing capabilities:</p>
+<ol>
+<li>Set the environment variable <code>ABR_OPENAPI_ENABLED=true</code></li>
+<li>Head to <code>&lt;your-domain&gt;/docs</code>.</li>
+</ol>
+
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-70cac3f21ec9ace937ed903becc9f4ca">2.3 - OpenID Connect</h1>
     <div class="lead">Setting up OIDC login</div>
 	<p>OIDC allows you to use the same login across multiple apps. This guide will show
 you how to set up OIDC with Authentik, but the concepts are the same or similar

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link rel="canonical" type="text/html" href="https://markbeep.github.io/AudioBookRequest/docs/local-development/">
-<link rel="alternate" type="application/rss&#43;xml" href="https://markbeep.github.io/AudioBookRequest/docs/local-development/index.xml">
+<link rel="canonical" type="text/html" href="https://markbeep.github.io/AudioBookRequest/docs/tutorials/api/">
+<link rel="alternate" type="application/rss&#43;xml" href="https://markbeep.github.io/AudioBookRequest/docs/tutorials/api/index.xml">
 <meta name="robots" content="noindex, nofollow">
 
 
@@ -19,23 +19,22 @@
 <link rel="icon" type="image/png" href="/AudioBookRequest/favicons/android-144x144.png" sizes="144x144">
 <link rel="icon" type="image/png" href="/AudioBookRequest/favicons/android-192x192.png" sizes="192x192">
 
-<title>Local Development | AudioBookRequest Docs</title>
-<meta name="description" content="How to set up the project for local development.">
-<meta property="og:url" content="https://markbeep.github.io/AudioBookRequest/docs/local-development/">
+<title>API | AudioBookRequest Docs</title>
+<meta name="description" content="How to use the AudioBookRequest API">
+<meta property="og:url" content="https://markbeep.github.io/AudioBookRequest/docs/tutorials/api/">
   <meta property="og:site_name" content="AudioBookRequest Docs">
-  <meta property="og:title" content="Local Development">
-  <meta property="og:description" content="How to set up the project for local development.">
+  <meta property="og:title" content="API">
+  <meta property="og:description" content="How to use the AudioBookRequest API">
   <meta property="og:locale" content="en">
   <meta property="og:type" content="website">
 
-  <meta itemprop="name" content="Local Development">
-  <meta itemprop="description" content="How to set up the project for local development.">
+  <meta itemprop="name" content="API">
+  <meta itemprop="description" content="How to use the AudioBookRequest API">
   <meta itemprop="dateModified" content="2025-08-14T10:43:41+02:00">
-  <meta itemprop="wordCount" content="354">
-  <meta itemprop="keywords" content="Local">
+  <meta itemprop="wordCount" content="232">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Local Development">
-  <meta name="twitter:description" content="How to set up the project for local development.">
+  <meta name="twitter:title" content="API">
+  <meta name="twitter:description" content="How to use the AudioBookRequest API">
 <link href="/AudioBookRequest/scss/main.css" rel="stylesheet">
 <script
   src="https://code.jquery.com/jquery-3.7.1.min.js"
@@ -133,14 +132,14 @@
 This is the multi-page printable view of this section.
 <a href="#" onclick="print();return false;">Click here to print</a>.
 </p><p>
-<a href="/AudioBookRequest/docs/local-development/">Return to the regular view of this page</a>.
+<a href="/AudioBookRequest/docs/tutorials/api/">Return to the regular view of this page</a>.
 </p>
 </div>
 
 
 
-<h1 class="title">Local Development</h1>
-<div class="lead">How to set up the project for local development.</div>
+<h1 class="title">API</h1>
+<div class="lead">How to use the AudioBookRequest API</div>
 
 
 
@@ -158,63 +157,46 @@ This is the multi-page printable view of this section.
 
 
 <div class="content">
-      <h2 id="requirements">Requirements<a class="td-heading-self-link" href="#requirements" aria-label="Heading self-link"></a></h2>
-<ul>
-<li>Python &gt;3.12</li>
-<li><a href="https://docs.astral.sh/uv/">uv</a>. Used as the package manager</li>
-<li>node.js. Exact version is not too important. Too old versions might fail when
-installing packages.</li>
-</ul>
-<h2 id="setup">Setup<a class="td-heading-self-link" href="#setup" aria-label="Heading self-link"></a></h2>
-<p>Virtual environments help isolate any installed packages to this directory.
-Project was made with <code>Python 3.12</code> and uses new generics introduced in 3.12.
-Older python versions might not work or could have incorrect typing.</p>
-<p>For improved dependency management, <code>uv</code> is used instead of <code>pip</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span><span style="color:#8a93a5;font-style:italic"># This creates the venv as well as installs all dependencies</span>
-</span></span><span style="display:flex;"><span>uv sync
-</span></span></code></pre></div><p>For local development, environment variables can be added to <code>.env.local</code> and
-they&rsquo;ll be used wherever required. This file is not used in production.</p>
-<h2 id="initialize-database">Initialize Database<a class="td-heading-self-link" href="#initialize-database" aria-label="Heading self-link"></a></h2>
-<p><a href="https://alembic.sqlalchemy.org/en/latest/">Alembic</a> is used to create database
-migrations. Run the following before starting up the application for the first
-time. It will initialize the directory if non-existant, create the database file
-as well as execute any required migrations.</p>
-<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>uv run alembic upgrade heads
-</span></span></code></pre></div><p><em>In case of any model changes, remember to create migrations using
-<code>alembic revision --autogenerate -m &quot;&lt;message&gt;&quot;</code>.</em></p>
-<h2 id="generate-the-css-files">Generate the CSS files<a class="td-heading-self-link" href="#generate-the-css-files" aria-label="Heading self-link"></a></h2>
-<p><a href="https://tailwindcss.com/">Tailwindcss</a> is used to style elements using CSS. On
-top of that, <a href="https://daisyui.com/">daisyUI</a> is for easy and consistent
-component styling.</p>
-<p>Install daisyUI and start Tailwindcss watcher. Required for any CSS styling.</p>
-<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>npm i
-</span></span><span style="display:flex;"><span>uv run tailwindcss -i static/tw.css -o static/globals.css --watch
-</span></span><span style="display:flex;"><span><span style="color:#8a93a5;font-style:italic"># Alternatively npx can be used to run tailwindcss</span>
-</span></span><span style="display:flex;"><span>npx @tailwindcss/cli@4 -i static/tw.css -o static/globals.css --watch
-</span></span></code></pre></div><p>Tailwind has to run anytime something is changed in the HTML template files.</p>
-<h2 id="run-the-app">Run the app<a class="td-heading-self-link" href="#run-the-app" aria-label="Heading self-link"></a></h2>
-<p>Running the application is best done in multiple terminals:</p>
+      <h2 id="overview">Overview<a class="td-heading-self-link" href="#overview" aria-label="Heading self-link"></a></h2>
+<p>AudioBookRequest provides a RESTful API for managing users and audiobook requests. The API uses Bearer token authentication with API keys that can be generated through the web interface.</p>
+<h2 id="how-to-create-an-api-key">How to Create an API Key<a class="td-heading-self-link" href="#how-to-create-an-api-key" aria-label="Heading self-link"></a></h2>
+<p>Follow these steps to create an API key for accessing the AudioBookRequest API:</p>
+<h3 id="step-1-access-the-web-interface">Step 1: Access the Web Interface<a class="td-heading-self-link" href="#step-1-access-the-web-interface" aria-label="Heading self-link"></a></h3>
 <ol>
-<li>
-<p>Start FastAPI dev mode:</p>
-<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>uv run fastapi dev
-</span></span></code></pre></div><p>Website can be visited at http://localhost:8000.</p>
-</li>
-<li>
-<p><em>Optional:</em> Start browser-sync. This hot reloads the website when the html
-template or python files are modified:</p>
-</li>
+<li>Open your web browser and navigate to your AudioBookRequest instance</li>
+<li>Log in with your username and password</li>
 </ol>
-<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>browser-sync http://localhost:8000 --files templates/** --files app/**
-</span></span></code></pre></div><p><strong>NOTE</strong>: Website has to be visited at http://localhost:3000 instead.</p>
-<h2 id="docker-compose">Docker Compose<a class="td-heading-self-link" href="#docker-compose" aria-label="Heading self-link"></a></h2>
-<p>The docker compose can also be used to run the app locally. Any services that
-are required can be added to it for easy testing:</p>
-<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker compose up --build
-</span></span></code></pre></div><p>The local context (ABR) is in a docker compose profile called <code>local</code>, which is
-only run if explicitly stated as follows:</p>
-<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker compose --profile <span style="color:#ef8383">local</span> up
-</span></span></code></pre></div>
+<h3 id="step-2-navigate-to-account-settings">Step 2: Navigate to Account Settings<a class="td-heading-self-link" href="#step-2-navigate-to-account-settings" aria-label="Heading self-link"></a></h3>
+<ol>
+<li>Once logged in, click on the <strong>Settings</strong> menu</li>
+<li>Select <strong>Account</strong> from the settings options</li>
+</ol>
+<h3 id="step-3-create-a-new-api-key">Step 3: Create a New API Key<a class="td-heading-self-link" href="#step-3-create-a-new-api-key" aria-label="Heading self-link"></a></h3>
+<ol>
+<li>In the Account settings page, look for the <strong>API Keys</strong> section</li>
+<li>Click on <strong>Create New API Key</strong> or similar button</li>
+<li>Enter a descriptive name for your API key (e.g., &ldquo;Mobile App&rdquo;, &ldquo;Automation Script&rdquo;, &ldquo;Home Assistant Integration&rdquo;)</li>
+<li>Click <strong>Generate</strong> or <strong>Create</strong></li>
+</ol>
+<h3 id="step-4-copy-and-store-your-api-key">Step 4: Copy and Store Your API Key<a class="td-heading-self-link" href="#step-4-copy-and-store-your-api-key" aria-label="Heading self-link"></a></h3>
+<ol>
+<li><strong>Important</strong>: The API key will only be displayed once for security reasons</li>
+<li>Copy the generated API key immediately and store it in a secure location</li>
+<li>If you lose the key, you&rsquo;ll need to generate a new one</li>
+</ol>
+<h3 id="step-5-use-your-api-key">Step 5: Use Your API Key<a class="td-heading-self-link" href="#step-5-use-your-api-key" aria-label="Heading self-link"></a></h3>
+<p>Include your API key in the Authorization header of your API requests:</p>
+<pre tabindex="0"><code>Authorization: Bearer &lt;your-api-key&gt;
+</code></pre><p><strong>Example using cURL:</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -H <span style="color:#63c381">&#34;Authorization: Bearer your-api-key-here&#34;</span> <span style="color:#d26464;font-weight:bold">\
+</span></span></span><span style="display:flex;"><span><span style="color:#d26464;font-weight:bold"></span>  http://localhost:8000/api/users/me
+</span></span></code></pre></div><h2 id="api-documentation">API Documentation<a class="td-heading-self-link" href="#api-documentation" aria-label="Heading self-link"></a></h2>
+<p>For a SwaggerUI documentation with interactive testing capabilities:</p>
+<ol>
+<li>Set the environment variable <code>ABR_OPENAPI_ENABLED=true</code></li>
+<li>Head to <code>&lt;your-domain&gt;/docs</code>.</li>
+</ol>
+
 </div>
 </div>
 
