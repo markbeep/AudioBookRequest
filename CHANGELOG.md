@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.2](https://github.com/markbeep/AudioBookRequest/compare/v1.5.1...v1.5.2) (2025-08-16)
+
+
+### Features
+
+* add changelog modal when clicking version in the settings ([d07765f](https://github.com/markbeep/AudioBookRequest/commit/d07765f9241b5965914bcc4bbb34abe993c5d733))
+
+
+### Bug Fixes
+
+* hide wrong book requests and clear cache ([12d323b](https://github.com/markbeep/AudioBookRequest/commit/12d323b9faa9026e3343bdb4d66b31bdee8f96b0))
+
 ## [1.5.1](https://github.com/markbeep/AudioBookRequest/compare/v1.5.0...v1.5.1) (2025-08-16)
 
 
