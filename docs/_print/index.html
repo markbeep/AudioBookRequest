@@ -30,7 +30,7 @@
 
   <meta itemprop="name" content="Documentation">
   <meta itemprop="description" content="Welcome to the documentation for AudioBookRequest.">
-  <meta itemprop="dateModified" content="2025-08-14T10:43:41+02:00">
+  <meta itemprop="dateModified" content="2025-08-16T11:20:34+02:00">
   <meta itemprop="wordCount" content="245">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Documentation">
@@ -1108,6 +1108,21 @@ receive the <code>Trusted</code> role once they login to AudioBookRequest.
           <td><code>ABR_APP__DEFAULT_REGION</code></td>
           <td>Default audible region to use for the search. Has to be one of <code>us, ca, uk, au, fr, de, jp, it, in, es, br</code>.</td>
           <td>us</td>
+      </tr>
+      <tr>
+          <td><code>ABR_APP__FORCE_LOGIN_TYPE</code></td>
+          <td>Forces the login type and prevents it from being modified. Can be one of <code>basic</code>, <code>forms</code>, <code>oidc</code>, or <code>none</code> to disable the login. <code>oidc</code> requires both the <code>ABR_APP__INIT_ROOT_USERNAME</code> and <code>ABR_APP__INIT_ROOT_PASSWORD</code> environment variables to be set.</td>
+          <td></td>
+      </tr>
+      <tr>
+          <td><code>ABR_APP__INIT_ROOT_USERNAME</code></td>
+          <td>Sets the initial username of the root user when first launching ABR. Has no effect if a root admin already exists.</td>
+          <td></td>
+      </tr>
+      <tr>
+          <td><code>ABR_APP__INIT_ROOT_PASSWORD</code></td>
+          <td>Sets the initial password of the root user when first launching ABR. Has no effect if a root admin already exists.</td>
+          <td></td>
       </tr>
   </tbody>
 </table>
