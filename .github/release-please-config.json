@@ -1,0 +1,18 @@
+{
+    "release-type": "python",
+    "target-branch": "main",
+    "changelog-sections": [
+        "feat",
+        "fix",
+        "perf",
+        "deps",
+        "revert",
+        "docs",
+        "style",
+        "chore",
+        "refactor",
+        "test",
+        "build",
+        "ci"
+    ]
+}
