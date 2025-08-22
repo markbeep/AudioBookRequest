@@ -30,7 +30,7 @@
 
   <meta itemprop="name" content="Documentation">
   <meta itemprop="description" content="Welcome to the documentation for AudioBookRequest.">
-  <meta itemprop="dateModified" content="2025-08-22T15:01:53+02:00">
+  <meta itemprop="dateModified" content="2025-08-22T16:37:59+02:00">
   <meta itemprop="wordCount" content="245">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Documentation">
@@ -319,6 +319,14 @@ This is the multi-page printable view of this section.
   
 
     </ul>
+    
+  
+    
+    
+	
+<li>2.4: <a href="#pg-166742871915c6e90a746d3724852039">Update indexer configuration from file</a></li>
+
+
     
   
 
@@ -1069,6 +1077,49 @@ receive the <code>Trusted</code> role once they login to AudioBookRequest.
   
 
   
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-166742871915c6e90a746d3724852039">2.4 - Update indexer configuration from file</h1>
+    <div class="lead">Update indexer configuration options using a file</div>
+	<h2 id="overview">Overview<a class="td-heading-self-link" href="#overview" aria-label="Heading self-link"></a></h2>
+<p>You can set up a JSON file that will be used to populate the indexer
+configuration options. This can be useful if you have a value that needs to
+constantly change, but you don&rsquo;t want to have to work with the
+<a href="/AudioBookRequest/docs/tutorials/api/">ABR API</a>.</p>
+<h2 id="how-to-set-up-file-configuration">How to set up file configuration<a class="td-heading-self-link" href="#how-to-set-up-file-configuration" aria-label="Heading self-link"></a></h2>
+<ol>
+<li>Create a JSON file with the desired options. The layout is a 2-layer object.
+The top-level is an object with key for each indexer type (for example
+<code>MyAnonamouse</code>). The value is an object containing a key for each config that
+you want to update.</li>
+<li>Ensure the JSON file is visible by ABR. Add it as a volume or copy it into
+the Docker container.</li>
+<li>Head to <code>Settings&gt;Indexers</code></li>
+<li>At the bottom, enter the path to the JSON file. It&rsquo;s best to pass in an
+absolute path.</li>
+<li>You&rsquo;re done! ABR will now check for updates to the file and update the
+configurations if there&rsquo;s ever any change.</li>
+</ol>
+<h2 id="example">Example<a class="td-heading-self-link" href="#example" aria-label="Heading self-link"></a></h2>
+<p>This is an example of a legal JSON file that would update the mam_id.</p>
+<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e06c75">&#34;MyAnonamouse&#34;</span>: {
+</span></span><span style="display:flex;"><span>    <span style="color:#e06c75">&#34;mam_session_id&#34;</span>: <span style="color:#63c381">&#34;test3&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div>
+</div>
+
+
 
     
 	

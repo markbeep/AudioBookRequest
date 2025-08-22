@@ -6,7 +6,14 @@
     <description>Recent content in Tutorials on AudioBookRequest Docs</description>
     <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate></lastBuildDate>
+    <lastBuildDate>Fri, 22 Aug 2025 16:37:59 +0200</lastBuildDate>
     <atom:link href="https://markbeep.github.io/AudioBookRequest/docs/tutorials/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Update indexer configuration from file</title>
+      <link>https://markbeep.github.io/AudioBookRequest/docs/tutorials/indexer_from_file/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://markbeep.github.io/AudioBookRequest/docs/tutorials/indexer_from_file/</guid>
+      <description>&lt;h2 id=&#34;overview&#34;&gt;Overview&lt;a class=&#34;td-heading-self-link&#34; href=&#34;#overview&#34; aria-label=&#34;Heading self-link&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&#xA;&lt;p&gt;You can set up a JSON file that will be used to populate the indexer&#xA;configuration options. This can be useful if you have a value that needs to&#xA;constantly change, but you don&amp;rsquo;t want to have to work with the&#xA;&lt;a href=&#34;https://markbeep.github.io/AudioBookRequest/docs/tutorials/api/&#34;&gt;ABR API&lt;/a&gt;.&lt;/p&gt;&#xA;&lt;h2 id=&#34;how-to-set-up-file-configuration&#34;&gt;How to set up file configuration&lt;a class=&#34;td-heading-self-link&#34; href=&#34;#how-to-set-up-file-configuration&#34; aria-label=&#34;Heading self-link&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&#xA;&lt;ol&gt;&#xA;&lt;li&gt;Create a JSON file with the desired options. The layout is a 2-layer object.&#xA;The top-level is an object with key for each indexer type (for example&#xA;&lt;code&gt;MyAnonamouse&lt;/code&gt;). The value is an object containing a key for each config that&#xA;you want to update.&lt;/li&gt;&#xA;&lt;li&gt;Ensure the JSON file is visible by ABR. Add it as a volume or copy it into&#xA;the Docker container.&lt;/li&gt;&#xA;&lt;li&gt;Head to &lt;code&gt;Settings&amp;gt;Indexers&lt;/code&gt;&lt;/li&gt;&#xA;&lt;li&gt;At the bottom, enter the path to the JSON file. It&amp;rsquo;s best to pass in an&#xA;absolute path.&lt;/li&gt;&#xA;&lt;li&gt;You&amp;rsquo;re done! ABR will now check for updates to the file and update the&#xA;configurations if there&amp;rsquo;s ever any change.&lt;/li&gt;&#xA;&lt;/ol&gt;&#xA;&lt;h2 id=&#34;example&#34;&gt;Example&lt;a class=&#34;td-heading-self-link&#34; href=&#34;#example&#34; aria-label=&#34;Heading self-link&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&#xA;&lt;p&gt;This is an example of a legal JSON file that would update the mam_id.&lt;/p&gt;</description>
+    </item>
   </channel>
 </rss>
