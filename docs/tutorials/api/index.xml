@@ -7,5 +7,12 @@
     <generator>Hugo</generator>
     <language>en</language>
     <atom:link href="https://markbeep.github.io/AudioBookRequest/docs/tutorials/api/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Indexers</title>
+      <link>https://markbeep.github.io/AudioBookRequest/docs/tutorials/api/indexers/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://markbeep.github.io/AudioBookRequest/docs/tutorials/api/indexers/</guid>
+      <description>&lt;p&gt;There are two main endpoints to work with indexers:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;A &lt;code&gt;PATCH&lt;/code&gt; to update indexer settings.&lt;/li&gt;&#xA;&lt;li&gt;A &lt;code&gt;GET&lt;/code&gt; to get all the available configuration settings for the indexers.&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;Head to the main &lt;a href=&#34;https://markbeep.github.io/AudioBookRequest/docs/tutorials/api/&#34;&gt;API Docs&lt;/a&gt; to see how you can access the SwaggerUI&#xA;and more easily test the endpoints.&lt;/p&gt;&#xA;&lt;h2 id=&#34;getting-the-indexer-configurations&#34;&gt;Getting the Indexer Configurations&lt;a class=&#34;td-heading-self-link&#34; href=&#34;#getting-the-indexer-configurations&#34; aria-label=&#34;Heading self-link&#34;&gt;&lt;/a&gt;&lt;/h2&gt;&#xA;&lt;p&gt;To figure out what values you need to adjust, &lt;code&gt;GET&lt;/code&gt; the endpoint&#xA;&lt;code&gt;/api/indexers/configurations&lt;/code&gt;.&lt;/p&gt;&#xA;&lt;p&gt;This will give you something along the lines of this:&lt;/p&gt;</description>
+    </item>
   </channel>
 </rss>

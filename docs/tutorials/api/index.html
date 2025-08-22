@@ -30,8 +30,8 @@
 
   <meta itemprop="name" content="API">
   <meta itemprop="description" content="How to use the AudioBookRequest API">
-  <meta itemprop="dateModified" content="2025-08-16T11:20:34+02:00">
-  <meta itemprop="wordCount" content="232">
+  <meta itemprop="dateModified" content="2025-08-22T15:01:53+02:00">
+  <meta itemprop="wordCount" content="154">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="API">
   <meta name="twitter:description" content="How to use the AudioBookRequest API">
@@ -160,8 +160,13 @@
   <ul class="ul-2 foldable">
     <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-audiobookrequestdocstutorialsnotifications-li">
   <a href="/AudioBookRequest/docs/tutorials/notifications/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-audiobookrequestdocstutorialsnotifications"><span class="">Notifications</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id="m-audiobookrequestdocstutorialsapi-li">
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-audiobookrequestdocstutorialsapi-li">
   <a href="/AudioBookRequest/docs/tutorials/api/" class="align-left ps-0 active td-sidebar-link td-sidebar-link__section" id="m-audiobookrequestdocstutorialsapi"><span class="td-sidebar-nav-active-item">API</span></a>
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-audiobookrequestdocstutorialsapiindexers-li">
+  <a href="/AudioBookRequest/docs/tutorials/api/indexers/" class="align-left ps-0 td-sidebar-link td-sidebar-link__page" id="m-audiobookrequestdocstutorialsapiindexers"><span class="">Indexers</span></a>
+</li>
+  </ul>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-audiobookrequestdocstutorialsoidc-li">
   <a href="/AudioBookRequest/docs/tutorials/oidc/" class="align-left ps-0 td-sidebar-link td-sidebar-link__section" id="m-audiobookrequestdocstutorialsoidc"><span class="">OpenID Connect</span></a>
 </li>
@@ -202,11 +207,7 @@
     <li><a href="#overview">Overview</a></li>
     <li><a href="#how-to-create-an-api-key">How to Create an API Key</a>
       <ul>
-        <li><a href="#step-1-access-the-web-interface">Step 1: Access the Web Interface</a></li>
-        <li><a href="#step-2-navigate-to-account-settings">Step 2: Navigate to Account Settings</a></li>
-        <li><a href="#step-3-create-a-new-api-key">Step 3: Create a New API Key</a></li>
-        <li><a href="#step-4-copy-and-store-your-api-key">Step 4: Copy and Store Your API Key</a></li>
-        <li><a href="#step-5-use-your-api-key">Step 5: Use Your API Key</a></li>
+        <li><a href="#use-your-api-key">Use Your API Key</a></li>
       </ul>
     </li>
     <li><a href="#api-documentation">API Documentation</a></li>
@@ -254,49 +255,42 @@
 		
   </header>
 	<h2 id="overview">Overview<a class="td-heading-self-link" href="#overview" aria-label="Heading self-link"></a></h2>
-<p>AudioBookRequest provides a RESTful API for managing users and audiobook requests. The API uses Bearer token authentication with API keys that can be generated through the web interface.</p>
+<p>AudioBookRequest provides a RESTful API for a select few endpoints.</p>
+<p>The API uses Bearer token authentication with API keys that can be generated
+through the web interface.</p>
 <h2 id="how-to-create-an-api-key">How to Create an API Key<a class="td-heading-self-link" href="#how-to-create-an-api-key" aria-label="Heading self-link"></a></h2>
 <p>Follow these steps to create an API key for accessing the AudioBookRequest API:</p>
-<h3 id="step-1-access-the-web-interface">Step 1: Access the Web Interface<a class="td-heading-self-link" href="#step-1-access-the-web-interface" aria-label="Heading self-link"></a></h3>
-<ol>
-<li>Open your web browser and navigate to your AudioBookRequest instance</li>
-<li>Log in with your username and password</li>
-</ol>
-<h3 id="step-2-navigate-to-account-settings">Step 2: Navigate to Account Settings<a class="td-heading-self-link" href="#step-2-navigate-to-account-settings" aria-label="Heading self-link"></a></h3>
-<ol>
-<li>Once logged in, click on the <strong>Settings</strong> menu</li>
-<li>Select <strong>Account</strong> from the settings options</li>
-</ol>
-<h3 id="step-3-create-a-new-api-key">Step 3: Create a New API Key<a class="td-heading-self-link" href="#step-3-create-a-new-api-key" aria-label="Heading self-link"></a></h3>
 <ol>
 <li>In the Account settings page, look for the <strong>API Keys</strong> section</li>
-<li>Click on <strong>Create New API Key</strong> or similar button</li>
-<li>Enter a descriptive name for your API key (e.g., &ldquo;Mobile App&rdquo;, &ldquo;Automation Script&rdquo;, &ldquo;Home Assistant Integration&rdquo;)</li>
-<li>Click <strong>Generate</strong> or <strong>Create</strong></li>
-</ol>
-<h3 id="step-4-copy-and-store-your-api-key">Step 4: Copy and Store Your API Key<a class="td-heading-self-link" href="#step-4-copy-and-store-your-api-key" aria-label="Heading self-link"></a></h3>
-<ol>
+<li>Enter a unique name for your API key</li>
+<li>Click on <strong>Create API Key</strong></li>
 <li><strong>Important</strong>: The API key will only be displayed once for security reasons</li>
 <li>Copy the generated API key immediately and store it in a secure location</li>
 <li>If you lose the key, you&rsquo;ll need to generate a new one</li>
 </ol>
-<h3 id="step-5-use-your-api-key">Step 5: Use Your API Key<a class="td-heading-self-link" href="#step-5-use-your-api-key" aria-label="Heading self-link"></a></h3>
+<h3 id="use-your-api-key">Use Your API Key<a class="td-heading-self-link" href="#use-your-api-key" aria-label="Heading self-link"></a></h3>
 <p>Include your API key in the Authorization header of your API requests:</p>
 <pre tabindex="0"><code>Authorization: Bearer &lt;your-api-key&gt;
 </code></pre><p><strong>Example using cURL:</strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -H <span style="color:#63c381">&#34;Authorization: Bearer your-api-key-here&#34;</span> <span style="color:#d26464;font-weight:bold">\
-</span></span></span><span style="display:flex;"><span><span style="color:#d26464;font-weight:bold"></span>  http://localhost:8000/api/users/me
+<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -H <span style="color:#63c381">&#34;Authorization: Bearer &lt;your-api-key-here&gt;&#34;</span> https://abr.example.com/api/users/me
 </span></span></code></pre></div><h2 id="api-documentation">API Documentation<a class="td-heading-self-link" href="#api-documentation" aria-label="Heading self-link"></a></h2>
 <p>For a SwaggerUI documentation with interactive testing capabilities:</p>
 <ol>
-<li>Set the environment variable <code>ABR_OPENAPI_ENABLED=true</code></li>
+<li>Set the environment variable <code>ABR_APP__OPENAPI_ENABLED=true</code></li>
 <li>Head to <code>&lt;your-domain&gt;/docs</code>.</li>
 </ol>
 
 	<div class="section-index">
     
     
-    </div>
+    <hr class="panel-line">
+        <div class="entry">
+                <h5>
+                    <a href="/AudioBookRequest/docs/tutorials/api/indexers/">Indexers</a>
+                </h5>
+                <p>Using the API to access/update indexers</p>
+            </div>
+        </div>
 <style>
   .feedback--answer {
     display: inline-block;
@@ -354,7 +348,7 @@
 </script>
 <br />
 <div class="td-page-meta__lastmod">
-  Last modified August 16, 2025: <a data-proofer-ignore href="https://github.com/markbeep/AudioBookRequest/commit/93a6315e304a829506136e90fde2f98af71625f9">feat: added env variables for forcing login type and initializing username/password (93a6315)</a>
+  Last modified August 22, 2025: <a data-proofer-ignore href="https://github.com/markbeep/AudioBookRequest/commit/9b2cda30c01e8d024cc8e66fdef5cf0d46bc153f">feat: add API endpoint to update indexers (mam_id). Closes #122 (9b2cda3)</a>
 </div>
 </div>
 

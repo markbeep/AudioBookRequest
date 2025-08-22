@@ -30,7 +30,7 @@
 
   <meta itemprop="name" content="Documentation">
   <meta itemprop="description" content="Welcome to the documentation for AudioBookRequest.">
-  <meta itemprop="dateModified" content="2025-08-16T11:20:34+02:00">
+  <meta itemprop="dateModified" content="2025-08-22T15:01:53+02:00">
   <meta itemprop="wordCount" content="245">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Documentation">
@@ -289,6 +289,14 @@ This is the multi-page printable view of this section.
   
   
 
+  
+    
+    
+	
+<li>2.2.1: <a href="#pg-3e4cf7e150c25ad9c46b6de4e314451e">Indexers</a></li>
+
+
+    
   
 
     </ul>
@@ -839,42 +847,28 @@ one of the following pages:</p>
 	<h1 id="pg-eb0b8b2f51c3e22c9b2de4770486ca52">2.2 - API</h1>
     <div class="lead">How to use the AudioBookRequest API</div>
 	<h2 id="overview">Overview<a class="td-heading-self-link" href="#overview" aria-label="Heading self-link"></a></h2>
-<p>AudioBookRequest provides a RESTful API for managing users and audiobook requests. The API uses Bearer token authentication with API keys that can be generated through the web interface.</p>
+<p>AudioBookRequest provides a RESTful API for a select few endpoints.</p>
+<p>The API uses Bearer token authentication with API keys that can be generated
+through the web interface.</p>
 <h2 id="how-to-create-an-api-key">How to Create an API Key<a class="td-heading-self-link" href="#how-to-create-an-api-key" aria-label="Heading self-link"></a></h2>
 <p>Follow these steps to create an API key for accessing the AudioBookRequest API:</p>
-<h3 id="step-1-access-the-web-interface">Step 1: Access the Web Interface<a class="td-heading-self-link" href="#step-1-access-the-web-interface" aria-label="Heading self-link"></a></h3>
-<ol>
-<li>Open your web browser and navigate to your AudioBookRequest instance</li>
-<li>Log in with your username and password</li>
-</ol>
-<h3 id="step-2-navigate-to-account-settings">Step 2: Navigate to Account Settings<a class="td-heading-self-link" href="#step-2-navigate-to-account-settings" aria-label="Heading self-link"></a></h3>
-<ol>
-<li>Once logged in, click on the <strong>Settings</strong> menu</li>
-<li>Select <strong>Account</strong> from the settings options</li>
-</ol>
-<h3 id="step-3-create-a-new-api-key">Step 3: Create a New API Key<a class="td-heading-self-link" href="#step-3-create-a-new-api-key" aria-label="Heading self-link"></a></h3>
 <ol>
 <li>In the Account settings page, look for the <strong>API Keys</strong> section</li>
-<li>Click on <strong>Create New API Key</strong> or similar button</li>
-<li>Enter a descriptive name for your API key (e.g., &ldquo;Mobile App&rdquo;, &ldquo;Automation Script&rdquo;, &ldquo;Home Assistant Integration&rdquo;)</li>
-<li>Click <strong>Generate</strong> or <strong>Create</strong></li>
-</ol>
-<h3 id="step-4-copy-and-store-your-api-key">Step 4: Copy and Store Your API Key<a class="td-heading-self-link" href="#step-4-copy-and-store-your-api-key" aria-label="Heading self-link"></a></h3>
-<ol>
+<li>Enter a unique name for your API key</li>
+<li>Click on <strong>Create API Key</strong></li>
 <li><strong>Important</strong>: The API key will only be displayed once for security reasons</li>
 <li>Copy the generated API key immediately and store it in a secure location</li>
 <li>If you lose the key, you&rsquo;ll need to generate a new one</li>
 </ol>
-<h3 id="step-5-use-your-api-key">Step 5: Use Your API Key<a class="td-heading-self-link" href="#step-5-use-your-api-key" aria-label="Heading self-link"></a></h3>
+<h3 id="use-your-api-key">Use Your API Key<a class="td-heading-self-link" href="#use-your-api-key" aria-label="Heading self-link"></a></h3>
 <p>Include your API key in the Authorization header of your API requests:</p>
 <pre tabindex="0"><code>Authorization: Bearer &lt;your-api-key&gt;
 </code></pre><p><strong>Example using cURL:</strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -H <span style="color:#63c381">&#34;Authorization: Bearer your-api-key-here&#34;</span> <span style="color:#d26464;font-weight:bold">\
-</span></span></span><span style="display:flex;"><span><span style="color:#d26464;font-weight:bold"></span>  http://localhost:8000/api/users/me
+<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -H <span style="color:#63c381">&#34;Authorization: Bearer &lt;your-api-key-here&gt;&#34;</span> https://abr.example.com/api/users/me
 </span></span></code></pre></div><h2 id="api-documentation">API Documentation<a class="td-heading-self-link" href="#api-documentation" aria-label="Heading self-link"></a></h2>
 <p>For a SwaggerUI documentation with interactive testing capabilities:</p>
 <ol>
-<li>Set the environment variable <code>ABR_OPENAPI_ENABLED=true</code></li>
+<li>Set the environment variable <code>ABR_APP__OPENAPI_ENABLED=true</code></li>
 <li>Head to <code>&lt;your-domain&gt;/docs</code>.</li>
 </ol>
 
@@ -892,6 +886,63 @@ one of the following pages:</p>
   
   
 
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-3e4cf7e150c25ad9c46b6de4e314451e">2.2.1 - Indexers</h1>
+    <div class="lead">Using the API to access/update indexers</div>
+	<p>There are two main endpoints to work with indexers:</p>
+<ul>
+<li>A <code>PATCH</code> to update indexer settings.</li>
+<li>A <code>GET</code> to get all the available configuration settings for the indexers.</li>
+</ul>
+<p>Head to the main <a href="/AudioBookRequest/docs/tutorials/api/">API Docs</a> to see how you can access the SwaggerUI
+and more easily test the endpoints.</p>
+<h2 id="getting-the-indexer-configurations">Getting the Indexer Configurations<a class="td-heading-self-link" href="#getting-the-indexer-configurations" aria-label="Heading self-link"></a></h2>
+<p>To figure out what values you need to adjust, <code>GET</code> the endpoint
+<code>/api/indexers/configurations</code>.</p>
+<p>This will give you something along the lines of this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#e06c75">&#34;MyAnonamouse&#34;</span>: [
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;name&#34;</span>: <span style="color:#63c381">&#34;mam_session_id&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;description&#34;</span>: <span style="color:#b756ff;font-weight:bold">null</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;default&#34;</span>: <span style="color:#b756ff;font-weight:bold">null</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;required&#34;</span>: <span style="color:#b756ff;font-weight:bold">true</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;type&#34;</span>: <span style="color:#63c381">&#34;str&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;name&#34;</span>: <span style="color:#63c381">&#34;mam_active&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;description&#34;</span>: <span style="color:#b756ff;font-weight:bold">null</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;default&#34;</span>: <span style="color:#63c381">&#34;True&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;required&#34;</span>: <span style="color:#b756ff;font-weight:bold">false</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#e06c75">&#34;type&#34;</span>: <span style="color:#63c381">&#34;bool&#34;</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>  ]
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>This gives you the full information about what values can be adjusted.</p>
+<h2 id="updating-indexer-settings">Updating Indexer Settings<a class="td-heading-self-link" href="#updating-indexer-settings" aria-label="Heading self-link"></a></h2>
+<p>You can update indexer settings by sending a <code>PATCH</code> request to
+<code>/api/indexers/{indexer name}</code>. The name is <strong>case-sensitive</strong>. The body has to
+be a JSON object with key-value pairs of the values you want to update.</p>
+<p>Here is an example using cURL: as</p>
+<div class="highlight"><pre tabindex="0" style="color:#b0c4de;background-color:#282c34;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -X <span style="color:#98c379">&#39;PATCH&#39;</span> <span style="color:#d26464;font-weight:bold">\
+</span></span></span><span style="display:flex;"><span><span style="color:#d26464;font-weight:bold"></span>    <span style="color:#98c379">&#39;https://abr.example.com/api/indexers/MyAnonamouse&#39;</span> <span style="color:#d26464;font-weight:bold">\
+</span></span></span><span style="display:flex;"><span><span style="color:#d26464;font-weight:bold"></span>    -H <span style="color:#98c379">&#39;accept: application/json&#39;</span> <span style="color:#d26464;font-weight:bold">\
+</span></span></span><span style="display:flex;"><span><span style="color:#d26464;font-weight:bold"></span>    -H <span style="color:#98c379">&#39;Authorization: Bearer MaEqMYAGY3qvXxtje6-YDxcs4damlyRaKzTC8itG2b8&#39;</span> <span style="color:#d26464;font-weight:bold">\
+</span></span></span><span style="display:flex;"><span><span style="color:#d26464;font-weight:bold"></span>    -d <span style="color:#98c379">&#39;{&#34;mam_session_id&#34;:&#34;bXDv1tC1d2MVvOypbFy8Q4Q-rz6q-bKwdqaSZzm85Dg&#34;}&#39;</span>
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
   
 
     
