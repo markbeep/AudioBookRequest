@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.0](https://github.com/markbeep/AudioBookRequest/compare/v1.5.3...v1.6.0) (2025-08-22)
+
+
+### Features
+
+* add API endpoint to update indexers (mam_id). Closes [#122](https://github.com/markbeep/AudioBookRequest/issues/122) ([9b2cda3](https://github.com/markbeep/AudioBookRequest/commit/9b2cda30c01e8d024cc8e66fdef5cf0d46bc153f))
+* update indexer configuration using a local file. Closes [#122](https://github.com/markbeep/AudioBookRequest/issues/122) ([c7bd803](https://github.com/markbeep/AudioBookRequest/commit/c7bd80377c9495e5519cd5a7ab4edc84f1b2a436))
+
+
+### Code Refactoring
+
+* split up settings router file into a file for each page ([c8279f0](https://github.com/markbeep/AudioBookRequest/commit/c8279f084784dd19bf02631eb31de8befab03eba))
+
 ## [1.5.3](https://github.com/markbeep/AudioBookRequest/compare/v1.5.2...v1.5.3) (2025-08-18)
 
 
