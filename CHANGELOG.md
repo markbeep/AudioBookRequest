@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/markbeep/AudioBookRequest/compare/v1.7.0...v1.7.1) (2025-09-26)
+
+
+### Miscellaneous Chores
+
+* fix devcontainer ([05f505d](https://github.com/markbeep/AudioBookRequest/commit/05f505ddb30435b53bd7f6d64703ceaad2dd2271))
+
 ## [1.7.0](https://github.com/markbeep/AudioBookRequest/compare/v1.6.2...v1.7.0) (2025-09-18)
 
 
