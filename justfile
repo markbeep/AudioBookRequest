@@ -21,3 +21,4 @@ types:
     uv run pyright app
     uv run djlint templates
     uv run ruff format --check app
+    uv run alembic check

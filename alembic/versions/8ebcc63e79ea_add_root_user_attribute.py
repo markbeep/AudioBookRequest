@@ -25,7 +25,7 @@ def upgrade() -> None:
         batch_op.add_column(
             sa.Column("root", sa.Boolean(), nullable=False, server_default="false")
         )
-    op.execute("UPDATE user SET root = true WHERE \"group\" = 'admin'")
+    op.execute('UPDATE "user" SET root = true WHERE "group" = \'admin\'')
 
     # ### end Alembic commands ###
 

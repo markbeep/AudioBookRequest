@@ -30,6 +30,7 @@ dependencies = [
     "torf>=4.3.0",
     "markdown>=3.8.2",
     "apscheduler>=3.11.0",
+    "psycopg2>=2.9.10",
 ]
 
 # setuptools by default expects a "src" folder structure

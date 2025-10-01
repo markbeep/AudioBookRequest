@@ -5,8 +5,14 @@ from sqlmodel import Session, text
 
 from app.internal.env_settings import Settings
 
-sqlite_path = Settings().get_sqlite_path()
-engine = create_engine(f"sqlite+pysqlite:///{sqlite_path}")
+db = Settings().db
+if db.use_postgres:
+    engine = create_engine(
+        f"postgresql://{db.postgres_user}:{db.postgres_password}@{db.postgres_host}:{db.postgres_port}/{db.postgres_db}"
+    )
+else:
+    sqlite_path = Settings().get_sqlite_path()
+    engine = create_engine(f"sqlite+pysqlite:///{sqlite_path}")
 
 
 def get_session():

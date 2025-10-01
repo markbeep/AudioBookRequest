@@ -10,6 +10,12 @@ from app.internal.auth.login_types import LoginTypeEnum
 class DBSettings(BaseModel):
     sqlite_path: str = "db.sqlite"
     """Relative path to the sqlite database given the config directory. If absolute, it ignores the config dir location."""
+    use_postgres: bool = False
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_db: str = "audiobookrequest"
+    postgres_user: str = "abr"
+    postgres_password: str = "password"
 
 
 class ApplicationSettings(BaseModel):
