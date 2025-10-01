@@ -27,7 +27,7 @@ jobs:
         with:
           version: "0.8.22"
 
-      - run: uv sync --all-extras --dev
+      - run: uv sync --all-extras
 
       - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
 

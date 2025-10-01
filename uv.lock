@@ -224,6 +224,7 @@ dependencies = [
     { name = "jinja2" },
     { name = "jinja2-fragments" },
     { name = "markdown" },
+    { name = "psycopg2" },
     { name = "pydantic" },
     { name = "pydantic-core" },
     { name = "pydantic-settings" },
