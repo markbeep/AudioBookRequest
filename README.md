@@ -32,7 +32,7 @@ If you've heard of Overseer, Ombi, or Jellyseer; this is in the similar vein, <i
 
 # Motivation
 
-AudioBookRequest aims to be a simple and lightweight tool for managing audiobook requests for your media server. It should be easy to set up and use, while integrating nicely with other common tools in the *arr stack. AudioBookRequest serves as as the frontend for you and your friends to easily make audiobook wishlists or create requests in an organized fashion.
+AudioBookRequest aims to be a simple and lightweight tool for managing audiobook requests for your media server. It should be easy to set up and use, while integrating nicely with other common tools in the \*arr stack. AudioBookRequest serves as as the frontend for you and your friends to easily make audiobook wishlists or create requests in an organized fashion.
 
 It is not intended as a full replacement for Readarr/Chaptarr, but instead intended to be used alongside them.
 
@@ -44,12 +44,11 @@ It is not intended as a full replacement for Readarr/Chaptarr, but instead inten
 - Automatic downloading of requests. Integrate Prowlarr to use all your existing indexer settings and download clients.
 - Send notifications to your favorite notification service (apprise, gotify, discord, ntfy, etc.).
 - Single image deployment. You can deploy and create your first requests in under 5 minutes.
-- SQLite database by default. (Watch [#137](https://github.com/markbeep/AudioBookRequest/issues/137) for postgres support)
+- SQLite and Postgres support!
 - Lightweight website. No bulky javascript files, allowing you to use the website even on low bandwidth.
 - Mobile friendly. Search for books for accept requests on the go!
 
 ---
-
 
 # Getting Started
 
@@ -111,19 +110,26 @@ In the case of an OIDC misconfiguration, i.e. changing a setting like your clien
 
 ### Environment Variables
 
-| ENV                           | Description                                                                                                                                                                                                                                                  | Default   |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
-| `ABR_APP__PORT`               | The port to run the server on.                                                                                                                                                                                                                               | 8000      |
-| `ABR_APP__DEBUG`              | If to enable debug mode. Not recommended for production.                                                                                                                                                                                                     | false     |
-| `ABR_APP__OPENAPI_ENABLED`    | If set to `true`, enables an OpenAPI specs page on `/docs`.                                                                                                                                                                                                  | false     |
-| `ABR_APP__CONFIG_DIR`         | The directory path where persistant data and configuration is stored. If ran using Docker or Kubernetes, this is the location a volume should be mounted to.                                                                                                 | /config   |
-| `ABR_APP__LOG_LEVEL`          | One of `DEBUG`, `INFO`, `WARN`, `ERROR`.                                                                                                                                                                                                                     | INFO      |
-| `ABR_APP__BASE_URL`           | Defines the base url the website is hosted at. If the website is accessed at `example.org/abr/`, set the base URL to `/abr/`                                                                                                                                 |           |
-| `ABR_DB__SQLITE_PATH`         | If relative, path and name of the sqlite database in relation to `ABR_APP__CONFIG_DIR`. If absolute (path starts with `/`), the config dir is ignored and only the absolute path is used.                                                                    | db.sqlite |
-| `ABR_APP__DEFAULT_REGION`     | Default audible region to use for the search. Has to be one of `us, ca, uk, au, fr, de, jp, it, in, es, br`.                                                                                                                                                 | us        |
-| `ABR_APP__FORCE_LOGIN_TYPE`   | Forces the login type and prevents it from being modified. Can be one of `basic`, `forms`, `oidc`, or `none` to disable the login. `oidc` requires both the `ABR_APP__INIT_ROOT_USERNAME` and `ABR_APP__INIT_ROOT_PASSWORD` environment variables to be set. |           |
-| `ABR_APP__INIT_ROOT_USERNAME` | Sets the initial username of the root user when first launching ABR. Has no effect if a root admin already exists.                                                                                                                                           |           |
-| `ABR_APP__INIT_ROOT_PASSWORD` | Sets the initial password of the root user when first launching ABR. Has no effect if a root admin already exists.                                                                                                                                           | us        |
+| ENV                           | Description                                                                                                                                                                                                                                                  | Default          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| `ABR_APP__PORT`               | The port to run the server on.                                                                                                                                                                                                                               | 8000             |
+| `ABR_APP__DEBUG`              | If to enable debug mode. Not recommended for production.                                                                                                                                                                                                     | false            |
+| `ABR_APP__OPENAPI_ENABLED`    | If set to `true`, enables an OpenAPI specs page on `/docs`.                                                                                                                                                                                                  | false            |
+| `ABR_APP__CONFIG_DIR`         | The directory path where persistant data and configuration is stored. If ran using Docker or Kubernetes, this is the location a volume should be mounted to.                                                                                                 | /config          |
+| `ABR_APP__LOG_LEVEL`          | One of `DEBUG`, `INFO`, `WARN`, `ERROR`.                                                                                                                                                                                                                     | INFO             |
+| `ABR_APP__BASE_URL`           | Defines the base url the website is hosted at. If the website is accessed at `example.org/abr/`, set the base URL to `/abr/`                                                                                                                                 |                  |
+| `ABR_DB__SQLITE_PATH`         | If relative, path and name of the sqlite database in relation to `ABR_APP__CONFIG_DIR`. If absolute (path starts with `/`), the config dir is ignored and only the absolute path is used.                                                                    | db.sqlite        |
+| `ABR_APP__DEFAULT_REGION`     | Default audible region to use for the search. Has to be one of `us, ca, uk, au, fr, de, jp, it, in, es, br`.                                                                                                                                                 | us               |
+| `ABR_APP__FORCE_LOGIN_TYPE`   | Forces the login type and prevents it from being modified. Can be one of `basic`, `forms`, `oidc`, or `none` to disable the login. `oidc` requires both the `ABR_APP__INIT_ROOT_USERNAME` and `ABR_APP__INIT_ROOT_PASSWORD` environment variables to be set. |                  |
+| `ABR_APP__INIT_ROOT_USERNAME` | Sets the initial username of the root user when first launching ABR. Has no effect if a root admin already exists.                                                                                                                                           |                  |
+| `ABR_APP__INIT_ROOT_PASSWORD` | Sets the initial password of the root user when first launching ABR. Has no effect if a root admin already exists.                                                                                                                                           | us               |
+| `ABR_DB__USE_POSTGRES`        | Whether to use Postgres as a database. Ensure the connection settings are valid.                                                                                                                                                                             | false            |
+| `ABR_DB__POSTGRES_HOST`       | Host URL/IP of the postgres instance.                                                                                                                                                                                                                        | localhost        |
+| `ABR_DB__POSTGRES_PORT`       | Port of the postgres instance.                                                                                                                                                                                                                               | 5432             |
+| `ABR_DB__POSTGRES_DB`         | Database name of the postgres instance.                                                                                                                                                                                                                      | audiobookrequest |
+| `ABR_DB__POSTGRES_USER`       | Username of the postgres database.                                                                                                                                                                                                                           | abr              |
+| `ABR_DB__POSTGRES_PASSWORD`   | Password of the postgres database.                                                                                                                                                                                                                           | password         |
+| `ABR_DB__POSTGRES_SSL_MODE`   | [SSL mode](https://www.postgresql.org/docs/18/libpq-connect.html#LIBPQ-CONNECT-SSLMODE) to use for the postgres instance.                                                                                                                                    | prefer           |
 
 ---
 

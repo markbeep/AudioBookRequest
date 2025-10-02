@@ -16,6 +16,7 @@ class DBSettings(BaseModel):
     postgres_db: str = "audiobookrequest"
     postgres_user: str = "abr"
     postgres_password: str = "password"
+    postgres_ssl_mode: str = "prefer"
 
 
 class ApplicationSettings(BaseModel):

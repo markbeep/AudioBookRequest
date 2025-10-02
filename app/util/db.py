@@ -8,7 +8,7 @@ from app.internal.env_settings import Settings
 db = Settings().db
 if db.use_postgres:
     engine = create_engine(
-        f"postgresql://{db.postgres_user}:{db.postgres_password}@{db.postgres_host}:{db.postgres_port}/{db.postgres_db}"
+        f"postgresql://{db.postgres_user}:{db.postgres_password}@{db.postgres_host}:{db.postgres_port}/{db.postgres_db}?sslmode={db.postgres_ssl_mode}"
     )
 else:
     sqlite_path = Settings().get_sqlite_path()
