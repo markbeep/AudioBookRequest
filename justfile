@@ -14,7 +14,10 @@ create_revision *MESSAGE:
 dev: migrate
     uv run fastapi dev
 
-tailwind:
+node_modules:
+    npm install
+
+tailwind: node_modules
     npx @tailwindcss/cli@4 -i static/tw.css -o static/globals.css --watch
 
 types:

@@ -1,7 +1,7 @@
 import json
 from typing import Optional
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, InvalidUrlClientError
 from sqlmodel import Session, select
 
 from app.internal.models import (
@@ -50,22 +50,26 @@ async def _send(
     notification: Notification,
     client_session: ClientSession,
 ):
-    if notification.body_type == NotificationBodyTypeEnum.json:
-        async with client_session.post(
-            notification.url,
-            json=body,
-            headers=notification.headers,
-        ) as response:
-            response.raise_for_status()
-            return await response.text()
-    elif notification.body_type == NotificationBodyTypeEnum.text:
-        async with client_session.post(
-            notification.url,
-            data=body,
-            headers=notification.headers,
-        ) as response:
-            response.raise_for_status()
-            return await response.text()
+    try:
+        if notification.body_type == NotificationBodyTypeEnum.json:
+            async with client_session.post(
+                notification.url,
+                json=body,
+                headers=notification.headers,
+            ) as response:
+                response.raise_for_status()
+                return await response.text()
+        elif notification.body_type == NotificationBodyTypeEnum.text:
+            async with client_session.post(
+                notification.url,
+                data=body,
+                headers=notification.headers,
+            ) as response:
+                response.raise_for_status()
+                return await response.text()
+    except InvalidUrlClientError:
+        logger.error("Failed to send notification. Invalid URL", url=notification.url)
+        raise ValueError(f"Invalid URL: url={notification.url}") from None
 
 
 async def send_notification(
