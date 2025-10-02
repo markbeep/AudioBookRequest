@@ -30,7 +30,7 @@
 
   <meta itemprop="name" content="Documentation">
   <meta itemprop="description" content="Welcome to the documentation for AudioBookRequest.">
-  <meta itemprop="dateModified" content="2025-09-17T17:36:24+00:00">
+  <meta itemprop="dateModified" content="2025-10-02T15:14:28+02:00">
   <meta itemprop="wordCount" content="245">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Documentation">
@@ -1221,6 +1221,41 @@ configurations if there&rsquo;s ever any change.</li>
           <td><code>ABR_APP__INIT_ROOT_PASSWORD</code></td>
           <td>Sets the initial password of the root user when first launching ABR. Has no effect if a root admin already exists.</td>
           <td></td>
+      </tr>
+      <tr>
+          <td><code>ABR_DB__USE_POSTGRES</code></td>
+          <td>Whether to use Postgres as a database. Ensure the connection settings are valid.</td>
+          <td>false</td>
+      </tr>
+      <tr>
+          <td><code>ABR_DB__POSTGRES_HOST</code></td>
+          <td>Host URL/IP of the postgres instance.</td>
+          <td>localhost</td>
+      </tr>
+      <tr>
+          <td><code>ABR_DB__POSTGRES_PORT</code></td>
+          <td>Port of the postgres instance.</td>
+          <td>5432</td>
+      </tr>
+      <tr>
+          <td><code>ABR_DB__POSTGRES_DB</code></td>
+          <td>Database name of the postgres instance.</td>
+          <td>audiobookrequest</td>
+      </tr>
+      <tr>
+          <td><code>ABR_DB__POSTGRES_USER</code></td>
+          <td>Username of the postgres database.</td>
+          <td>abr</td>
+      </tr>
+      <tr>
+          <td><code>ABR_DB__POSTGRES_PASSWORD</code></td>
+          <td>Password of the postgres database.</td>
+          <td>password</td>
+      </tr>
+      <tr>
+          <td><code>ABR_DB__POSTGRES_SSL_MODE</code></td>
+          <td><a href="https://www.postgresql.org/docs/18/libpq-connect.html#LIBPQ-CONNECT-SSLMODE">SSL mode</a> to use for the postgres instance.</td>
+          <td>prefer</td>
       </tr>
   </tbody>
 </table>
