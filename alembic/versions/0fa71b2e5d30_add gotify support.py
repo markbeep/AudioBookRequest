@@ -48,5 +48,7 @@ def downgrade() -> None:
     with op.batch_alter_table("notification", schema=None) as batch_op:
         batch_op.alter_column("url", new_column_name="apprise_url")
         batch_op.drop_column("service")
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("DROP TYPE notificationserviceenum")
 
     # ### end Alembic commands ###

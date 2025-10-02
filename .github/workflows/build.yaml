@@ -23,6 +23,21 @@ jobs:
     name: Test types
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v3
 
@@ -44,10 +59,29 @@ jobs:
         with:
           extra-args: app # only check apps dir
 
-      - name: Check Alembic Migrations
+      - name: Check SQLite Alembic Migrations
         run: |
           uv run alembic upgrade heads
           uv run alembic check
+          uv run alembic downgrade base
+          uv run alembic upgrade heads
+          uv run alembic check
+      
+      - name: Check PSQL Alembic Migrations
+        run: |
+          uv run alembic upgrade heads
+          uv run alembic check
+          uv run alembic downgrade base
+          uv run alembic upgrade heads
+          uv run alembic check
+        env:
+          ABR_DB__POSTGRES_HOST: localhost
+          ABR_DB__POSTGRES_PORT: 5432
+          ABR_DB__POSTGRES_USER: postgres
+          ABR_DB__POSTGRES_PASSWORD: postgres
+          ABR_DB__POSTGRES_DB: postgres
+          ABR_DB__USE_POSTGRES: true
+
 
   build:
     needs: test

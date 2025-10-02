@@ -160,7 +160,7 @@ just alembic_upgrade # or simply 'just au'
 uv run alembic upgrade heads
 ```
 
-_In case of any model changes, remember to create migrations using `alembic revision --autogenerate -m "<message>"`._
+_In case of any model changes, remember to create migrations using `alembic revision --autogenerate -m "<message>"`. Note that alembic ALTER table migrations leave out unique constraints for postgres, so those have to be added manually._
 
 ## Running
 

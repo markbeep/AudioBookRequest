@@ -29,7 +29,7 @@ def upgrade() -> None:
         )
         batch_op.add_column(sa.Column("id", sa.Uuid(), nullable=False))
         batch_op.create_primary_key("pk_bookrequest", ["id"])
-
+        batch_op.create_unique_constraint("unique_asin_user", ["asin", "user_username"])
         batch_op.drop_constraint("user_user_username", type_="foreignkey")
         batch_op.create_foreign_key(
             "user_user_username",

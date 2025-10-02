@@ -115,4 +115,7 @@ def downgrade() -> None:
         batch_op.drop_column("body")
         batch_op.drop_column("body_type")
 
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("DROP TYPE notificationbodytypeenum")
+
     # ### end Alembic commands ###
