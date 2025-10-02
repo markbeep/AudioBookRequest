@@ -7,12 +7,6 @@ on:
       - "**.html"
       - "**.css"
       - "**.yaml"
-  pull_request:
-    paths:
-      - "**.py"
-      - "**.html"
-      - "**.css"
-      - "**.yaml"
 
 jobs:
   test:

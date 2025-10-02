@@ -8,13 +8,6 @@ on:
       - "**.css"
       - "**.yaml"
       - "Dockerfile"
-  pull_request:
-    paths:
-      - "**.py"
-      - "**.html"
-      - "**.css"
-      - "**.yaml"
-      - "Dockerfile"
   release:
     types: [created]
 
