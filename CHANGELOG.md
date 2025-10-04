@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.8.0](https://github.com/markbeep/AudioBookRequest/compare/v1.7.0...v1.8.0) (2025-10-04)
+
+
+### Features
+
+* add postgresql support ([abd75a9](https://github.com/markbeep/AudioBookRequest/commit/abd75a96dad8f7e96a0c564f3bf7625cdf5ee831))
+
+
+### Bug Fixes
+
+* correctly handle book metadata server being down ([399d82e](https://github.com/markbeep/AudioBookRequest/commit/399d82ed4e9d79ab968312067d258239863e0052))
+* get infohash from magnet link ([6ac754e](https://github.com/markbeep/AudioBookRequest/commit/6ac754e2621fcbb31a6bbd32a270a1da7fafa30c))
+
+
+### Miscellaneous Chores
+
+* fix devcontainer ([05f505d](https://github.com/markbeep/AudioBookRequest/commit/05f505ddb30435b53bd7f6d64703ceaad2dd2271))
+* install psycopg binary instead of non ([82f356f](https://github.com/markbeep/AudioBookRequest/commit/82f356f0cf0afbeb9e70e2ce49ac500d1fd6d554))
+
 ## [1.7.0](https://github.com/markbeep/AudioBookRequest/compare/v1.6.2...v1.7.0) (2025-09-18)
 
 
