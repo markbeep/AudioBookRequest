@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.1](https://github.com/markbeep/AudioBookRequest/compare/v1.8.0...v1.8.1) (2025-10-16)
+
+
+### Miscellaneous Chores
+
+* add tools section to readme ([9140ba8](https://github.com/markbeep/AudioBookRequest/commit/9140ba8e0c8b8a3b034354f328e0d1ec9690304d))
+* fix uv python version ([6bfba44](https://github.com/markbeep/AudioBookRequest/commit/6bfba44536de66a80000f5ce334440101f522194))
+
 ## [1.8.0](https://github.com/markbeep/AudioBookRequest/compare/v1.7.0...v1.8.0) (2025-10-04)
 
 
