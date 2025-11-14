@@ -217,6 +217,173 @@ async def get_search_suggestions(
     return titles
 
 
+async def list_popular_audible_books(
+    session: Session,
+    client_session: ClientSession,
+    num_results: int = 20,
+    audible_region: audible_region_type = get_region_from_settings(),
+) -> list[BookRequest]:
+    """
+    Get popular/trending books by searching for popular terms.
+    Uses the existing search functionality with popular keywords.
+    """
+    from pydantic import BaseModel
+    
+    # Create a proper cache key object
+    class PopularBooksCache(BaseModel, frozen=True):
+        type: str = "popular"
+        region: str
+        num_results: int
+    
+    cache_key = PopularBooksCache(region=audible_region, num_results=num_results)
+    cache_result = search_cache.get(cache_key)
+
+    if cache_result and time.time() - cache_result.timestamp < REFETCH_TTL:
+        # Merge cached ORM instances into the current session to avoid cross-session attachment errors
+        merged = [session.merge(book) for book in cache_result.value]
+        logger.debug("Using cached popular books", region=audible_region)
+        return merged
+
+    # Use popular search terms to find trending books
+    popular_search_terms = [
+        "bestseller",
+        "james clear", 
+        "atomic habits",
+        "stephen king",
+        "psychology", 
+        "biography",
+        "business",
+        "self help"
+    ]
+    
+    all_books = []
+    books_per_term = max(1, num_results // len(popular_search_terms))
+    
+    for term in popular_search_terms:
+        try:
+            # Use the existing search function
+            term_books = await list_audible_books(
+                session=session,
+                client_session=client_session,
+                query=term,
+                num_results=books_per_term,
+                page=0,
+                audible_region=audible_region
+            )
+            
+            # Add unique books only
+            for book in term_books:
+                if book not in all_books and len(all_books) < num_results:
+                    all_books.append(book)
+                    
+            if len(all_books) >= num_results:
+                break
+                
+        except Exception as e:
+            logger.warning(f"Failed to search for popular term '{term}': {e}")
+            continue
+    
+    # Cache the results
+    search_cache[cache_key] = CacheResult(
+        value=all_books,
+        timestamp=time.time(),
+    )
+    
+    logger.info(f"Fetched {len(all_books)} popular books using search terms")
+    return all_books
+
+
+class SimilarBooksCache(pydantic.BaseModel, frozen=True):
+    asin: str
+    num_results: int
+    audible_region: audible_region_type
+
+
+async def list_similar_audible_books(
+    session: Session,
+    client_session: ClientSession,
+    asin: str,
+    num_results: int = 20,
+    audible_region: audible_region_type = get_region_from_settings(),
+) -> list[BookRequest]:
+    """
+    Fetch similar/recommended books for a given ASIN using Audible's sims endpoint when available.
+    Falls back to author-based search if the endpoint fails or is unavailable.
+
+    Ordering of returned list should match Audible's ordering where possible.
+    """
+    cache_key = SimilarBooksCache(asin=asin, num_results=num_results, audible_region=audible_region)
+    cache_result = search_cache.get(cache_key)
+    if cache_result and time.time() - cache_result.timestamp < REFETCH_TTL:
+        merged = [session.merge(book) for book in cache_result.value]
+        logger.debug("Using cached sims result", asin=asin, region=audible_region)
+        return merged
+
+    base_url = f"https://api.audible{audible_regions[audible_region]}/1.0/catalog/products/{asin}/sims"
+    params = {
+        "num_results": str(min(50, max(1, num_results))),
+        # Keep response light; details fetched via Audimeta/Audnexus
+    }
+
+    ordered: list[BookRequest] = []
+    try:
+        async with client_session.get(base_url, params=params) as response:
+            response.raise_for_status()
+            data = await response.json()
+
+        products = data.get("products") or []
+        # Extract ASINs in Audible-provided order
+        asins = [p.get("asin") for p in products if p.get("asin")]
+        if not asins:
+            raise ValueError("No sims returned")
+
+        # Reuse existing books from DB cache; then fetch missing via Audimeta/Audnexus
+        books_map = get_existing_books(session, set(asins))
+        missing_asins = [a for a in asins if a not in books_map]
+
+        coros = [get_book_by_asin(client_session, a, audible_region) for a in missing_asins]
+        fetched = await asyncio.gather(*coros)
+        for b in fetched:
+            if b:
+                books_map[b.asin] = b
+
+        store_new_books(session, [b for b in fetched if b])
+
+        for a in asins:
+            b = books_map.get(a)
+            if b:
+                ordered.append(b)
+
+        # Trim to requested size
+        ordered = ordered[:num_results]
+
+    except Exception as e:
+        # Fallback: approximate with author-based search
+        logger.debug("Sims endpoint failed, falling back to author search", asin=asin, error=str(e))
+        try:
+            # Find seed book to derive authors
+            seed = await get_book_by_asin(client_session, asin, audible_region)
+            if seed:
+                author = seed.authors[0] if seed.authors else seed.title
+                results = await list_audible_books(
+                    session=session,
+                    client_session=client_session,
+                    query=author,
+                    num_results=num_results,
+                    page=0,
+                    audible_region=audible_region,
+                )
+                # Exclude the seed asin itself
+                ordered = [b for b in results if b.asin != asin][:num_results]
+            else:
+                ordered = []
+        except Exception:
+            ordered = []
+
+    search_cache[cache_key] = CacheResult(value=ordered, timestamp=time.time())
+    return ordered
+
+
 async def list_audible_books(
     session: Session,
     client_session: ClientSession,
@@ -241,11 +408,10 @@ async def list_audible_books(
     cache_result = search_cache.get(cache_key)
 
     if cache_result and time.time() - cache_result.timestamp < REFETCH_TTL:
-        for book in cache_result.value:
-            # add back books to the session so we can access their attributes
-            session.add(book)
+        # Merge cached objects into this session and return the merged list
+        merged = [session.merge(book) for book in cache_result.value]
         logger.debug("Using cached search result", query=query, region=audible_region)
-        return cache_result.value
+        return merged
 
     params = {
         "num_results": num_results,
@@ -283,6 +449,16 @@ async def list_audible_books(
         book = books.get(asin_obj["asin"])
         if book:
             ordered.append(book)
+
+    # Attempt to mark items as downloaded if they exist in Audiobookshelf
+    try:
+        from app.internal.audiobookshelf.config import abs_config
+        from app.internal.audiobookshelf.client import abs_mark_downloaded_flags
+
+        if abs_config.is_valid(session) and abs_config.get_check_downloaded(session):
+            await abs_mark_downloaded_flags(session, client_session, ordered)
+    except Exception as e:
+        logger.debug("ABS integration check failed", error=str(e))
 
     search_cache[cache_key] = CacheResult(
         value=ordered,

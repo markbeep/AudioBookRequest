@@ -19,6 +19,7 @@ If you've heard of Overseer, Ombi, or Jellyseer; this is in the similar vein, <i
   - [Basic Usage](#basic-usage)
   - [Documentation](#documentation)
     - [Auto download](#auto-download)
+    - [Audiobookshelf Integration](#audiobookshelf-integration)
     - [OpenID Connect](#openid-connect)
       - [Getting locked out](#getting-locked-out)
     - [Environment Variables](#environment-variables)
@@ -89,6 +90,27 @@ Auto-downloading enables requests by `Trusted` and `Admin` users to directly sta
    1. Enable `Auto Download` at the top.
    2. The remaining heuristics determine the ranking of any sources retrieved from Prowlarr.
    3. Indexer flags allow you to add priorities to certain sources like freeleeches.
+
+### Audiobookshelf Integration
+
+Audiobookshelf (ABS) integration lets ABR:
+
+- Check if a book already exists in your ABS library and mark it as downloaded in search results to avoid duplicate requests.
+- Trigger a library scan in ABS when a request is marked as downloaded in ABR (manual or automatic), so the new item appears quickly.
+
+Setup steps:
+
+1. In ABS, create an API token for an account with access to your audiobook library (Admin recommended).
+2. In ABR, go to Settings > Audiobookshelf and enter:
+  - Base URL of your ABS server (e.g. https://abs.example.com or http://localhost:13378)
+  - API Token from step 1
+  - Select the target Library
+  - Enable “Use ABS to mark existing books as downloaded” if you want ABR to flag existing titles during search.
+
+Notes:
+
+- ABR searches ABS by ASIN and by “title + first author” to detect existing books; this is a best-effort match and may not catch every case depending on your metadata.
+- ABS is automatically asked to scan after successful downloads are marked in ABR. ABS typically auto-detects updates, but this helps pick up changes sooner.
 
 ### OpenID Connect
 

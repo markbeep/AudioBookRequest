@@ -30,6 +30,8 @@ from app.internal.notifications import (
     send_all_manual_notifications,
     send_all_notifications,
 )
+from app.internal.audiobookshelf.config import abs_config
+from app.internal.audiobookshelf.client import abs_trigger_scan
 from app.internal.prowlarr.prowlarr import (
     ProwlarrMisconfigured,
     prowlarr_config,
@@ -175,6 +177,7 @@ async def update_downloaded(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
+    client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
 ):
     books = session.exec(
@@ -197,6 +200,10 @@ async def update_downloaded(
             requester=requested_by[0],  # TODO: support multiple requesters
             book_asin=asin,
         )
+
+    # Trigger ABS library scan in background if configured
+    if abs_config.is_valid(session):
+        background_task.add_task(abs_trigger_scan, session, client_session)
 
     username = None if admin_user.is_admin() else admin_user.username
     books = get_wishlist_books(session, username, "not_downloaded")
@@ -249,6 +256,7 @@ async def downloaded_manual(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
+    client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
 ):
     book_request = session.get(ManualBookRequest, id)
@@ -262,6 +270,10 @@ async def downloaded_manual(
             event_type=EventEnum.on_successful_download,
             book_request=ManualBookRequest.model_validate(book_request),
         )
+
+        # Trigger ABS library scan in background if configured
+        if abs_config.is_valid(session):
+            background_task.add_task(abs_trigger_scan, session, client_session)
 
     books = _get_all_manual_requests(session, admin_user)
     counts = get_wishlist_counts(session, admin_user)
@@ -398,6 +410,12 @@ async def download_book(
         b.downloaded = True
         session.add(b)
     session.commit()
+
+    # Trigger ABS library scan in background if configured
+    if abs_config.is_valid(session):
+        # Use background tasks to not block response
+        # We can't access background_task here since this endpoint does not define it, so just fire and forget
+        await abs_trigger_scan(session, client_session)
 
     return Response(status_code=204)
 

@@ -1,7 +1,5 @@
 services:
   web:
-    # start with `docker-compose --profile local up`
-    profiles: [local]
     build:
       context: .
       args:
@@ -9,14 +7,16 @@ services:
     volumes:
       - ./config:/config
     ports:
-      - "8000:8000"
+      - "8012:8000"
+    restart: unless-stopped
 
   gotify:
     image: gotify/server
     ports:
-      - "8080:80"
+      - "8180:80"
     volumes:
       - ./data/gotify/data:/app/data
+    restart: unless-stopped
 
   psql:
     image: postgres:15
@@ -28,3 +28,5 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    restart: unless-stopped
+

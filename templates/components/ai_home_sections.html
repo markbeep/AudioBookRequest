@@ -1,0 +1,70 @@
+{% if ai_because_you_like %}
+<div class="w-full max-w-7xl mb-8">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-2xl font-bold">Because you liked</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <div class="flex gap-4 pb-4" style="width: max-content;">
+      {% for item in ai_because_you_like[:12] %}
+        <div class="flex-none w-[8rem] sm:w-[10rem]">
+          <div class="tooltip" data-tip="{{ item.reason }}">
+            {% set book = item.book %}
+            {% include "components/book_card.html" %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if ai_sections %}
+  {% for sec in ai_sections %}
+  <div class="w-full max-w-7xl mb-8">
+    <div class="flex justify-between items-center mb-2">
+      <div class="flex items-center gap-2">
+  <h2 class="text-2xl font-bold">{{ sec.title }}</h2>
+        {% if sec.description %}
+        <div class="tooltip" data-tip="{{ sec.description }}">
+          <span class="opacity-60 cursor-help">ⓘ</span>
+        </div>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="{{ base_url }}/recommendations/ai" class="link link-primary">Discover more →</a>
+        <button class="btn btn-xs" hx-post="{{ base_url }}/recommendations/ai/refresh" hx-swap="none">Refresh</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <div class="flex gap-4 pb-4" style="width: max-content;">
+        {% for book in sec.books[:12] %}
+          <div class="flex-none w-[8rem] sm:w-[10rem]">
+            {% include "components/book_card.html" %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% elif ai_picks %}
+  <div class="w-full max-w-7xl mb-8">
+    <div class="flex justify-between items-center mb-4">
+  <h2 class="text-2xl font-bold">{{ ai_picks_title or 'AI Picks' }}</h2>
+      <div class="flex items-center gap-3">
+        <a href="{{ base_url }}/recommendations/ai" class="link link-primary">Discover more →</a>
+        <button class="btn btn-xs" hx-post="{{ base_url }}/recommendations/ai/refresh" hx-swap="none">Refresh</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <div class="flex gap-4 pb-4" style="width: max-content;">
+        {% for book in ai_picks[:12] %}
+          <div class="flex-none w-[8rem] sm:w-[10rem]">
+            {% include "components/book_card.html" %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% else %}
+  <!-- If no AI results came back, render nothing (keeps homepage clean) -->
+{% endif %}

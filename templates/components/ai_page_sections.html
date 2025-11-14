@@ -1,0 +1,33 @@
+{% if sections and sections|length > 0 %}
+  {% for sec in sections %}
+    <div class="w-full max-w-7xl mt-6">
+      <div class="flex justify-between items-center mb-2">
+        <div class="flex items-center gap-2">
+          <h2 class="text-2xl font-bold">{{ sec.title }}</h2>
+          {% if sec.description %}
+          <div class="tooltip" data-tip="{{ sec.description }}">
+            <span class="opacity-60 cursor-help">ⓘ</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% if sec.books and sec.books|length > 0 %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {% for book in sec.books %}
+            <div>
+              {% include "components/book_card.html" %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-8 opacity-70">No books found for this category.</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="w-full max-w-7xl text-center py-16">
+    <h3 class="text-2xl font-semibold mt-2">No AI recommendations yet</h3>
+    <p class="opacity-70 mt-1">Make sure the Ollama endpoint and model are configured in Settings.</p>
+    <a href="{{ base_url }}/settings/ai" class="btn btn-primary mt-4">Open AI Settings</a>
+  </div>
+{% endif %}

@@ -14,6 +14,8 @@ from app.internal.prowlarr.prowlarr import (
     start_download,
 )
 from app.internal.ranking.download_ranking import rank_sources
+from app.internal.audiobookshelf.config import abs_config
+from app.internal.audiobookshelf.client import abs_trigger_scan
 
 querying: set[str] = set()
 
@@ -99,6 +101,12 @@ async def query_sources(
                     b.downloaded = True
                     session.add(b)
                 session.commit()
+                # Try to trigger an ABS scan to pick up new media
+                try:
+                    if abs_config.is_valid(session):
+                        await abs_trigger_scan(session, client_session)
+                except Exception:
+                    pass
             else:
                 raise HTTPException(status_code=500, detail="Failed to start download")
 

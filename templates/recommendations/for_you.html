@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block head %}
+  <title>For You — AudioBook Request</title>
+{% endblock head %}
+{% block body %}
+  <div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6">
+    <div class="w-full max-w-7xl flex items-center justify-between">
+      <div>
+  <h1 class="text-3xl font-bold">For You</h1>
+        <p class="opacity-70">Personalized picks based on your requests{% if has_next %}, showing {{ books|length }} of {{ total_items }}{% endif %}</p>
+      </div>
+      <a href="{{ base_url }}/search" class="btn btn-primary flex items-center gap-2" title="Search for books">
+        <span>Search</span>
+        {% include "icons/search.html" %}
+      </a>
+    </div>
+
+    <div class="w-full max-w-7xl">
+      {% if books and books|length > 0 %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {% for book in books %}
+            <div>
+              {% include "components/book_card.html" %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-16">
+          <h3 class="text-2xl font-semibold mt-2">No personalized recommendations yet</h3>
+          <p class="opacity-70 mt-1">Request a few audiobooks to help us learn your tastes.</p>
+          <a href="{{ base_url }}/search" class="btn btn-primary mt-4">Search for Books</a>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if books and books|length > 0 %}
+    <div class="w-full max-w-7xl flex items-center justify-between mt-4">
+      <div class="opacity-70">Page {{ page }}</div>
+      <div class="flex gap-2">
+        {% if page > 1 %}
+          <a class="btn btn-outline" href="{{ base_url }}/recommendations/for-you?page={{ page - 1 }}&per_page={{ per_page }}">Previous</a>
+        {% else %}
+          <button class="btn btn-outline btn-disabled">Previous</button>
+        {% endif %}
+        {% if has_next %}
+          <a class="btn btn-primary" href="{{ base_url }}/recommendations/for-you?page={{ page + 1 }}&per_page={{ per_page }}">Next</a>
+        {% else %}
+          <button class="btn btn-disabled">Next</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+{% endblock body %}

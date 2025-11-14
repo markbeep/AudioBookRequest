@@ -1,0 +1,43 @@
+{% extends "settings_page/base.html" %}
+{% block content %}
+<div class="card bg-base-200">
+  <div class="card-body gap-6">
+    <div>
+      <h2 class="card-title">AI Recommendations (Ollama)</h2>
+      <p class="opacity-70">Configure your local or remote Ollama server and model to power AI-based recommendations.</p>
+    </div>
+
+    <div class="divider">Connection</div>
+    <form hx-put="{{ base_url }}/settings/ai/endpoint" hx-swap="none" class="flex flex-col gap-2">
+      <label class="label"><span class="label-text">Ollama Endpoint</span></label>
+      <input name="endpoint" type="text" class="input input-bordered" placeholder="http://localhost:11434" value="{{ ai_endpoint }}" />
+      <div class="text-xs opacity-60">
+        The base URL to your Ollama server (e.g., http://localhost:11434).
+        If ABR runs in Docker and Ollama runs on the host, use
+        <code>http://host.docker.internal:11434</code> (Linux may require enabling it or using your host gateway IP).
+      </div>
+      <div class="mt-2"><button class="btn btn-primary">Save Endpoint</button></div>
+    </form>
+
+    <div class="divider">Model</div>
+    <form hx-put="{{ base_url }}/settings/ai/model" hx-swap="none" class="flex flex-col gap-2">
+      <label class="label"><span class="label-text">Model</span></label>
+      <input name="model" type="text" class="input input-bordered" placeholder="llama3.1" value="{{ ai_model }}" />
+      <div class="text-xs opacity-60">Name of the model available in your Ollama (e.g., llama3.1, mistral, qwen, etc.)</div>
+      <div class="mt-2"><button class="btn btn-primary">Save Model</button></div>
+    </form>
+
+    <div class="divider">Diagnostics</div>
+    <div class="flex items-center gap-3">
+      <button class="btn" hx-post="{{ base_url }}/settings/ai/test" hx-target="#ai-test-status" hx-swap="innerHTML">Test Connection</button>
+      <a href="{{ base_url }}/recommendations/ai?refresh=true" class="btn btn-outline">Generate Now</a>
+    </div>
+    <div id="ai-test-status" class="mt-2">
+      {% if test_result_html %}{{ test_result_html | safe }}{% endif %}
+    </div>
+
+    <div class="divider"></div>
+    <div class="opacity-70">Once saved, one or more AI Picks sections will appear on the homepage. You can also browse <a class="link link-primary" href="{{ base_url }}/recommendations/ai">AI Recommendations</a>.</div>
+  </div>
+  </div>
+{% endblock content %}

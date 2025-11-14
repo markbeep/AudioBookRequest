@@ -5,12 +5,14 @@ from sqlmodel import Session, select, text
 
 from app.routers.api.indexers import router as indexers_router
 from app.routers.api.users import router as users_router
+from app.routers.api.recommendations import router as recommendations_router
 from app.util.db import get_session
 from app.util.log import logger
 
 router = APIRouter(prefix="/api", tags=["API"])
 router.include_router(indexers_router)
 router.include_router(users_router)
+router.include_router(recommendations_router)
 
 
 @router.get("/health", tags=["System"])

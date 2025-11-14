@@ -140,8 +140,145 @@
               searching. If the book doesn't exist on Audible it'll have to be added
               <a class="link" preload href="{{ base_url }}/search/manual">manually</a>.</span>
           {% else %}
-            <span class="text-xl font-semibold">Perform a search</span>
-            <span class="text-sm opacity-60">Nothing has been searched yet.</span>
+            <span class="text-xl font-semibold">Discover audiobooks</span>
+            <span class="text-sm opacity-60">Start typing to search, or check out the recommendations below.</span>
+          {% endif %}
+        </div>
+      {% endif %}
+      
+      <!-- Recommendations Section (shown when no search term) -->
+      {% if not search_term and recommendations %}
+        <div class="w-full pt-8 space-y-8">
+          {% if recommendations.popular %}
+          <div class="w-full">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-bold">Popular Books</h2>
+              <a href="{{ base_url }}/" class="link link-primary text-sm">View more →</a>
+            </div>
+            <div class="grid gap-2 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7">
+              {% for book in recommendations.popular[:7] %}
+                <div class="flex flex-col">
+                  <div class="relative w-[8rem] h-[8rem] sm:w-[10rem] sm:h-[10rem] rounded-md overflow-hidden shadow shadow-black items-center justify-center flex">
+                    {% if book.cover_image %}
+                      <img class="object-cover w-full h-full hover:scale-110 transition-transform duration-500 ease-in-out"
+                           height="128"
+                           width="128"
+                           src="{{ book.cover_image }}"
+                           alt="{{ book.title }}" />
+                    {% else %}
+                      {% include "icons/photo-off.html" %}
+                    {% endif %}
+                    <button class="absolute top-0 right-0 rounded-none rounded-bl-md btn-sm btn btn-square items-center justify-center flex {% if book.downloaded or book.already_requested %}btn-ghost bg-success text-neutral/20{% else %}btn-info{% endif %}"
+                            hx-post="{{ base_url }}/search/request/{{ book.asin }}"
+                            hx-disabled-elt="this"
+                            hx-target="#book-results"
+                            hx-include="this"
+                            hx-swap="outerHTML"
+                            hx-on:click="this.disabled = true;"
+                            {% if book.downloaded or book.already_requested %}disabled{% endif %}>
+                      <input type="hidden" name="query" value="" />
+                      <input type="hidden" name="region" value="{{ selected_region }}" />
+                      <input type="hidden" name="page" value="0" />
+                      <input type="hidden" name="search_term" value="" />
+                      {% if book.downloaded or book.already_requested %}
+                        <span>{% include "icons/checkmark.html" %}</span>
+                      {% else %}
+                        {% if auto_start_download and user.can_download() %}
+                          <span>{% include "icons/download.html" %}</span>
+                        {% else %}
+                          <span>{% include "icons/plus.html" %}</span>
+                        {% endif %}
+                      {% endif %}
+                    </button>
+                  </div>
+                  <a class="text-sm text-primary font-bold pt-1"
+                     title="{{ book.title }}"
+                     target="_blank"
+                     href="https://audible{{ regions[selected_region] }}/pd/{{ book.asin }}?ipRedirectOverride=true"
+                     style="display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    {{ book.title }}
+                  </a>
+                  {% if book.subtitle %}
+                    <div class="opacity-60 font-semibold text-xs" 
+                         title="{{ book.subtitle }}"
+                         style="display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;">{{ book.subtitle }}</div>
+                  {% endif %}
+                  <div class="text-xs font-semibold" 
+                       title="Authors: {{ book.authors | join(', ') }}"
+                       style="display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;">
+                    {% for author in book.authors[:2] %}
+                      <a href="{{ base_url }}/search?q={{ author }}"
+                         title="Search for {{ author }}"
+                         class="hover:underline">
+                        {{ author }}
+                        {{- "," if loop.index < book.authors | length and loop.index < 2 else "" -}}
+                      </a>
+                    {% endfor %}
+                    {% if book.authors | length > 2 %}
+                      <span class="opacity-60">+{{ book.authors | length - 2 }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          {% if recommendations.recent %}
+          <div class="w-full">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-bold">⏰ Recently Requested</h2>
+              <a href="{{ base_url }}/" class="link link-primary text-sm">View more →</a>
+            </div>
+            <div class="grid gap-2 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7">
+              {% for book in recommendations.recent[:7] %}
+                <div class="flex flex-col">
+                  <div class="relative w-[8rem] h-[8rem] sm:w-[10rem] sm:h-[10rem] rounded-md overflow-hidden shadow shadow-black items-center justify-center flex">
+                    {% if book.cover_image %}
+                      <img class="object-cover w-full h-full hover:scale-110 transition-transform duration-500 ease-in-out"
+                           height="128"
+                           width="128"
+                           src="{{ book.cover_image }}"
+                           alt="{{ book.title }}" />
+                    {% else %}
+                      {% include "icons/photo-off.html" %}
+                    {% endif %}
+                    <button class="absolute top-0 right-0 rounded-none rounded-bl-md btn-sm btn btn-square items-center justify-center flex btn-ghost bg-success text-neutral/20"
+                            disabled>
+                      <span>{% include "icons/checkmark.html" %}</span>
+                    </button>
+                  </div>
+                  <a class="text-sm text-primary font-bold pt-1"
+                     title="{{ book.title }}"
+                     target="_blank"
+                     href="https://audible{{ regions[selected_region] }}/pd/{{ book.asin }}?ipRedirectOverride=true"
+                     style="display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    {{ book.title }}
+                  </a>
+                  {% if book.subtitle %}
+                    <div class="opacity-60 font-semibold text-xs" 
+                         title="{{ book.subtitle }}"
+                         style="display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;">{{ book.subtitle }}</div>
+                  {% endif %}
+                  <div class="text-xs font-semibold" 
+                       title="Authors: {{ book.authors | join(', ') }}"
+                       style="display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;">
+                    {% for author in book.authors[:2] %}
+                      <a href="{{ base_url }}/search?q={{ author }}"
+                         title="Search for {{ author }}"
+                         class="hover:underline">
+                        {{ author }}
+                        {{- "," if loop.index < book.authors | length and loop.index < 2 else "" -}}
+                      </a>
+                    {% endfor %}
+                    {% if book.authors | length > 2 %}
+                      <span class="opacity-60">+{{ book.authors | length - 2 }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
           {% endif %}
         </div>
       {% endif %}

@@ -28,6 +28,8 @@
         class="tab {% if page=='users' %}tab-active{% endif %}">Users</a>
       <a preload href="{{ base_url }}/settings/prowlarr" role="tab"
         class="tab {% if page=='prowlarr' %}tab-active{% endif %}">Prowlarr</a>
+      <a preload href="{{ base_url }}/settings/audiobookshelf" role="tab"
+        class="tab {% if page=='audiobookshelf' %}tab-active{% endif %}">Audiobookshelf</a>
       <a preload href="{{ base_url }}/settings/download" role="tab"
         class="tab {% if page=='download' %}tab-active{% endif %}">Download</a>
       <a preload href="{{ base_url }}/settings/notifications" role="tab"
@@ -36,6 +38,8 @@
         class="tab {% if page=='security' %}tab-active{% endif %}">Security</a>
       <a preload href="{{ base_url }}/settings/indexers" role="tab"
         class="tab {% if page=='indexers' %}tab-active{% endif %}">Indexers</a>
+      <a preload href="{{ base_url }}/settings/ai" role="tab"
+        class="tab {% if page=='ai' %}tab-active{% endif %}">AI</a>
     </div>
     {% endif %}
     {% block content %}

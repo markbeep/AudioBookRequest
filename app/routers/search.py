@@ -43,6 +43,7 @@ from app.internal.ranking.quality import quality_config
 from app.routers.wishlist import get_wishlist_books, get_wishlist_counts
 from app.util.connection import get_connection
 from app.util.db import get_session, open_session
+from app.util.recommendations import get_homepage_recommendations
 from app.util.templates import template_response
 
 router = APIRouter(prefix="/search")
@@ -102,6 +103,11 @@ async def read_search(
     prowlarr_configured = prowlarr_config.is_valid(session)
 
     clear_old_book_caches(session)
+    
+    # Get recommendations if no search term is provided
+    recommendations = None
+    if not query:
+        recommendations = get_homepage_recommendations(session, user)
 
     return template_response(
         "search.html",
@@ -116,6 +122,7 @@ async def read_search(
             "auto_start_download": quality_config.get_auto_download(session)
             and user.is_above(GroupEnum.trusted),
             "prowlarr_configured": prowlarr_configured,
+            "recommendations": recommendations,
         },
     )
 
@@ -159,10 +166,11 @@ async def add_request(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     background_task: BackgroundTasks,
-    query: Annotated[Optional[str], Form()],
-    page: Annotated[int, Form()],
-    region: Annotated[audible_region_type, Form()],
+    query: Annotated[Optional[str], Form()] = None,
+    page: Annotated[int, Form()] = 0,
+    region: Annotated[audible_region_type, Form()] = get_region_from_settings(),
     num_results: Annotated[int, Form()] = 20,
+    redirect_to_home: Annotated[Optional[str], Form()] = None,
     user: DetailedUser = Security(ABRAuth()),
 ):
     book = await get_book_by_asin(client_session, asin, region)
@@ -193,6 +201,18 @@ async def add_request(
             auto_download=True,
         )
 
+    # If redirect_to_home is set, redirect to homepage instead of refreshing search results
+    if redirect_to_home:
+        recommendations = get_homepage_recommendations(session, user)
+        return template_response(
+            "root.html",
+            request,
+            user,
+            {
+                "recommendations": recommendations,
+            },
+        )
+
     if audible_regions.get(region) is None:
         raise HTTPException(status_code=400, detail="Invalid region")
     if query:
@@ -212,6 +232,11 @@ async def add_request(
         books = get_already_requested(session, results, user.username)
 
     prowlarr_configured = prowlarr_config.is_valid(session)
+    
+    # Get recommendations if no search term is provided
+    recommendations = None
+    if not query:
+        recommendations = get_homepage_recommendations(session, user)
 
     return template_response(
         "search.html",
@@ -226,6 +251,7 @@ async def add_request(
             "auto_start_download": quality_config.get_auto_download(session)
             and user.is_above(GroupEnum.trusted),
             "prowlarr_configured": prowlarr_configured,
+            "recommendations": recommendations,
         },
         block_name="book_results",
     )

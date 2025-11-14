@@ -85,6 +85,7 @@
       rel="manifest"
       href="{{ base_url }}/static/site.webmanifest?v={{ version }}"
     />
+    <meta name="theme-color" content="#ffffff" />
     {% include "scripts/toast.html" %}
   </head>
   <body class="w-screen min-h-screen overflow-x-hidden" hx-ext="preload">
@@ -108,6 +109,20 @@
     <script> 
       // execute the script once here (to have it run on all pages), and once when the button loads below in the navbar
       setTheme();
+    </script>
+    <script>
+      // Register service worker for PWA installability and offline support
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          const baseUrl = '{{ base_url }}';
+          const version = '{{ version }}';
+          const swUrl = `${baseUrl}/service-worker.js?v=${version}`;
+          const scope = `${baseUrl}/`;
+          navigator.serviceWorker.register(swUrl, { scope }).catch((e) => {
+            console.debug('SW registration failed', e);
+          });
+        });
+      }
     </script>
     {% if not hide_navbar %}
     <header class="shadow-lg">
