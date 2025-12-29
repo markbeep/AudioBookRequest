@@ -3,9 +3,7 @@
 .env
 .envrc
 __pycache__
-static/globals.css
 config
 data
-node_modules
 result
 .ruff_cache

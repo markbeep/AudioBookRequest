@@ -1,48 +1,49 @@
-FROM node:23-alpine3.20
-
+# ---- CSS ----
+FROM alpine:3.23 AS css
 WORKDIR /app
 
-# Install daisyui
-COPY package.json package.json
-COPY package-lock.json package-lock.json
-RUN npm install
+RUN apk add --no-cache curl build-base && \
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        TAILWIND_ARCH="x64"; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+        TAILWIND_ARCH="arm64"; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi && \
+    curl -L "https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-${TAILWIND_ARCH}-musl" \
+         -o /bin/tailwindcss && \
+    chmod +x /bin/tailwindcss
 
-# Setup python
-FROM python:3.12-alpine AS linux-amd64
+RUN mkdir -p static && \
+    curl -Lo static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs && \
+    curl -Lo static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
+
+COPY static/tw.css static/tw.css
+RUN /bin/tailwindcss -i static/tw.css -o static/globals.css -m
+
+# ---- Python deps ----
+FROM astral/uv:python3.13-alpine AS python-deps
 WORKDIR /app
-RUN apk add --no-cache curl gcompat build-base
-RUN curl https://github.com/tailwindlabs/tailwindcss/releases/download/v4.0.6/tailwindcss-linux-x64-musl -L -o /bin/tailwindcss
+COPY uv.lock pyproject.toml ./
+RUN uv sync --frozen --no-cache --no-dev
 
-FROM python:3.12-alpine AS linux-arm64
-WORKDIR /app
-RUN apk add --no-cache curl gcompat build-base
-RUN curl https://github.com/tailwindlabs/tailwindcss/releases/download/v4.0.6/tailwindcss-linux-arm64-musl -L -o /bin/tailwindcss
-
-FROM ${TARGETOS}-${TARGETARCH}${TARGETVARIANT}
+# ---- Final ----
+FROM python:3.13-alpine AS final
 WORKDIR /app
 
-RUN chmod +x /bin/tailwindcss
+COPY --from=css /app/static/globals.css static/globals.css
+COPY --from=python-deps /app/.venv /app/.venv
 
-COPY --from=0 /app/node_modules/ node_modules/
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-
-COPY uv.lock pyproject.toml /app/
-RUN uv sync --frozen --no-cache
-
+COPY static/ static/
 COPY alembic/ alembic/
 COPY alembic.ini alembic.ini
-COPY static/ static/
 COPY templates/ templates/
 COPY app/ app/
 COPY CHANGELOG.md CHANGELOG.md
-
-RUN /bin/tailwindcss -i static/tw.css -o static/globals.css -m
-# Fetch all the required js files
-RUN uv run python /app/app/util/fetch_js.py
 
 ENV ABR_APP__PORT=8000
 ARG VERSION
 ENV ABR_APP__VERSION=$VERSION
 
 CMD /app/.venv/bin/alembic upgrade heads && /app/.venv/bin/fastapi run --port $ABR_APP__PORT
-

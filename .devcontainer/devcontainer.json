@@ -4,7 +4,7 @@
 		"context": "..",
 		"dockerfile": "./Dockerfile"
 	},
-	"runArgs": ["--network=host"],
+	"forwardPorts": [8000],
 	"customizations": {
 		"vscode": {
 			"extensions": [

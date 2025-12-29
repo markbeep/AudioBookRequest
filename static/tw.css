@@ -1,7 +1,12 @@
 @import "tailwindcss";
-@plugin "daisyui" {
+
+@source not "./daisyui{,*}.mjs";
+
+@plugin "./daisyui.mjs" {
   themes: nord --default, night --prefersdark;
 }
+
+@plugin "./daisyui-theme.mjs" {}
 
 /* Enables dark mode specific styling with "dark:" */
 @custom-variant dark (&:where(.dark, .dark *));
