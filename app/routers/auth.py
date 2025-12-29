@@ -89,7 +89,7 @@ async def login(
         redirect_uri=auth_redirect_uri,
     )
 
-    state = jwt.encode(  # pyright: ignore[reportUnknownMemberType]
+    state = jwt.encode(
         {"redirect_uri": redirect_uri},
         auth_config.get_auth_secret(session),
         algorithm="HS256",
@@ -247,7 +247,7 @@ async def login_oidc(
     request.session["exp"] = expires
 
     if state:
-        decoded = jwt.decode(  # pyright: ignore[reportUnknownMemberType]
+        decoded = jwt.decode(
             state,
             auth_config.get_auth_secret(session),
             algorithms=["HS256"],

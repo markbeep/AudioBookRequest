@@ -30,6 +30,7 @@ dependencies = [
     "markdown>=3.8.2",
     "apscheduler>=3.11.0",
     "psycopg2-binary>=2.9.10",
+    "jinja2-htmlmin>=1.0.1",
 ]
 
 # setuptools by default expects a "src" folder structure
@@ -39,18 +40,20 @@ where = ["."]
 [tool.uv]
 package = false
 
-[tool.pyright]
-include = ["**/*.py"]
-exclude = ["**/__pycache__", "**/.venv", "**/.direnv"]
-ignore = []
-
-typeCheckingMode = "strict"
-reportUnknownParameterType = true
-reportMissingParameterType = true
-
 [tool.djlint]
 profile = "jinja"
 ignore = "H021"
 
+[tool.pyrefly]
+project-includes = ["app"]
+
+[tool.pyrefly.errors]
+deprecated = false
+
 [dependency-groups]
-dev = ["djlint", "pyright", "ruff"]
+dev = [
+    "djlint",
+    "pyrefly>=0.46.2",
+    "ruff>=0.14.10",
+    "ty>=0.0.8",
+]

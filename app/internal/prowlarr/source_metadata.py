@@ -1,6 +1,4 @@
 import asyncio
-from types import CoroutineType
-from typing import Any
 
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.indexers.indexer_util import get_indexer_contexts
@@ -24,7 +22,7 @@ async def edit_source_metadata(
         if exc:
             logger.error("Failed to setup indexer", error=str(exc))
 
-    coros: list[CoroutineType[Any, Any, None]] = []
+    coros = []
     for source in sources:
         for context in contexts:
             if await context.indexer.is_matching_source(source, container):

@@ -7,7 +7,7 @@ from sqlmodel import Session
 from app.internal.auth.authentication import APIKeyAuth, DetailedUser
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.indexers.indexer_util import get_indexer_contexts
-from app.internal.models import BaseModel, GroupEnum
+from app.internal.models import BaseSQLModel, GroupEnum
 from app.routers.settings.indexers import update_single_indexer
 from app.util.connection import get_connection
 from app.util.db import get_session
@@ -48,7 +48,7 @@ async def update_indexer(
     return Response(status_code=204)
 
 
-class StringConfigurationResponse(BaseModel):
+class StringConfigurationResponse(BaseSQLModel):
     name: str
     description: Optional[str] = None
     default: Optional[str] = None

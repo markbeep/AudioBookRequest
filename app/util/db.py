@@ -18,7 +18,7 @@ else:
 def get_session():
     with Session(engine) as session:
         if not Settings().db.use_postgres:
-            session.execute(text("PRAGMA foreign_keys=ON"))  # pyright: ignore[reportDeprecated]
+            session.execute(text("PRAGMA foreign_keys=ON"))
         yield session
 
 
@@ -27,5 +27,5 @@ def get_session():
 def open_session():
     with Session(engine) as session:
         if not Settings().db.use_postgres:
-            session.execute(text("PRAGMA foreign_keys=ON"))  # pyright: ignore[reportDeprecated]
+            session.execute(text("PRAGMA foreign_keys=ON"))
         yield session

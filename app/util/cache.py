@@ -39,12 +39,10 @@ class StringConfigCache[L: str](ABC):
     _cache: dict[L, str] = {}
 
     @overload
-    def get(self, session: Session, key: L) -> Optional[str]:
-        pass
+    def get(self, session: Session, key: L) -> Optional[str]: ...
 
     @overload
-    def get(self, session: Session, key: L, default: str) -> str:
-        pass
+    def get(self, session: Session, key: L, default: str) -> str: ...
 
     def get(
         self, session: Session, key: L, default: Optional[str] = None
@@ -75,12 +73,10 @@ class StringConfigCache[L: str](ABC):
             del self._cache[key]
 
     @overload
-    def get_int(self, session: Session, key: L) -> Optional[int]:
-        pass
+    def get_int(self, session: Session, key: L) -> Optional[int]: ...
 
     @overload
-    def get_int(self, session: Session, key: L, default: int) -> int:
-        pass
+    def get_int(self, session: Session, key: L, default: int) -> int: ...
 
     def get_int(
         self, session: Session, key: L, default: Optional[int] = None

@@ -1,15 +1,14 @@
-# pyright: reportUnknownVariableType=false
+from pydantic import ConfigDict, BaseModel
 import json
 import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Annotated, Literal, Optional, Union
 
-import pydantic
 from sqlmodel import JSON, Column, DateTime, Field, SQLModel, UniqueConstraint, func
 
 
-class BaseModel(SQLModel):
+class BaseSQLModel(SQLModel):
     pass
 
 
@@ -19,7 +18,7 @@ class GroupEnum(str, Enum):
     admin = "admin"
 
 
-class User(BaseModel, table=True):
+class User(BaseSQLModel, table=True):
     username: str = Field(primary_key=True)
     password: str
     group: GroupEnum = Field(
@@ -60,7 +59,7 @@ class User(BaseModel, table=True):
         return self.username == username
 
 
-class BaseBook(BaseModel):
+class BaseBook(BaseSQLModel):
     asin: str
     title: str
     subtitle: Optional[str]
@@ -114,11 +113,10 @@ class BookRequest(BaseBook, table=True):
         UniqueConstraint("asin", "user_username", name="unique_asin_user"),
     )
 
-    class Config:  # pyright: ignore[reportIncompatibleVariableOverride]
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class ManualBookRequest(BaseModel, table=True):
+class ManualBookRequest(BaseSQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_username: str = Field(foreign_key="user.username", ondelete="CASCADE")
     title: str
@@ -138,11 +136,10 @@ class ManualBookRequest(BaseModel, table=True):
     )
     downloaded: bool = False
 
-    class Config:  # pyright: ignore[reportIncompatibleVariableOverride]
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class BookMetadata(BaseModel):
+class BookMetadata(BaseSQLModel):
     """extra metadata that can be added to sources to better rank them"""
 
     title: Optional[str] = None
@@ -152,7 +149,7 @@ class BookMetadata(BaseModel):
     filetype: Optional[str] = None
 
 
-class BaseSource(BaseModel):
+class BaseSource(BaseSQLModel):
     guid: str
     indexer_id: int
     indexer: str
@@ -187,14 +184,14 @@ ProwlarrSource = Annotated[
 ]
 
 
-class Indexer(pydantic.BaseModel, frozen=True):
+class Indexer(BaseModel, frozen=True):
     id: int
     name: str
     enable: bool
     privacy: str
 
 
-class Config(BaseModel, table=True):
+class Config(BaseSQLModel, table=True):
     key: str = Field(primary_key=True)
     value: str
 
@@ -210,7 +207,7 @@ class NotificationBodyTypeEnum(str, Enum):
     json = "json"
 
 
-class Notification(BaseModel, table=True):
+class Notification(BaseSQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
     url: str
@@ -225,7 +222,7 @@ class Notification(BaseModel, table=True):
         return json.dumps(self.headers)
 
 
-class APIKey(BaseModel, table=True):
+class APIKey(BaseSQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_username: str = Field(foreign_key="user.username", ondelete="CASCADE")
     name: str

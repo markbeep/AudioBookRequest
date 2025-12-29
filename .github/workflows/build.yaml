@@ -48,11 +48,10 @@ jobs:
 
       - run: uv sync --all-extras
 
-      - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
+      - name: Run Type Checks
+        run: uv run pyrefly check
 
-      - uses: jakebailey/pyright-action@v2
-        with:
-          extra-args: app # only check apps dir
+      - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
 
       - name: Check SQLite Alembic Migrations
         run: |

@@ -81,7 +81,7 @@ class CompareSource:
                 quality_range = quality_config.get_range(
                     self.session, "quality_unknown_audio"
                 )
-            case "unknown":
+            case "unknown" | _:
                 quality_range = quality_config.get_range(
                     self.session, "quality_unknown"
                 )
@@ -262,7 +262,7 @@ def fuzzy_author_narrator_match(
         return 0
     score = 0
     for book_person in book_people:
-        best_match = 0
+        best_match = 0.0
         for source_person in source_people:
             match_score = fuzz.token_set_ratio(
                 book_person, source_person, processor=utils.default_process

@@ -1,5 +1,3 @@
-# pyright: basic
-
 import os
 from collections import defaultdict
 

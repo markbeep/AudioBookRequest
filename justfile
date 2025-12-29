@@ -21,7 +21,7 @@ tailwind: node_modules
     tailwindcss -i static/tw.css -o static/globals.css --watch
 
 types:
-    uv run pyright app
+    uv run pyrefly check
     uv run djlint templates
     uv run ruff format --check app
     uv run alembic check

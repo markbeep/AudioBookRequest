@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Any, Literal, Mapping, Optional, cast
 
 from aiohttp import ClientSession
-from apscheduler.schedulers.asyncio import AsyncIOScheduler  # pyright: ignore[reportMissingTypeStubs]
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import APIRouter, Depends, FastAPI, Form, Request, Security
 from sqlmodel import Session
 
@@ -39,10 +39,10 @@ async def check_indexer_file_changes():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(check_indexer_file_changes, "interval", seconds=15)  # pyright: ignore[reportUnknownMemberType]
-    scheduler.start()  # pyright: ignore[reportUnknownMemberType]
+    scheduler.add_job(check_indexer_file_changes, "interval", seconds=15)
+    scheduler.start()
     yield
-    scheduler.shutdown()  # pyright: ignore[reportUnknownMemberType]
+    scheduler.shutdown()
 
 
 router = APIRouter(prefix="/indexers", lifespan=lifespan)

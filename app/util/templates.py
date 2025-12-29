@@ -1,3 +1,5 @@
+from jinja2_htmlmin import minify_loader
+from jinja2 import Environment, FileSystemLoader
 from typing import Any, Mapping, overload
 
 import markdown
@@ -8,22 +10,33 @@ from starlette.background import BackgroundTask
 from app.internal.auth.authentication import DetailedUser
 from app.internal.env_settings import Settings
 
-templates = Jinja2Blocks(directory="templates")
-templates.env.filters["zfill"] = lambda val, num: str(val).zfill(num)  # pyright: ignore[reportUnknownLambdaType,reportUnknownMemberType,reportUnknownArgumentType]
-templates.env.filters["toJSstring"] = (  # pyright: ignore[reportUnknownLambdaType,reportUnknownMemberType,reportUnknownArgumentType]
-    lambda val: f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'"  # pyright: ignore[reportUnknownLambdaType,reportUnknownMemberType,reportUnknownArgumentType]
+templates = Jinja2Blocks(
+    env=Environment(
+        loader=minify_loader(
+            FileSystemLoader("templates"),
+            remove_comments=True,  # pyrefly: ignore[bad-argument-type]
+            remove_empty_space=True,  # pyrefly: ignore[bad-argument-type]
+            remove_all_empty_space=True,  # pyrefly: ignore[bad-argument-type]
+            reduce_boolean_attributes=True,  # pyrefly: ignore[bad-argument-type]
+        )
+    )
 )
-templates.env.globals["vars"] = vars  # pyright: ignore[reportUnknownMemberType]
-templates.env.globals["getattr"] = getattr  # pyright: ignore[reportUnknownMemberType]
-templates.env.globals["version"] = Settings().app.version  # pyright: ignore[reportUnknownMemberType]
-templates.env.globals["json_regexp"] = (  # pyright: ignore[reportUnknownMemberType]
+
+templates.env.filters["zfill"] = lambda val, num: str(val).zfill(num)
+templates.env.filters["toJSstring"] = (
+    lambda val: f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'"
+)
+templates.env.globals["vars"] = vars
+templates.env.globals["getattr"] = getattr
+templates.env.globals["version"] = Settings().app.version
+templates.env.globals["json_regexp"] = (
     r'^\{\s*(?:"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*(?:,\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*)*)?\}$'
 )
-templates.env.globals["base_url"] = Settings().app.base_url.rstrip("/")  # pyright: ignore[reportUnknownMemberType]
+templates.env.globals["base_url"] = Settings().app.base_url.rstrip("/")
 
 with open("CHANGELOG.md", "r") as file:
     changelog_content = file.read()
-templates.env.globals["changelog"] = markdown.markdown(changelog_content)  # pyright: ignore[reportUnknownMemberType]
+templates.env.globals["changelog"] = markdown.markdown(changelog_content)
 
 
 @overload

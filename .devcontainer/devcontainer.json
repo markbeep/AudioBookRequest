@@ -13,7 +13,8 @@
 				"tamasfe.even-better-toml",
 				"bradlc.vscode-tailwindcss",
 				"samuelcolvin.jinjahtml",
-				"yzhang.markdown-all-in-one"
+				"yzhang.markdown-all-in-one",
+				"meta.pyrefly"
 			]
 		}
 	}

@@ -82,7 +82,7 @@ def create_valued_configuration(
         if not isinstance(_value, IndexerConfiguration):
             logger.debug("Skipping key", key=key)
             continue
-        value: IndexerConfiguration[Any] = _value  # pyright: ignore[reportUnknownVariableType]
+        value: IndexerConfiguration[Any] = _value
 
         config_value = indexer_configuration_cache.get(session, key)
         if config_value is None:

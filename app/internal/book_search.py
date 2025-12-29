@@ -1,3 +1,4 @@
+from typing import cast
 import asyncio
 import time
 from datetime import datetime
@@ -49,7 +50,7 @@ def clear_old_book_caches(session: Session):
         col(BookRequest.updated_at) < datetime.fromtimestamp(time.time() - REFETCH_TTL),
         col(BookRequest.user_username).is_(None),
     )
-    result: CursorResult = session.execute(delete_query)  # type: ignore[reportDeprecated]
+    result = cast(CursorResult, session.execute(delete_query))
     session.commit()
     logger.debug("Cleared old book caches", rowcount=result.rowcount)
 
@@ -58,7 +59,7 @@ def get_region_from_settings() -> audible_region_type:
     region = Settings().app.default_region
     if region not in audible_regions:
         return "us"
-    return region
+    return cast(audible_region_type, region)
 
 
 async def _get_audnexus_book(
