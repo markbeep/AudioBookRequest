@@ -183,22 +183,21 @@ uv run fastapi dev
 
 Website can be visited at http://localhost:8000.
 
-2. Install daisyUI and start Tailwindcss watcher. Required for any CSS styling.
+2. Tailwind is used in combination with [DaisyUI](https://daisyui.com). Download the source files using the following commands:
+
+```sh
+curl -sLo static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs
+curl -sLo static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
+```
+
+3. Start Tailwindcss watcher. Required for any CSS styling.
 
 ```sh
 just tailwind # or simply 'just tw'
 
-# or if you don't have 'just':
-npm i
-uv run tailwindcss -i static/tw.css -o static/globals.css --watch
+tailwindcss -i static/tw.css -o static/globals.css --watch
 # Alternatively npx can be used to run tailwindcss
 npx @tailwindcss/cli@4 -i static/tw.css -o static/globals.css --watch
-```
-
-3. _Optional:_ Start browser-sync. This hot reloads the website when the html template or python files are modified:
-
-```sh
-browser-sync http://localhost:8000 --files templates/** --files app/**
 ```
 
 **NOTE**: Website has to be visited at http://localhost:3000 instead.

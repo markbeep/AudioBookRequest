@@ -18,7 +18,7 @@ node_modules:
     npm install
 
 tailwind: node_modules
-    npx @tailwindcss/cli@4 -i static/tw.css -o static/globals.css --watch
+    tailwindcss -i static/tw.css -o static/globals.css --watch
 
 types:
     uv run pyright app

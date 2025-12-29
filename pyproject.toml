@@ -17,7 +17,6 @@ dependencies = [
     "pydantic-settings",
     "pydantic-core",
     "pyjwt",
-    "pytailwindcss",
     "sqlmodel",
     "terminaltables",
     "torrent-parser",
