@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.8.1](https://github.com/markbeep/AudioBookRequest/compare/v1.8.0...v1.8.1) (2025-12-30)
+
+
+### Bug Fixes
+
+* fix missing fetch for js files in dockerfile ([5b985d2](https://github.com/markbeep/AudioBookRequest/commit/5b985d2eaf1db075d3c2f55016907bfc6d91ca08))
+
+
+### Performance Improvements
+
+* minimize HTML while templating ([63c9d14](https://github.com/markbeep/AudioBookRequest/commit/63c9d147b56867b1444ab2f8f2f33fbfe5e4fe62))
+
+
+### Miscellaneous Chores
+
+* add tools section to readme ([9140ba8](https://github.com/markbeep/AudioBookRequest/commit/9140ba8e0c8b8a3b034354f328e0d1ec9690304d))
+* fix uv python version ([6bfba44](https://github.com/markbeep/AudioBookRequest/commit/6bfba44536de66a80000f5ce334440101f522194))
+
+
+### Tests
+
+* switch from pyright to pyrefly for typing ([63c9d14](https://github.com/markbeep/AudioBookRequest/commit/63c9d147b56867b1444ab2f8f2f33fbfe5e4fe62))
+
+
+### Build System
+
+* split up and minimize Dockerfile and image size ([#172](https://github.com/markbeep/AudioBookRequest/issues/172)) ([23aaf16](https://github.com/markbeep/AudioBookRequest/commit/23aaf169d703f9b6469c2e6e3b55abead1b6b9f1))
+
 ## [1.8.0](https://github.com/markbeep/AudioBookRequest/compare/v1.7.0...v1.8.0) (2025-10-04)
 
 
