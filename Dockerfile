@@ -19,6 +19,7 @@ RUN mkdir -p static && \
     curl -Lo static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs && \
     curl -Lo static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
 
+COPY templates/ templates/
 COPY static/tw.css static/tw.css
 RUN /bin/tailwindcss -i static/tw.css -o static/globals.css -m
 
@@ -27,6 +28,8 @@ FROM astral/uv:python3.13-alpine AS python-deps
 WORKDIR /app
 COPY uv.lock pyproject.toml ./
 RUN uv sync --frozen --no-cache --no-dev
+COPY app/util/fetch_js.py app/util/fetch_js.py
+RUN mkdir -p static && /app/.venv/bin/python app/util/fetch_js.py
 
 # ---- Final ----
 FROM python:3.13-alpine AS final
@@ -34,6 +37,7 @@ WORKDIR /app
 
 COPY --from=css /app/static/globals.css static/globals.css
 COPY --from=python-deps /app/.venv /app/.venv
+COPY --from=python-deps /app/static static/
 
 COPY static/ static/
 COPY alembic/ alembic/
