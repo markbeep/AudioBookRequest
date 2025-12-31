@@ -59,50 +59,55 @@ async def read_search(
     page: int = 0,
     region: audible_region_type | None = None,
 ):
-    if region is None:
-        region = get_region_from_settings()
-    if audible_regions.get(region) is None:
-        raise HTTPException(status_code=400, detail="Invalid region")
-    if query:
-        results = await list_audible_books(
-            session=session,
-            client_session=client_session,
-            query=query,
-            num_results=num_results,
-            page=page,
-            audible_region=region,
+    try:
+        if region is None:
+            region = get_region_from_settings()
+        if audible_regions.get(region) is None:
+            raise HTTPException(status_code=400, detail="Invalid region")
+        if query:
+            results = await list_audible_books(
+                session=session,
+                client_session=client_session,
+                query=query,
+                num_results=num_results,
+                page=page,
+                audible_region=region,
+            )
+        else:
+            results = []
+
+        results = [
+            AudiobookSearchResult(
+                book=book,
+                requests=book.requests,
+                username=user.username,
+            )
+            for book in results
+        ]
+
+        prowlarr_configured = prowlarr_config.is_valid(session)
+
+        clear_old_book_caches(session)
+
+        return template_response(
+            "search.html",
+            request,
+            user,
+            {
+                "search_term": query or "",
+                "search_results": results,
+                "regions": audible_regions,
+                "selected_region": region,
+                "page": page,
+                "auto_start_download": quality_config.get_auto_download(session)
+                and user.is_above(GroupEnum.trusted),
+                "prowlarr_configured": prowlarr_configured,
+            },
         )
-    else:
-        results = []
-
-    results = [
-        AudiobookSearchResult(
-            book=book,
-            requests=book.requests,
-            username=user.username,
-        )
-        for book in results
-    ]
-
-    prowlarr_configured = prowlarr_config.is_valid(session)
-
-    clear_old_book_caches(session)
-
-    return template_response(
-        "search.html",
-        request,
-        user,
-        {
-            "search_term": query or "",
-            "search_results": results,
-            "regions": audible_regions,
-            "selected_region": region,
-            "page": page,
-            "auto_start_download": quality_config.get_auto_download(session)
-            and user.is_above(GroupEnum.trusted),
-            "prowlarr_configured": prowlarr_configured,
-        },
-    )
+    except Exception as e:
+        session.rollback()
+        logger.exception("Error during search", error=e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/suggestions")
