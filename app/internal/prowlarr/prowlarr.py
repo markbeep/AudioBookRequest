@@ -1,6 +1,7 @@
 import json
 import posixpath
 from datetime import datetime
+import time
 from typing import Any, Literal, Optional
 from urllib.parse import urlencode
 
@@ -11,7 +12,7 @@ from torf import BdecodeError, MetainfoError, ReadError, Torrent
 
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.models import (
-    BookRequest,
+    Audiobook,
     EventEnum,
     Indexer,
     ProwlarrSource,
@@ -196,12 +197,12 @@ async def start_download(
 async def query_prowlarr(
     session: Session,
     client_session: ClientSession,
-    book_request: BookRequest,
+    book: Audiobook,
     indexer_ids: Optional[list[int]] = None,
     force_refresh: bool = False,
     only_return_if_cached: bool = False,
 ) -> Optional[list[ProwlarrSource]]:
-    query = book_request.title
+    query = book.title
 
     base_url = prowlarr_config.get_base_url(session)
     api_key = prowlarr_config.get_api_key(session)
@@ -217,7 +218,7 @@ async def query_prowlarr(
         if cached_sources:
             return cached_sources
 
-    params: dict[str, Any] = {
+    params: dict[str, int | str | list[int]] = {
         "query": query,
         "type": "search",
         "limit": 100,
@@ -233,12 +234,38 @@ async def query_prowlarr(
     url = posixpath.join(base_url, f"api/v1/search?{urlencode(params, doseq=True)}")
 
     logger.info("Querying prowlarr", url=url)
+    start_time = time.time()
 
-    async with client_session.get(
-        url,
-        headers={"X-Api-Key": api_key},
-    ) as response:
-        search_results = await response.json()
+    try:
+        async with client_session.get(
+            url,
+            headers={"X-Api-Key": api_key},
+        ) as response:
+            search_results = await response.json()
+            if not response.ok:
+                logger.error(
+                    "Prowlarr: Failed to query", response=await response.text()
+                )
+                return []
+    except TimeoutError as e:
+        elapsed_time = time.time() - start_time
+        logger.error(
+            "Prowlarr query timed out", error=str(e), elapsed_time=elapsed_time
+        )
+        return []
+    except Exception as e:
+        elapsed_time = time.time() - start_time
+        logger.error(
+            "Failed to query Prowlarr", error=str(e), elapsed_time=elapsed_time
+        )
+        return []
+
+    elapsed_time = time.time() - start_time
+    logger.info(
+        "Prowlarr query completed",
+        elapsed_time_seconds=elapsed_time,
+        results=search_results,
+    )
 
     sources: list[ProwlarrSource] = []
     for result in search_results:
@@ -292,7 +319,7 @@ async def query_prowlarr(
 
     # add additional metadata using any available indexers
     container = SessionContainer(session=session, client_session=client_session)
-    await edit_source_metadata(book_request, sources, container)
+    await edit_source_metadata(book, sources, container)
 
     prowlarr_source_cache.set(sources, query)
 

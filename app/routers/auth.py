@@ -54,7 +54,7 @@ async def login(
         backup = False
 
     try:
-        await ABRAuth()(request, session)
+        _ = await ABRAuth()(request, session)
         # already logged in
         return BaseUrlRedirectResponse(redirect_uri)
     except (HTTPException, RequiresLoginException):
@@ -109,7 +109,7 @@ async def login(
 async def logout(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    user: DetailedUser = Security(ABRAuth()),
+    _: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     request.session["sub"] = ""
 

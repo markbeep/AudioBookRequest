@@ -44,16 +44,10 @@ package = false
 profile = "jinja"
 ignore = "H021"
 
-[tool.pyrefly]
-project-includes = ["app"]
-
-[tool.pyrefly.errors]
-deprecated = false
+[tool.basedpyright]
+include = ["app"]
+strictGenericNarrowing = true
+reportDeprecated = false
 
 [dependency-groups]
-dev = [
-    "djlint",
-    "pyrefly>=0.46.2",
-    "ruff>=0.14.10",
-    "ty>=0.0.8",
-]
+dev = ["basedpyright>=1.36.2", "djlint", "ruff>=0.14.10"]
