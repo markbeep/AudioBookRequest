@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 import json
-from typing import Any
+from typing import Any, override
 from urllib.parse import urlencode, urljoin
 
 from app.internal.indexers.abstract import (
@@ -11,10 +12,7 @@ from app.internal.indexers.configuration import (
     IndexerConfiguration,
     ValuedConfigurations,
 )
-from app.internal.models import (
-    AudiobookRequest,
-    ProwlarrSource,
-)
+from app.internal.models import Audiobook, ProwlarrSource
 from app.util.log import logger
 
 
@@ -26,31 +24,34 @@ class MamConfigurations(Configurations):
     )
 
 
+@dataclass
 class ValuedMamConfigurations(ValuedConfigurations):
     mam_session_id: str
 
 
 class MamIndexer(AbstractIndexer[MamConfigurations]):
-    name = "MyAnonamouse"
+    name: str = "MyAnonamouse"
     results: dict[str, dict[str, Any]] = dict()
 
+    @override
     @staticmethod
     async def get_configurations(
         container: SessionContainer,
     ) -> MamConfigurations:
         return MamConfigurations()
 
+    @override
     async def setup(
         self,
-        request: AudiobookRequest,
+        book: Audiobook,
         container: SessionContainer,
         configurations: ValuedMamConfigurations,
     ):
         if not await self.is_enabled(container, configurations):
             return
 
-        params: dict[str, Any] = {
-            "tor[text]": request.title,
+        params = {
+            "tor[text]": book.title,
             "tor[main_cat]": [13],  # MAM audiobook category
             "tor[searchIn]": "torrents",
             "tor[srchIn][author]": "true",
@@ -88,6 +89,7 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
             self.results[str(result["id"])] = result
         logger.info("Mam: Retrieved results", results_amount=len(self.results))
 
+    @override
     async def is_matching_source(
         self,
         source: ProwlarrSource,
@@ -97,6 +99,7 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
             "https://www.myanonamouse.net/t/"
         )
 
+    @override
     async def edit_source_metadata(
         self,
         source: ProwlarrSource,

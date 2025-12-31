@@ -7,7 +7,7 @@ import torrent_parser as tp
 from aiohttp import ClientSession
 from sqlmodel import Session
 
-from app.internal.models import AudiobookRequest, ProwlarrSource
+from app.internal.models import Audiobook, ProwlarrSource
 from app.internal.prowlarr.prowlarr import prowlarr_config
 from app.internal.ranking.quality import FileFormat
 
@@ -73,7 +73,7 @@ async def extract_qualities(
     session: Session,
     client_session: ClientSession,
     source: ProwlarrSource,
-    book: AudiobookRequest,
+    book: Audiobook,
 ) -> list[Quality]:
     api_key = prowlarr_config.get_api_key(session)
     if not api_key:

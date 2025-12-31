@@ -11,7 +11,7 @@ from torf import BdecodeError, MetainfoError, ReadError, Torrent
 
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.models import (
-    AudiobookRequest,
+    Audiobook,
     EventEnum,
     Indexer,
     ProwlarrSource,
@@ -196,12 +196,12 @@ async def start_download(
 async def query_prowlarr(
     session: Session,
     client_session: ClientSession,
-    book_request: AudiobookRequest,
+    book: Audiobook,
     indexer_ids: Optional[list[int]] = None,
     force_refresh: bool = False,
     only_return_if_cached: bool = False,
 ) -> Optional[list[ProwlarrSource]]:
-    query = book_request.title
+    query = book.title
 
     base_url = prowlarr_config.get_base_url(session)
     api_key = prowlarr_config.get_api_key(session)
@@ -217,7 +217,7 @@ async def query_prowlarr(
         if cached_sources:
             return cached_sources
 
-    params: dict[str, Any] = {
+    params: dict[str, int | str | list[int]] = {
         "query": query,
         "type": "search",
         "limit": 100,
@@ -292,7 +292,7 @@ async def query_prowlarr(
 
     # add additional metadata using any available indexers
     container = SessionContainer(session=session, client_session=client_session)
-    await edit_source_metadata(book_request, sources, container)
+    await edit_source_metadata(book, sources, container)
 
     prowlarr_source_cache.set(sources, query)
 

@@ -5,6 +5,7 @@ from aiohttp import ClientSession, InvalidUrlClientError
 from sqlmodel import Session, select
 
 from app.internal.models import (
+    Audiobook,
     AudiobookRequest,
     EventEnum,
     ManualBookRequest,
@@ -84,7 +85,7 @@ async def send_notification(
     book_narrators = None
     if book_asin:
         book = session.exec(
-            select(AudiobookRequest).where(AudiobookRequest.asin == book_asin)
+            select(Audiobook).where(Audiobook.asin == book_asin)
         ).first()
         if book:
             book_title = book.title
@@ -145,13 +146,25 @@ async def send_all_notifications(
             )
         ).all()
         for notification in notifications:
-            await send_notification(
+            succ = await send_notification(
                 session=session,
                 notification=notification,
                 requester=requester,
                 book_asin=book_asin,
                 other_replacements=other_replacements,
             )
+            if succ:
+                logger.info(
+                    "Notification sent successfully",
+                    url=notification.url,
+                    asin=book_asin,
+                )
+            else:
+                logger.error(
+                    "Failed to send notification",
+                    url=notification.url,
+                    asin=book_asin,
+                )
 
 
 async def send_manual_notification(
@@ -219,12 +232,6 @@ async def send_all_manual_notifications(
                 other_replacements=other_replacements,
             )
             if succ:
-                logger.info(
-                    "Manual notification sent successfully",
-                    url=notif.url,
-                )
+                logger.info("Manual notification sent successfully", url=notif.url)
             else:
-                logger.error(
-                    "Failed to send manual notification",
-                    url=notif.url,
-                )
+                logger.error("Failed to send manual notification", url=notif.url)

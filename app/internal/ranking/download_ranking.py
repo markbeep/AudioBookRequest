@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 from rapidfuzz import fuzz, utils
 from sqlmodel import Session
 
-from app.internal.models import AudiobookRequest, ProwlarrSource
+from app.internal.models import Audiobook, ProwlarrSource
 from app.internal.ranking.quality import quality_config
 from app.internal.ranking.quality_extract import Quality, extract_qualities
 
@@ -21,7 +21,7 @@ async def rank_sources(
     session: Session,
     client_session: ClientSession,
     sources: list[ProwlarrSource],
-    book: AudiobookRequest,
+    book: Audiobook,
 ) -> list[ProwlarrSource]:
     async def get_qualities(source: ProwlarrSource):
         qualities = await extract_qualities(session, client_session, source, book)
@@ -38,7 +38,7 @@ async def rank_sources(
 
 @final
 class CompareSource:
-    def __init__(self, session: Session, book: AudiobookRequest):
+    def __init__(self, session: Session, book: Audiobook):
         self.session = session
         self.book = book
         self.compare_order = [
