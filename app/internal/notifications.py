@@ -6,7 +6,6 @@ from sqlmodel import Session, select
 
 from app.internal.models import (
     Audiobook,
-    AudiobookRequest,
     EventEnum,
     ManualBookRequest,
     Notification,

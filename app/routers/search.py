@@ -1,3 +1,4 @@
+import aiohttp
 from app.internal.models import AudiobookSearchResult
 import uuid
 from typing import Annotated, Optional
@@ -13,7 +14,7 @@ from fastapi import (
     Request,
     Security,
 )
-from sqlmodel import Session, select
+from sqlmodel import Session, col, delete, select
 
 from app.internal import book_search
 from app.internal.auth.authentication import ABRAuth, DetailedUser
@@ -134,7 +135,7 @@ async def search_suggestions(
 
 async def background_start_query(asin: str, requester: User, auto_download: bool):
     with open_session() as session:
-        async with ClientSession() as client_session:
+        async with ClientSession(timeout=aiohttp.ClientTimeout(60)) as client_session:
             _ = await query_sources(
                 asin=asin,
                 session=session,
@@ -249,14 +250,12 @@ async def delete_request(
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     downloaded: Optional[bool] = None,
 ):
-    books = session.exec(
-        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
-    ).all()
-    if books:
-        [session.delete(b) for b in books]
-        session.commit()
+    _ = session.execute(
+        delete(AudiobookRequest).where(col(AudiobookRequest.asin) == asin)
+    )
+    session.commit()
 
-    books = get_wishlist_results(
+    results = get_wishlist_results(
         session, None, "downloaded" if downloaded else "not_downloaded"
     )
     counts = get_wishlist_counts(session, admin_user)
@@ -266,7 +265,7 @@ async def delete_request(
         request,
         admin_user,
         {
-            "books": books,
+            "results": results,
             "page": "downloaded" if downloaded else "wishlist",
             "counts": counts,
             "update_tablist": True,

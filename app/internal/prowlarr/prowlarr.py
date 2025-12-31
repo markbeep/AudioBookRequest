@@ -1,6 +1,7 @@
 import json
 import posixpath
 from datetime import datetime
+import time
 from typing import Any, Literal, Optional
 from urllib.parse import urlencode
 
@@ -233,12 +234,38 @@ async def query_prowlarr(
     url = posixpath.join(base_url, f"api/v1/search?{urlencode(params, doseq=True)}")
 
     logger.info("Querying prowlarr", url=url)
+    start_time = time.time()
 
-    async with client_session.get(
-        url,
-        headers={"X-Api-Key": api_key},
-    ) as response:
-        search_results = await response.json()
+    try:
+        async with client_session.get(
+            url,
+            headers={"X-Api-Key": api_key},
+        ) as response:
+            search_results = await response.json()
+            if not response.ok:
+                logger.error(
+                    "Prowlarr: Failed to query", response=await response.text()
+                )
+                return []
+    except TimeoutError as e:
+        elapsed_time = time.time() - start_time
+        logger.error(
+            "Prowlarr query timed out", error=str(e), elapsed_time=elapsed_time
+        )
+        return []
+    except Exception as e:
+        elapsed_time = time.time() - start_time
+        logger.error(
+            "Failed to query Prowlarr", error=str(e), elapsed_time=elapsed_time
+        )
+        return []
+
+    elapsed_time = time.time() - start_time
+    logger.info(
+        "Prowlarr query completed",
+        elapsed_time_seconds=elapsed_time,
+        results=search_results,
+    )
 
     sources: list[ProwlarrSource] = []
     for result in search_results:

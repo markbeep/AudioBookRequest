@@ -34,6 +34,7 @@ class QueryResult(pydantic.BaseModel):
     sources: Optional[list[ProwlarrSource]]
     book: Audiobook
     state: Literal["ok", "querying", "uncached"]
+    error_message: Optional[str] = None
 
     @property
     def ok(self) -> bool:

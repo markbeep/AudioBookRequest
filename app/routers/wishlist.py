@@ -1,3 +1,4 @@
+import aiohttp
 from app.util.toast import ToastException
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
 from app.internal.models import AudiobookWishlistResult
@@ -180,29 +181,21 @@ async def update_downloaded(
     background_task: BackgroundTasks,
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
-    books = session.exec(
-        select(AudiobookRequest, User)
-        .join(User, isouter=True)
-        .where(AudiobookRequest.asin == asin)
-    ).all()
-
-    requested_by = [User.model_validate(user) for [_, user] in books if user]
-
-    for [book, _] in books:
+    book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
+    if book:
         book.downloaded = True
         session.add(book)
-    session.commit()
+        session.commit()
 
-    if len(requested_by) > 0:
         background_task.add_task(
             send_all_notifications,
             event_type=EventEnum.on_successful_download,
-            requester=requested_by[0],  # TODO: support multiple requesters
+            requester=None,
             book_asin=asin,
         )
 
     username = None if admin_user.is_admin() else admin_user.username
-    books = get_wishlist_results(session, username, "not_downloaded")
+    results = get_wishlist_results(session, username, "not_downloaded")
     counts = get_wishlist_counts(session, admin_user)
 
     return template_response(
@@ -210,7 +203,7 @@ async def update_downloaded(
         request,
         admin_user,
         {
-            "books": books,
+            "results": results,
             "page": "wishlist",
             "counts": counts,
             "update_tablist": True,
@@ -321,7 +314,7 @@ async def refresh_source(
 ):
     # causes the sources to be placed into cache once they're done
     with open_session() as session:
-        async with ClientSession() as client_session:
+        async with ClientSession(timeout=aiohttp.ClientTimeout(30)) as client_session:
             background_task.add_task(
                 query_sources,
                 asin=asin,
@@ -396,13 +389,11 @@ async def download_book(
     if not resp.ok:
         raise HTTPException(status_code=500, detail="Failed to start download")
 
-    book = session.exec(
-        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
-    ).all()
-    for b in book:
-        b.downloaded = True
-        session.add(b)
-    session.commit()
+    book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
+    if book:
+        book.downloaded = True
+        session.add(book)
+        session.commit()
 
     return Response(status_code=204)
 
@@ -427,7 +418,7 @@ async def start_auto_download(
         raise ToastException(e.detail) from None
 
     username = None if user.is_admin() else user.username
-    books = get_wishlist_results(session, username)
+    results = get_wishlist_results(session, username, "not_downloaded")
     counts = get_wishlist_counts(session, user)
 
     return template_response(
@@ -435,7 +426,7 @@ async def start_auto_download(
         request,
         user,
         {
-            "books": books,
+            "results": results,
             "page": "wishlist",
             "counts": counts,
             "update_tablist": True,
