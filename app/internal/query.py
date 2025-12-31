@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from app.internal.models import BookRequest, ProwlarrSource, User
+from app.internal.models import AudiobookRequest, ProwlarrSource, User
 from app.internal.prowlarr.prowlarr import (
     prowlarr_config,
     query_prowlarr,
@@ -32,7 +32,7 @@ def manage_queried(asin: str):
 
 class QueryResult(pydantic.BaseModel):
     sources: Optional[list[ProwlarrSource]]
-    book: BookRequest
+    book: AudiobookRequest
     state: Literal["ok", "querying", "uncached"]
 
     @property
@@ -49,7 +49,9 @@ async def query_sources(
     start_auto_download: bool = False,
     only_return_if_cached: bool = False,
 ) -> QueryResult:
-    book = session.exec(select(BookRequest).where(BookRequest.asin == asin)).first()
+    book = session.exec(
+        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+    ).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
@@ -93,7 +95,7 @@ async def query_sources(
             )
             if resp.ok:
                 same_books = session.exec(
-                    select(BookRequest).where(BookRequest.asin == asin)
+                    select(AudiobookRequest).where(AudiobookRequest.asin == asin)
                 ).all()
                 for b in same_books:
                     b.downloaded = True

@@ -1,9 +1,11 @@
+from typing import final
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.util.time import Second
 
 
+@final
 class DynamicSessionMiddleware:
     """
     A wrapper around the Starlette SessionMiddleware with the ability to
@@ -16,7 +18,7 @@ class DynamicSessionMiddleware:
         app: ASGIApp,
         secret_key: str,
         linker: "DynamicMiddlewareLinker",
-        max_age: Second = Second(60 * 60 * 24 * 14),
+        max_age: Second | None = None,
     ):
         self.app = app
         self.secret_key = secret_key
@@ -25,7 +27,7 @@ class DynamicSessionMiddleware:
             app,
             secret_key,
             same_site="strict",
-            max_age=max_age,
+            max_age=max_age or Second(60 * 60 * 24 * 14),
         )
         linker.add_middleware(self)
 

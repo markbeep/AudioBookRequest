@@ -1,6 +1,9 @@
+from app.util.toast import ToastException
+from sqlalchemy.orm import InstrumentedAttribute, selectinload
+from app.internal.models import AudiobookWishlistResult
+from app.internal.models import Audiobook
 import uuid
-from collections import defaultdict
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal, Optional, cast
 
 from aiohttp import ClientSession
 from fastapi import (
@@ -19,8 +22,7 @@ from sqlmodel import Session, asc, col, not_, select
 
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.models import (
-    BookRequest,
-    BookWishlistResult,
+    AudiobookRequest,
     EventEnum,
     GroupEnum,
     ManualBookRequest,
@@ -53,28 +55,26 @@ class WishlistCounts(BaseModel):
 def get_wishlist_counts(
     session: Session, user: Optional[User] = None
 ) -> WishlistCounts:
-    """Optional user limits results to only the current user if they are not an admin."""
+    """
+    If a non-admin user is given, only count requests for that user.
+    Admins can see and get counts for all requests.
+    """
     username = None if user is None or user.is_admin() else user.username
 
-    downloaded = session.exec(
-        select(func.count(func.distinct(BookRequest.asin)))
-        .where(
-            BookRequest.downloaded,
-            not username or BookRequest.user_username == username,
-            col(BookRequest.user_username).is_not(None),
-        )
-        .select_from(BookRequest)
-    ).one()
-
-    requests = session.exec(
-        select(func.count(func.distinct(BookRequest.asin)))
-        .where(
-            not_(BookRequest.downloaded),
-            not username or BookRequest.user_username == username,
-            col(BookRequest.user_username).is_not(None),
-        )
-        .select_from(BookRequest)
-    ).one()
+    rows = session.exec(
+        select(Audiobook.downloaded, func.count("*"))
+        .where(not username or AudiobookRequest.user_username == username)
+        .select_from(Audiobook)
+        .join(AudiobookRequest)
+        .group_by(col(Audiobook.downloaded))
+    ).all()
+    requests = 0
+    downloaded = 0
+    for downloaded_status, count in rows:
+        if downloaded_status:
+            downloaded = count
+        else:
+            requests = count
 
     manual = session.exec(
         select(func.count())
@@ -92,63 +92,66 @@ def get_wishlist_counts(
     )
 
 
-def get_wishlist_books(
+def get_wishlist_results(
     session: Session,
     username: Optional[str] = None,
     response_type: Literal["all", "downloaded", "not_downloaded"] = "all",
-) -> list[BookWishlistResult]:
+) -> list[AudiobookWishlistResult]:
     """
     Gets the books that have been requested. If a username is given only the books requested by that
     user are returned. If no username is given, all book requests are returned.
     """
-    book_requests = session.exec(
-        select(BookRequest).where(
-            not username or BookRequest.user_username == username,
-            col(BookRequest.user_username).is_not(None),
+    match response_type:
+        case "downloaded":
+            clause = Audiobook.downloaded
+        case "not_downloaded":
+            clause = not_(Audiobook.downloaded)
+        case _:
+            clause = True
+
+    results = session.exec(
+        select(Audiobook)
+        .where(
+            clause,
+            col(Audiobook.asin).in_(
+                select(AudiobookRequest.asin).where(
+                    not username or AudiobookRequest.user_username == username
+                )
+            ),
+        )
+        .options(
+            selectinload(
+                cast(
+                    InstrumentedAttribute[list[AudiobookRequest]],
+                    cast(object, Audiobook.requests),
+                )
+            )
         )
     ).all()
 
-    # group by asin and aggregate all usernames
-    usernames: dict[str, list[str]] = defaultdict(list)
-    distinct_books: dict[str, BookRequest] = {}
-    for book in book_requests:
-        if book.asin not in distinct_books:
-            distinct_books[book.asin] = book
-        if book.user_username:
-            usernames[book.asin].append(book.user_username)
-
-    # add information of what users requested the book
-    books: list[BookWishlistResult] = []
-    downloaded: list[BookWishlistResult] = []
-    for asin, book in distinct_books.items():
-        b = BookWishlistResult.model_validate(book)
-        b.requested_by = usernames[asin]
-        if b.downloaded:
-            downloaded.append(b)
-        else:
-            books.append(b)
-
-    if response_type == "downloaded":
-        return downloaded
-    if response_type == "not_downloaded":
-        return books
-    return books + downloaded
+    return [
+        AudiobookWishlistResult(
+            book=book,
+            requests=book.requests,
+        )
+        for book in results
+    ]
 
 
 @router.get("")
 async def wishlist(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    user: DetailedUser = Security(ABRAuth()),
+    user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     username = None if user.is_admin() else user.username
-    books = get_wishlist_books(session, username, "not_downloaded")
+    results = get_wishlist_results(session, username, "not_downloaded")
     counts = get_wishlist_counts(session, user)
     return template_response(
         "wishlist_page/wishlist.html",
         request,
         user,
-        {"books": books, "page": "wishlist", "counts": counts},
+        {"results": results, "page": "wishlist", "counts": counts},
     )
 
 
@@ -156,16 +159,16 @@ async def wishlist(
 async def downloaded(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    user: DetailedUser = Security(ABRAuth()),
+    user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     username = None if user.is_admin() else user.username
-    books = get_wishlist_books(session, username, "downloaded")
+    results = get_wishlist_results(session, username, "downloaded")
     counts = get_wishlist_counts(session, user)
     return template_response(
         "wishlist_page/wishlist.html",
         request,
         user,
-        {"books": books, "page": "downloaded", "counts": counts},
+        {"results": results, "page": "downloaded", "counts": counts},
     )
 
 
@@ -175,12 +178,12 @@ async def update_downloaded(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     books = session.exec(
-        select(BookRequest, User)
+        select(AudiobookRequest, User)
         .join(User, isouter=True)
-        .where(BookRequest.asin == asin)
+        .where(AudiobookRequest.asin == asin)
     ).all()
 
     requested_by = [User.model_validate(user) for [_, user] in books if user]
@@ -199,7 +202,7 @@ async def update_downloaded(
         )
 
     username = None if admin_user.is_admin() else admin_user.username
-    books = get_wishlist_books(session, username, "not_downloaded")
+    books = get_wishlist_results(session, username, "not_downloaded")
     counts = get_wishlist_counts(session, admin_user)
 
     return template_response(
@@ -231,7 +234,7 @@ def _get_all_manual_requests(session: Session, user: User):
 async def manual(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    user: DetailedUser = Security(ABRAuth()),
+    user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     books = _get_all_manual_requests(session, user)
     counts = get_wishlist_counts(session, user)
@@ -285,7 +288,7 @@ async def delete_manual(
     request: Request,
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     book = session.get(ManualBookRequest, id)
     if book:
@@ -336,8 +339,8 @@ async def list_sources(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     only_body: bool = False,
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
 ):
     try:
         prowlarr_config.raise_if_invalid(session)
@@ -377,7 +380,7 @@ async def download_book(
     indexer_id: Annotated[int, Form()],
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     try:
         resp = await start_download(
@@ -393,7 +396,9 @@ async def download_book(
     if not resp.ok:
         raise HTTPException(status_code=500, detail="Failed to start download")
 
-    book = session.exec(select(BookRequest).where(BookRequest.asin == asin)).all()
+    book = session.exec(
+        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+    ).all()
     for b in book:
         b.downloaded = True
         session.add(b)
@@ -408,9 +413,8 @@ async def start_auto_download(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    user: DetailedUser = Security(ABRAuth(GroupEnum.trusted)),
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.trusted))],
 ):
-    download_error: Optional[str] = None
     try:
         await query_sources(
             asin=asin,
@@ -420,14 +424,10 @@ async def start_auto_download(
             requester=user,
         )
     except HTTPException as e:
-        download_error = e.detail
+        raise ToastException(e.detail) from None
 
     username = None if user.is_admin() else user.username
-    books = get_wishlist_books(session, username)
-    if download_error:
-        errored_book = [b for b in books if b.asin == asin][0]
-        errored_book.download_error = download_error
-
+    books = get_wishlist_results(session, username)
     counts = get_wishlist_counts(session, user)
 
     return template_response(

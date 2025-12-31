@@ -49,7 +49,7 @@ jobs:
       - run: uv sync --all-extras
 
       - name: Run Type Checks
-        run: uv run pyrefly check
+        run: uv run basedpyright
 
       - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
 

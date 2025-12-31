@@ -1,11 +1,13 @@
-from pydantic import ConfigDict, BaseModel
+from sqlmodel._compat import SQLModelConfig
 import json
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Literal, Optional, Union, cast
 
-from sqlmodel import JSON, Column, DateTime, Field, SQLModel, UniqueConstraint, func
+from pydantic import BaseModel, ConfigDict
+from sqlmodel import JSON, Column, DateTime, Field, SQLModel, func
+from sqlmodel.main import Relationship
 
 
 class BaseSQLModel(SQLModel):
@@ -59,8 +61,10 @@ class User(BaseSQLModel, table=True):
         return self.username == username
 
 
-class BaseBook(BaseSQLModel):
-    asin: str
+class Audiobook(BaseSQLModel, table=True):
+    """A cached Audible audiobook result. Used for both the search results and also linked to via a foreign key for requests."""
+
+    asin: str = Field(primary_key=True)
     title: str
     subtitle: Optional[str]
     authors: list[str] = Field(default_factory=list, sa_column=Column(JSON))
@@ -68,36 +72,38 @@ class BaseBook(BaseSQLModel):
     cover_image: Optional[str]
     release_date: datetime
     runtime_length_min: int
+    updated_at: datetime = Field(
+        default_factory=datetime.now,
+        sa_column=Column(
+            onupdate=func.now(),
+            server_default=func.now(),
+            type_=DateTime,
+            nullable=False,
+        ),
+    )
     downloaded: bool = False
+
+    requests: list["AudiobookRequest"] = Relationship(back_populates="audiobook")
+
+    model_config: SQLModelConfig = cast(
+        SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))
+    )
 
     @property
     def runtime_length_hrs(self):
         return round(self.runtime_length_min / 60, 1)
 
 
-class BookSearchResult(BaseBook):
-    already_requested: bool = False
-
-
-class BookWishlistResult(BaseBook):
-    requested_by: list[str] = []
-    download_error: Optional[str] = None
-
-    @property
-    def amount_requested(self):
-        return len(self.requested_by)
-
-
-class BookRequest(BaseBook, table=True):
-    """
-    A book request is not directly a book that has been requested. At first, it is simply a cache so that we don't
-    have to query the book from the metadata servers every time.
-    TODO: Separate this into its own table
-    """
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_username: Optional[str] = Field(
-        default=None, foreign_key="user.username", ondelete="CASCADE"
+class AudiobookRequest(BaseSQLModel, table=True):
+    asin: str = Field(
+        primary_key=True,
+        foreign_key="audiobook.asin",
+        ondelete="CASCADE",
+    )
+    user_username: str = Field(
+        primary_key=True,
+        foreign_key="user.username",
+        ondelete="CASCADE",
     )
     updated_at: datetime = Field(
         default_factory=datetime.now,
@@ -109,11 +115,37 @@ class BookRequest(BaseBook, table=True):
         ),
     )
 
-    __table_args__ = (
-        UniqueConstraint("asin", "user_username", name="unique_asin_user"),
+    audiobook: Audiobook = Relationship(back_populates="requests")
+
+    model_config: SQLModelConfig = cast(
+        SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))
     )
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+class AudiobookSearchResult(BaseModel):
+    book: Audiobook
+    requests: list[AudiobookRequest]
+    username: str
+
+    @property
+    def already_requested(self):
+        if self.username:
+            return any(req.user_username == self.username for req in self.requests)
+        return len(self.requests) > 0
+
+
+class AudiobookWishlistResult(BaseModel):
+    book: Audiobook
+    requests: list[AudiobookRequest]
+    download_error: str | None = None
+
+    @property
+    def amount_requested(self):
+        return len(self.requests)
+
+    @property
+    def requested_by_usernames(self):
+        return "\n".join(req.user_username for req in self.requests)
 
 
 class ManualBookRequest(BaseSQLModel, table=True):
@@ -136,7 +168,9 @@ class ManualBookRequest(BaseSQLModel, table=True):
     )
     downloaded: bool = False
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config: SQLModelConfig = cast(
+        SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))
+    )
 
 
 class BookMetadata(BaseSQLModel):

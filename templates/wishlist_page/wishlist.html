@@ -6,7 +6,7 @@
   <div class="overflow-x-auto h-[75vh] border-b pb-2 border-b-base-200">
     {% block book_wishlist %}
       {% if update_tablist %}{% include "wishlist_page/tablist.html" %}{% endif %}
-      <table id="book-table-body" class="table table-pin-rows min-w-[60rem]">
+      <table id="book-table-body" class="table table-pin-rows min-w-240">
         <thead>
           <tr>
             <th></th>
@@ -20,7 +20,7 @@
             <th></th>
           </tr>
         </thead>
-        {% if not books %}
+        {% if not results %}
           <div role="alert" class="alert my-2">
             <span class="stroke-info h-6 w-6 shrink-0">{% include "icons/info-circle.html" %}</span>
             <span>
@@ -34,11 +34,12 @@
             </div>
           {% endif %}
           <tbody>
-            {% for book in books %}
+            {% for result in results %}
+              {% set book = result.book %}
               <tr class="text-xs lg:text-sm" id="{{ book.asin }}">
                 <th>{{ loop.index }}</th>
                 <td>
-                  <div class="size-[4rem] lg:size-[6rem]">
+                  <div class="size-16 lg:size-24">
                     {% if book.cover_image %}
                       <img class="object-cover w-full h-full"
                            height="64"
@@ -68,25 +69,19 @@
                 <td class="hidden lg:table-cell">{{ book.release_date.strftime("%B %Y") }}</td>
                 <td class="lg:hidden">{{ book.release_date.strftime("%Y") }}</td>
                 <td>{{ book.runtime_length_hrs }}</td>
-                <td title="{{ book.requested_by|join('\n') }}">{{ book.amount_requested }}</td>
-                <td class="grid grid-cols-2 min-w-[8rem] gap-1">
+                <td title="{{ result.requested_by }}">{{ result.amount_requested }}</td>
+                <td class="grid grid-cols-2 min-w-32 gap-1">
                   <a preload
                      title="Torrent Sources"
                      href="{{ base_url }}/wishlist/sources/{{ book.asin }}"
                      {% if not user.is_admin() %}disabled{% endif %}
                      class="btn btn-square">{% include "icons/list.html" %}</a>
-                  {% if book.download_error %}
-                    <button title="Automatic Download"
-                            class="btn btn-square btn-ghost bg-error/70 text-base-100"
-                            disabled>{% include "icons/xmark.html" %}</button>
-                  {% else %}
                     <button {% if book.downloaded %}title="Downloaded"class="btn btn-square btn-ghost bg-success text-neutral/20" {% else %} title="Automatic Download" class="btn btn-square" {% endif %}
                             {% if not user.can_download() or book.downloaded %}disabled{% endif %}
                             hx-post="{{ base_url }}/wishlist/auto-download/{{ book.asin }}"
                             hx-swap="outerHTML"
                             hx-target="#book-table-body"
                             hx-disabled-elt="this">{% include "icons/download.html" %}</button>
-                  {% endif %}
                   <button title="Remove"
                           class="btn btn-square"
                           {% if not user.is_admin() %}disabled{% endif %}

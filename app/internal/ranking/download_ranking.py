@@ -1,13 +1,13 @@
 import asyncio
 from functools import cmp_to_key
-from typing import Callable
+from typing import Callable, final
 
 import pydantic
 from aiohttp import ClientSession
 from rapidfuzz import fuzz, utils
 from sqlmodel import Session
 
-from app.internal.models import BookRequest, ProwlarrSource
+from app.internal.models import AudiobookRequest, ProwlarrSource
 from app.internal.ranking.quality import quality_config
 from app.internal.ranking.quality_extract import Quality, extract_qualities
 
@@ -21,7 +21,7 @@ async def rank_sources(
     session: Session,
     client_session: ClientSession,
     sources: list[ProwlarrSource],
-    book: BookRequest,
+    book: AudiobookRequest,
 ) -> list[ProwlarrSource]:
     async def get_qualities(source: ProwlarrSource):
         qualities = await extract_qualities(session, client_session, source, book)
@@ -36,8 +36,9 @@ async def rank_sources(
     return [rs.source for rs in rank_sources]
 
 
+@final
 class CompareSource:
-    def __init__(self, session: Session, book: BookRequest):
+    def __init__(self, session: Session, book: AudiobookRequest):
         self.session = session
         self.book = book
         self.compare_order = [

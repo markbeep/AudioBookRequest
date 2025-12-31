@@ -4,7 +4,7 @@
 		"context": "..",
 		"dockerfile": "./Dockerfile"
 	},
-	"forwardPorts": [8000],
+	"runArgs": ["--network=host"],
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -14,7 +14,7 @@
 				"bradlc.vscode-tailwindcss",
 				"samuelcolvin.jinjahtml",
 				"yzhang.markdown-all-in-one",
-				"meta.pyrefly"
+				"detachhead.basedpyright"
 			]
 		}
 	}

@@ -12,7 +12,7 @@ from app.internal.indexers.configuration import (
     ValuedConfigurations,
 )
 from app.internal.models import (
-    BookRequest,
+    AudiobookRequest,
     ProwlarrSource,
 )
 from app.util.log import logger
@@ -42,7 +42,7 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
 
     async def setup(
         self,
-        request: BookRequest,
+        request: AudiobookRequest,
         container: SessionContainer,
         configurations: ValuedMamConfigurations,
     ):

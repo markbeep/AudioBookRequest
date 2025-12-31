@@ -11,7 +11,7 @@ from torf import BdecodeError, MetainfoError, ReadError, Torrent
 
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.models import (
-    BookRequest,
+    AudiobookRequest,
     EventEnum,
     Indexer,
     ProwlarrSource,
@@ -196,7 +196,7 @@ async def start_download(
 async def query_prowlarr(
     session: Session,
     client_session: ClientSession,
-    book_request: BookRequest,
+    book_request: AudiobookRequest,
     indexer_ids: Optional[list[int]] = None,
     force_refresh: bool = False,
     only_return_if_cached: bool = False,

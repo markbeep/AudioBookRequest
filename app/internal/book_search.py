@@ -1,17 +1,16 @@
-from typing import cast
 import asyncio
 import time
 from datetime import datetime
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, cast
 from urllib.parse import urlencode
 
 import pydantic
 from aiohttp import ClientSession
 from sqlalchemy import CursorResult, delete
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, not_, select
 
 from app.internal.env_settings import Settings
-from app.internal.models import BookRequest
+from app.internal.models import Audiobook, AudiobookRequest
 from app.util.log import logger
 
 REFETCH_TTL = 60 * 60 * 24 * 7  # 1 week
@@ -45,12 +44,13 @@ audible_regions: dict[audible_region_type, str] = {
 
 
 def clear_old_book_caches(session: Session):
-    """Deletes outdated BookRequest entries that are used as a search result cache."""
-    delete_query = delete(BookRequest).where(
-        col(BookRequest.updated_at) < datetime.fromtimestamp(time.time() - REFETCH_TTL),
-        col(BookRequest.user_username).is_(None),
+    """Deletes outdated cached audiobooks that haven't been requested by anyone"""
+    delete_query = delete(Audiobook).where(
+        col(Audiobook.updated_at) < datetime.fromtimestamp(time.time() - REFETCH_TTL),
+        col(Audiobook.asin).not_in(select(col(AudiobookRequest.asin).distinct())),
+        not_(Audiobook.downloaded),
     )
-    result = cast(CursorResult, session.execute(delete_query))
+    result = cast(CursorResult[Audiobook], session.execute(delete_query))
     session.commit()
     logger.debug("Cleared old book caches", rowcount=result.rowcount)
 
@@ -59,14 +59,14 @@ def get_region_from_settings() -> audible_region_type:
     region = Settings().app.default_region
     if region not in audible_regions:
         return "us"
-    return cast(audible_region_type, region)
+    return region
 
 
 async def _get_audnexus_book(
     session: ClientSession,
     asin: str,
     region: audible_region_type,
-) -> Optional[BookRequest]:
+) -> Optional[Audiobook]:
     """
     https://audnex.us/#tag/Books/operation/getBookById
     """
@@ -88,7 +88,7 @@ async def _get_audnexus_book(
     except Exception as e:
         logger.error("Exception while fetching book from Audnexus", asin=asin, error=e)
         return None
-    return BookRequest(
+    return Audiobook(
         asin=book["asin"],
         title=book["title"],
         subtitle=book.get("subtitle"),
@@ -104,7 +104,7 @@ async def _get_audimeta_book(
     session: ClientSession,
     asin: str,
     region: audible_region_type,
-) -> Optional[BookRequest]:
+) -> Optional[Audiobook]:
     """
     https://audimeta.de/api-docs/#/book/get_book__asin_
     """
@@ -126,7 +126,7 @@ async def _get_audimeta_book(
     except Exception as e:
         logger.error("Exception while fetching book from Audimeta", asin=asin, error=e)
         return None
-    return BookRequest(
+    return Audiobook(
         asin=book["asin"],
         title=book["title"],
         subtitle=book.get("subtitle"),
@@ -142,7 +142,7 @@ async def get_book_by_asin(
     session: ClientSession,
     asin: str,
     audible_region: audible_region_type = get_region_from_settings(),
-) -> Optional[BookRequest]:
+) -> Optional[Audiobook]:
     book = await _get_audimeta_book(session, asin, audible_region)
     if book:
         return book
@@ -174,7 +174,7 @@ class CacheResult[T](pydantic.BaseModel, frozen=True):
 
 
 # simple caching of search results to avoid having to fetch from audible so frequently
-search_cache: dict[CacheQuery, CacheResult[list[BookRequest]]] = {}
+search_cache: dict[CacheQuery, CacheResult[list[Audiobook]]] = {}
 search_suggestions_cache: dict[str, CacheResult[list[str]]] = {}
 
 
@@ -225,7 +225,7 @@ async def list_audible_books(
     num_results: int = 20,
     page: int = 0,
     audible_region: audible_region_type = get_region_from_settings(),
-) -> list[BookRequest]:
+) -> list[Audiobook]:
     """
     https://audible.readthedocs.io/en/latest/misc/external_api.html#get--1.0-catalog-products
 
@@ -279,7 +279,7 @@ async def list_audible_books(
     for b in new_books:
         books[b.asin] = b
 
-    ordered: list[BookRequest] = []
+    ordered: list[Audiobook] = []
     for asin_obj in books_json["products"]:
         book = books.get(asin_obj["asin"])
         if book:
@@ -301,16 +301,12 @@ async def list_audible_books(
     return ordered
 
 
-def get_existing_books(session: Session, asins: set[str]) -> dict[str, BookRequest]:
+def get_existing_books(session: Session, asins: set[str]) -> dict[str, Audiobook]:
     books = list(
-        session.exec(
-            select(BookRequest).where(
-                col(BookRequest.asin).in_(asins),
-            )
-        ).all()
+        session.exec(select(Audiobook).where(col(Audiobook.asin).in_(asins))).all()
     )
 
-    ok_books: list[BookRequest] = []
+    ok_books: list[Audiobook] = []
     for b in books:
         if b.updated_at.timestamp() + REFETCH_TTL < time.time():
             continue
@@ -319,20 +315,16 @@ def get_existing_books(session: Session, asins: set[str]) -> dict[str, BookReque
     return {b.asin: b for b in ok_books}
 
 
-def store_new_books(session: Session, books: list[BookRequest]):
-    assert all(b.user_username is None for b in books)
+def store_new_books(session: Session, books: list[Audiobook]):
     asins = {b.asin: b for b in books}
 
     existing = list(
         session.exec(
-            select(BookRequest).where(
-                col(BookRequest.asin).in_(asins.keys()),
-                col(BookRequest.user_username).is_(None),
-            )
+            select(Audiobook).where(col(Audiobook.asin).in_(asins.keys()))
         ).all()
     )
 
-    to_update: list[BookRequest] = []
+    to_update: list[Audiobook] = []
     for b in existing:
         new_book = asins[b.asin]
         b.title = new_book.title

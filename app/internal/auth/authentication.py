@@ -2,7 +2,7 @@ import secrets
 import time
 from datetime import datetime
 from math import inf
-from typing import Annotated, Optional
+from typing import Annotated, Optional, final
 
 import pydantic
 from argon2 import PasswordHasher
@@ -191,6 +191,7 @@ class RequiresLoginException(Exception):
         self.detail = detail
 
 
+@final
 class ABRAuth(SecurityBase):
     def __init__(self, lowest_allowed_group: GroupEnum = GroupEnum.untrusted):
         self.lowest_allowed_group = lowest_allowed_group

@@ -2,12 +2,12 @@ import asyncio
 
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.indexers.indexer_util import get_indexer_contexts
-from app.internal.models import BookRequest, ProwlarrSource
+from app.internal.models import AudiobookRequest, ProwlarrSource
 from app.util.log import logger
 
 
 async def edit_source_metadata(
-    book_request: BookRequest,
+    book_request: AudiobookRequest,
     sources: list[ProwlarrSource],
     container: SessionContainer,
 ):
