@@ -235,12 +235,14 @@ async def query_prowlarr(
 
     logger.info("Querying prowlarr", url=url)
     start_time = time.time()
+    prowlarr_text = None
 
     try:
         async with client_session.get(
             url,
-            headers={"X-Api-Key": api_key},
+            headers={"X-Api-Key": api_key, "Accept": "application/json"},
         ) as response:
+            prowlarr_text = await response.text()
             search_results = await response.json()
             if not response.ok:
                 logger.error(
@@ -256,7 +258,10 @@ async def query_prowlarr(
     except Exception as e:
         elapsed_time = time.time() - start_time
         logger.error(
-            "Failed to query Prowlarr", error=str(e), elapsed_time=elapsed_time
+            "Failed to query Prowlarr",
+            error=str(e),
+            prowlarr_response=prowlarr_text,
+            elapsed_time=elapsed_time,
         )
         return []
 

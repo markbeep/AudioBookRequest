@@ -45,6 +45,7 @@ profile = "jinja"
 ignore = "H021"
 
 [tool.basedpyright]
+typeCheckingMode = "standard"
 include = ["app"]
 strictGenericNarrowing = true
 reportDeprecated = false
