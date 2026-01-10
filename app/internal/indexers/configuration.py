@@ -1,6 +1,8 @@
+# pyright: reportAny=false
+
 from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlmodel import Session
 
 from app.util.cache import StringConfigCache
@@ -12,19 +14,19 @@ class IndexerConfiguration[T: (str, int, bool, float, None)](BaseModel):
     description: Optional[str] = None
     default: Optional[T] = None
     required: bool = False
-    type: type[T]
+    type_: type[T] = Field(exclude=True)
 
     def is_str(self) -> bool:
-        return self.type is str
+        return self.type_ is str
 
     def is_float(self) -> bool:
-        return self.type is float
+        return self.type_ is float
 
     def is_int(self) -> bool:
-        return self.type is int
+        return self.type_ is int
 
     def is_bool(self) -> bool:
-        return self.type is bool
+        return self.type_ is bool
 
 
 class Configurations(BaseModel):
@@ -82,7 +84,7 @@ def create_valued_configuration(
         if not isinstance(_value, IndexerConfiguration):
             logger.debug("Skipping key", key=key)
             continue
-        value: IndexerConfiguration[Any] = _value
+        value: IndexerConfiguration[Any] = _value  # pyright: ignore[reportExplicitAny, reportUnknownVariableType]
 
         config_value = indexer_configuration_cache.get(session, key)
         if config_value is None:
@@ -93,19 +95,19 @@ def create_valued_configuration(
 
         if config_value is None:
             setattr(valued, key, None)
-        elif value.type is str:
+        elif value.type_ is str:
             setattr(valued, key, config_value)
-        elif value.type is int:
+        elif value.type_ is int:
             try:
                 setattr(valued, key, int(config_value))
             except ValueError:
                 raise InvalidTypeException(f"Configuration {key} must be an integer")
-        elif value.type is float:
+        elif value.type_ is float:
             try:
                 setattr(valued, key, float(config_value))
             except ValueError:
                 raise InvalidTypeException(f"Configuration {key} must be a float")
-        elif value.type is bool:
+        elif value.type_ is bool:
             setattr(valued, key, config_value == "1")
 
     return valued

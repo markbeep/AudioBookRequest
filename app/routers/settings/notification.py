@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Optional, cast
 
 from aiohttp import ClientResponseError
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, Security
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/notifications")
 def read_notifications(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     notifications = session.exec(select(Notification)).all()
     event_types = [e.value for e in EventEnum]
@@ -75,9 +75,10 @@ def _upsert_notification(
     notification_id: Optional[uuid.UUID] = None,
 ):
     try:
-        headers_json = json.loads(headers or "{}")
+        headers_json = json.loads(headers or "{}")  # pyright: ignore[reportAny]
         if not isinstance(headers_json, dict) or any(
-            not isinstance(v, str) for v in cast(dict[str, Any], headers_json).values()
+            not isinstance(v, str)
+            for v in cast(dict[str, object], headers_json).values()
         ):
             raise ToastException(
                 "Invalid headers JSON. Not of type object/dict", "error"
@@ -88,7 +89,7 @@ def _upsert_notification(
 
     try:
         if body_type == NotificationBodyTypeEnum.json:
-            json_body = json.loads(body, strict=False)
+            json_body = json.loads(body, strict=False)  # pyright: ignore[reportAny]
             if not isinstance(json_body, dict):
                 raise ToastException("Invalid body. Not a JSON object", "error")
             body = json.dumps(json_body, indent=2)
@@ -141,8 +142,8 @@ def add_notification(
     body_type: Annotated[NotificationBodyTypeEnum, Form()],
     headers: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     body: Annotated[str, Form()] = "{}",
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
 ):
     return _upsert_notification(
         request=request,
@@ -167,8 +168,8 @@ def update_notification(
     body_type: Annotated[NotificationBodyTypeEnum, Form()],
     headers: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     body: Annotated[str, Form()] = "{}",
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
 ):
     return _upsert_notification(
         notification_id=notification_id,
@@ -189,7 +190,7 @@ def toggle_notification(
     request: Request,
     notification_id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     notification = session.get_one(Notification, notification_id)
     if not notification:
@@ -206,7 +207,7 @@ def delete_notification(
     request: Request,
     notification_id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     notification = session.get_one(Notification, notification_id)
     if not notification:
@@ -221,8 +222,9 @@ def delete_notification(
 async def test_notification(
     notification_id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
+    _ = admin_user
     notification = session.get(Notification, notification_id)
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")

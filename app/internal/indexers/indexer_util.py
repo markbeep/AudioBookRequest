@@ -1,10 +1,13 @@
-from typing import Any, cast
+# pyright: reportExplicitAny=false
+
+from typing import Any
 
 from pydantic import BaseModel
 
 from app.internal.indexers.abstract import AbstractIndexer, SessionContainer
 from app.internal.indexers.configuration import (
     ConfigurationException,
+    Configurations,
     IndexerConfiguration,
     ValuedConfigurations,
     create_valued_configuration,
@@ -14,7 +17,7 @@ from app.util.log import logger
 
 
 class IndexerContext(BaseModel, arbitrary_types_allowed=True):
-    indexer: AbstractIndexer[Any]
+    indexer: AbstractIndexer[Configurations]
     configuration: dict[str, IndexerConfiguration[Any]]
     valued: ValuedConfigurations
     enabled: bool
@@ -33,7 +36,7 @@ async def get_indexer_contexts(
         try:
             configuration = await Indexer.get_configurations(container)
             filtered_configuration: dict[str, IndexerConfiguration[Any]] = dict()
-            for k, v in cast(dict[str, Any], vars(configuration)).items():
+            for k, v in vars(configuration).items():  # pyright: ignore[reportAny]
                 if isinstance(v, IndexerConfiguration):
                     filtered_configuration[k] = v
 

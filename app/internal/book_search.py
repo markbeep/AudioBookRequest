@@ -1,11 +1,11 @@
 import asyncio
 import time
 from datetime import datetime
-from typing import Any, Literal, Optional, cast
+from typing import Literal, Optional, TypedDict, cast
 from urllib.parse import urlencode
 
-import pydantic
 from aiohttp import ClientSession
+from pydantic import BaseModel
 from sqlalchemy import CursorResult, delete
 from sqlalchemy.exc import InvalidRequestError
 from sqlmodel import Session, col, not_, select
@@ -63,6 +63,20 @@ def get_region_from_settings() -> audible_region_type:
     return region
 
 
+class _AudnexusResponse(BaseModel):
+    class _Author(TypedDict):
+        name: str
+
+    asin: str
+    title: str
+    subtitle: Optional[str]
+    authors: list[_Author]
+    narrators: list[_Author]
+    image: Optional[str]
+    releaseDate: str
+    runtimeLengthMin: int
+
+
 async def _get_audnexus_book(
     session: ClientSession,
     asin: str,
@@ -85,20 +99,34 @@ async def _get_audnexus_book(
                     reason=response.reason,
                 )
                 return None
-            book = await response.json()
+            audnexus_response = _AudnexusResponse.model_validate(await response.json())
     except Exception as e:
         logger.error("Exception while fetching book from Audnexus", asin=asin, error=e)
         return None
     return Audiobook(
-        asin=book["asin"],
-        title=book["title"],
-        subtitle=book.get("subtitle"),
-        authors=[author["name"] for author in book["authors"]],
-        narrators=[narrator["name"] for narrator in book["narrators"]],
-        cover_image=book.get("image"),
-        release_date=datetime.fromisoformat(book["releaseDate"]),
-        runtime_length_min=book["runtimeLengthMin"],
+        asin=audnexus_response.asin,
+        title=audnexus_response.title,
+        subtitle=audnexus_response.subtitle,
+        authors=[author["name"] for author in audnexus_response.authors],
+        narrators=[narrator["name"] for narrator in audnexus_response.narrators],
+        cover_image=audnexus_response.image,
+        release_date=datetime.fromisoformat(audnexus_response.releaseDate),
+        runtime_length_min=audnexus_response.runtimeLengthMin,
     )
+
+
+class _AudimetaResponse(BaseModel):
+    class _Author(TypedDict):
+        name: str
+
+    asin: str
+    title: str
+    subtitle: Optional[str]
+    authors: list[_Author]
+    narrators: list[_Author]
+    imageUrl: Optional[str]
+    releaseDate: str
+    lengthMinutes: Optional[int]
 
 
 async def _get_audimeta_book(
@@ -123,27 +151,29 @@ async def _get_audimeta_book(
                     reason=response.reason,
                 )
                 return None
-            book = await response.json()
+            audimeta_response = _AudimetaResponse.model_validate(await response.json())
     except Exception as e:
         logger.error("Exception while fetching book from Audimeta", asin=asin, error=e)
         return None
     return Audiobook(
-        asin=book["asin"],
-        title=book["title"],
-        subtitle=book.get("subtitle"),
-        authors=[author["name"] for author in book["authors"]],
-        narrators=[narrator["name"] for narrator in book["narrators"]],
-        cover_image=book.get("imageUrl"),
-        release_date=datetime.fromisoformat(book["releaseDate"]),
-        runtime_length_min=book["lengthMinutes"] or 0,
+        asin=audimeta_response.asin,
+        title=audimeta_response.title,
+        subtitle=audimeta_response.subtitle,
+        authors=[author["name"] for author in audimeta_response.authors],
+        narrators=[narrator["name"] for narrator in audimeta_response.narrators],
+        cover_image=audimeta_response.imageUrl,
+        release_date=datetime.fromisoformat(audimeta_response.releaseDate),
+        runtime_length_min=audimeta_response.lengthMinutes or 0,
     )
 
 
 async def get_book_by_asin(
     session: ClientSession,
     asin: str,
-    audible_region: audible_region_type = get_region_from_settings(),
+    audible_region: audible_region_type | None = None,
 ) -> Optional[Audiobook]:
+    if audible_region is None:
+        audible_region = get_region_from_settings()
     book = await _get_audimeta_book(session, asin, audible_region)
     if book:
         return book
@@ -162,14 +192,14 @@ async def get_book_by_asin(
     )
 
 
-class CacheQuery(pydantic.BaseModel, frozen=True):
+class CacheQuery(BaseModel, frozen=True):
     query: str
     num_results: int
     page: int
     audible_region: audible_region_type
 
 
-class CacheResult[T](pydantic.BaseModel, frozen=True):
+class CacheResult[T](BaseModel, frozen=True):
     value: T
     timestamp: float
 
@@ -179,11 +209,47 @@ search_cache: dict[CacheQuery, CacheResult[list[Audiobook]]] = {}
 search_suggestions_cache: dict[str, CacheResult[list[str]]] = {}
 
 
+class _AudibleSuggestionsResponse(BaseModel):
+    class _Items(BaseModel):
+        class _Item(BaseModel):
+            class _Model(BaseModel):
+                class _Metadata(BaseModel):
+                    class _Title(BaseModel):
+                        value: str
+
+                    title: _Title
+
+                class _TitleGroup(BaseModel):
+                    class _Title(BaseModel):
+                        value: str
+
+                    title: _Title
+
+                product_metadata: _Metadata | None = None
+                title_group: _TitleGroup | None = None
+
+                @property
+                def title(self) -> str | None:
+                    if self.product_metadata and self.product_metadata.title:
+                        return self.product_metadata.title.value
+                    if self.title_group and self.title_group.title:
+                        return self.title_group.title.value
+                    return None
+
+            model: _Model
+
+        items: list[_Item]
+
+    model: _Items
+
+
 async def get_search_suggestions(
     client_session: ClientSession,
     query: str,
-    audible_region: audible_region_type = get_region_from_settings(),
+    audible_region: audible_region_type | None = None,
 ) -> list[str]:
+    if audible_region is None:
+        audible_region = get_region_from_settings()
     cache_result = search_suggestions_cache.get(query)
     if cache_result and time.time() - cache_result.timestamp < REFETCH_TTL:
         return cache_result.value
@@ -197,20 +263,22 @@ async def get_search_suggestions(
     )
     url = base_url + urlencode(params)
 
-    async with client_session.get(url) as response:
-        response.raise_for_status()
-        results = await response.json()
+    try:
+        async with client_session.get(url) as response:
+            response.raise_for_status()
+            suggestions = _AudibleSuggestionsResponse.model_validate(
+                await response.json()
+            )
+    except Exception as e:
+        logger.error(
+            "Exception while fetching search suggestions from Audible",
+            query=query,
+            region=audible_region,
+            error=e,
+        )
+        return []
 
-    items: list[Any] = results.get("model", {}).get("items", [])
-    titles: list[str] = [
-        item["model"]["product_metadata"]["title"]["value"]
-        for item in items
-        if item.get("model", {})
-        .get("product_metadata", {})
-        .get("title", {})
-        .get("value")
-    ]
-
+    titles = [item.model.title for item in suggestions.model.items if item.model.title]
     search_suggestions_cache[query] = CacheResult(
         value=titles,
         timestamp=time.time(),
@@ -219,13 +287,20 @@ async def get_search_suggestions(
     return titles
 
 
+class _AudibleSearchResponse(BaseModel):
+    class _AsinObj(BaseModel):
+        asin: str
+
+    products: list[_AsinObj]
+
+
 async def list_audible_books(
     session: Session,
     client_session: ClientSession,
     query: str,
     num_results: int = 20,
     page: int = 0,
-    audible_region: audible_region_type = get_region_from_settings(),
+    audible_region: audible_region_type | None = None,
 ) -> list[Audiobook]:
     """
     https://audible.readthedocs.io/en/latest/misc/external_api.html#get--1.0-catalog-products
@@ -234,6 +309,8 @@ async def list_audible_books(
     if we have any of the books already to save on the amount of requests we have to do.
     Any books we don't already have locally, we fetch all the details from audnexus.
     """
+    if audible_region is None:
+        audible_region = get_region_from_settings()
     cache_key = CacheQuery(
         query=query,
         num_results=num_results,
@@ -270,12 +347,23 @@ async def list_audible_books(
     )
     url = base_url + urlencode(params)
 
-    async with client_session.get(url) as response:
-        response.raise_for_status()
-        books_json = await response.json()
+    try:
+        async with client_session.get(url) as response:
+            response.raise_for_status()
+            audible_response = _AudibleSearchResponse.model_validate(
+                await response.json()
+            )
+    except Exception as e:
+        logger.error(
+            "Exception while fetching search results from Audible",
+            query=query,
+            region=audible_region,
+            error=e,
+        )
+        return []
 
     # do not fetch book results we already have locally
-    asins = set(asin_obj["asin"] for asin_obj in books_json["products"])
+    asins = set(asin_obj.asin for asin_obj in audible_response.products)
     books = get_existing_books(session, asins)
     for key in books.keys():
         asins.remove(key)
@@ -291,8 +379,8 @@ async def list_audible_books(
         books[b.asin] = b
 
     ordered: list[Audiobook] = []
-    for asin_obj in books_json["products"]:
-        book = books.get(asin_obj["asin"])
+    for asin_obj in audible_response.products:
+        book = books.get(asin_obj.asin)
         if book:
             ordered.append(book)
 

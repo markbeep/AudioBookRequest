@@ -52,7 +52,7 @@ class ApplicationSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
+    model_config = SettingsConfigDict(  # pyright: ignore[reportUnannotatedClassAttribute]
         env_prefix="ABR_",
         env_nested_delimiter="__",
         nested_model_default_partial_update=True,

@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 
 import aiohttp
-import pydantic
+from pydantic import BaseModel, ValidationError
 import torrent_parser as tp
 from aiohttp import ClientSession
 from sqlmodel import Session
@@ -16,7 +16,7 @@ from app.internal.ranking.quality import FileFormat
 ENABLE_TORRENT_INSPECTION = False
 
 
-class Quality(pydantic.BaseModel):
+class Quality(BaseModel):
     kbits: float
     file_format: FileFormat
 
@@ -121,19 +121,36 @@ async def extract_qualities(
     ]
 
 
+class _DecodedTorrent(BaseModel):
+    class _Info(BaseModel):
+        class _File(BaseModel):
+            length: int
+            path: list[str]
+
+            @property
+            def last_path(self) -> str | None:
+                return self.path[-1] if self.path else None
+
+        files: list[_File]
+
+    info: _Info
+
+
 def get_torrent_info(data: bytes, book_seconds: int) -> list[Quality]:
     try:
         # TODO: correctly fix wrong torrent parsing
-        parsed = tp.decode(data, hash_fields={"pieces": (1, False)})
-    except tp.InvalidTorrentDataException:
+        parsed = _DecodedTorrent.model_validate(
+            tp.decode(data, hash_fields={"pieces": (1, False)})
+        )
+    except (tp.InvalidTorrentDataException, ValidationError):
         return []
     actual_sizes: dict[FileFormat, int] = defaultdict(int)
-    file_formats = set()
-    if "info" not in parsed or "files" not in parsed["info"]:
-        return []
-    for f in parsed["info"]["files"]:
-        size: int = f["length"]
-        path: str = f["path"][-1]
+    file_formats = set[str]()
+    for f in parsed.info.files:
+        size: int = f.length
+        path = f.last_path
+        if not path:
+            continue
         _, ext = os.path.splitext(path)
         ext = ext.lower()
         if ext == ".flac":
@@ -149,7 +166,7 @@ def get_torrent_info(data: bytes, book_seconds: int) -> list[Quality]:
             file_formats.add("unknown")
             actual_sizes["unknown"] += size
 
-    qualities = []
+    qualities: list[Quality] = []
     for k, v in actual_sizes.items():
         qualities.append(
             Quality(

@@ -1,5 +1,5 @@
 import json
-from typing import Literal
+from typing import Literal, final
 
 import pydantic
 from pydantic_core import from_json, to_json
@@ -53,6 +53,7 @@ class IndexerFlag(pydantic.BaseModel):
     score: int
 
 
+@final
 class QualityProfile(StringConfigCache[QualityConfigKey]):
     _default_quality_range = QualityRange(from_kbits=20.0, to_kbits=400.0)
     _default_name_exists_ratio: int = 75
@@ -98,8 +99,8 @@ class QualityProfile(StringConfigCache[QualityConfigKey]):
         indexer_flags = self.get(session, "quality_indexer_flags")
         if not indexer_flags:
             return []
-        flags = from_json(indexer_flags.encode())
-        return [IndexerFlag.model_validate(flag) for flag in flags]
+        flags = from_json(indexer_flags.encode())  # pyright: ignore[reportAny]
+        return [IndexerFlag.model_validate(flag) for flag in flags]  # pyright: ignore[reportAny]
 
     def set_indexer_flags(self, session: Session, indexer_flags: list[IndexerFlag]):
         self.set(session, "quality_indexer_flags", to_json(indexer_flags).decode())
@@ -108,7 +109,7 @@ class QualityProfile(StringConfigCache[QualityConfigKey]):
         format_order = self.get(session, "quality_format_order")
         if not format_order:
             return ["flac", "m4b", "mp3", "unknown-audio", "unknown"]
-        return json.loads(format_order)
+        return json.loads(format_order)  # pyright: ignore[reportAny]
 
     def set_format_order(self, session: Session, format_order: list[FileFormat]):
         self.set(session, "quality_format_order", json.dumps(format_order))
@@ -117,7 +118,7 @@ class QualityProfile(StringConfigCache[QualityConfigKey]):
         indexer_order = self.get(session, "quality_indexer_order")
         if not indexer_order:
             return []
-        return json.loads(indexer_order)
+        return json.loads(indexer_order)  # pyright: ignore[reportAny]
 
     def set_indexer_order(self, session: Session, format_order: list[int]):
         self.set(session, "quality_indexer_order", json.dumps(format_order))

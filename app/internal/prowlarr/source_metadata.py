@@ -1,4 +1,5 @@
 import asyncio
+from typing import Awaitable
 
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.indexers.indexer_util import get_indexer_contexts
@@ -13,7 +14,7 @@ async def edit_source_metadata(
 ):
     contexts = await get_indexer_contexts(container)
 
-    coros = [
+    coros: list[Awaitable[None]] = [
         context.indexer.setup(book, container, context.valued) for context in contexts
     ]
     exceptions = await asyncio.gather(*coros, return_exceptions=True)

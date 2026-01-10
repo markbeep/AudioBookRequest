@@ -118,6 +118,7 @@ def create_api_key(
     return api_key, private_key
 
 
+@final
 class APIKeyAuth(SecurityBase):
     def __init__(
         self,
@@ -188,7 +189,7 @@ class APIKeyAuth(SecurityBase):
 class RequiresLoginException(Exception):
     def __init__(self, detail: Optional[str] = None, **kwargs: object):
         super().__init__(**kwargs)
-        self.detail = detail
+        self.detail: str | None = detail
 
 
 @final
@@ -246,7 +247,6 @@ class ABRAuth(SecurityBase):
                 exc_info=e,
                 user=standard_user.model_dump(),
             )
-            exit(0)
             raise RequiresLoginException(
                 "Failed to validate user model. Please log in again."
             )
@@ -293,7 +293,7 @@ class ABRAuth(SecurityBase):
         logger.debug("Getting user from session", url=request.url)
         # It's enough to get the username from the signed session cookie
         username = request.session.get("sub")
-        if not username:
+        if not username or not isinstance(username, str):
             logger.debug("No username found in session sub")
             raise RequiresLoginException()
 

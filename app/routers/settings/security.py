@@ -24,7 +24,7 @@ router = APIRouter(prefix="/security")
 def read_security(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     try:
         force_login_type = Settings().app.get_force_login_type()
@@ -57,8 +57,9 @@ def read_security(
 @router.post("/reset-auth")
 def reset_auth_secret(
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
+    _ = admin_user
     auth_config.reset_auth_secret(session)
     return Response(status_code=204, headers={"HX-Refresh": "true"})
 
@@ -69,17 +70,17 @@ async def update_security(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    access_token_expiry: Optional[int] = Form(None),
-    min_password_length: Optional[int] = Form(None),
-    oidc_endpoint: Optional[str] = Form(None),
-    oidc_client_id: Optional[str] = Form(None),
-    oidc_client_secret: Optional[str] = Form(None),
-    oidc_scope: Optional[str] = Form(None),
-    oidc_username_claim: Optional[str] = Form(None),
-    oidc_group_claim: Optional[str] = Form(None),
-    oidc_redirect_https: Optional[bool] = Form(False),
-    oidc_logout_url: Optional[str] = Form(None),
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    access_token_expiry: Annotated[Optional[int], Form()] = None,
+    min_password_length: Annotated[Optional[int], Form()] = None,
+    oidc_endpoint: Annotated[Optional[str], Form()] = None,
+    oidc_client_id: Annotated[Optional[str], Form()] = None,
+    oidc_client_secret: Annotated[Optional[str], Form()] = None,
+    oidc_scope: Annotated[Optional[str], Form()] = None,
+    oidc_username_claim: Annotated[Optional[str], Form()] = None,
+    oidc_group_claim: Annotated[Optional[str], Form()] = None,
+    oidc_redirect_https: Annotated[Optional[bool], Form()] = None,
+    oidc_logout_url: Annotated[Optional[str], Form()] = None,
 ):
     if (
         login_type in [LoginTypeEnum.basic, LoginTypeEnum.forms]
@@ -114,7 +115,7 @@ async def update_security(
             oidc_config.set(session, "oidc_scope", oidc_scope)
         if oidc_username_claim:
             oidc_config.set(session, "oidc_username_claim", oidc_username_claim)
-        if oidc_redirect_https is not None:
+        if oidc_redirect_https:
             oidc_config.set(
                 session,
                 "oidc_redirect_https",

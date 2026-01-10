@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Optional
+from typing import Annotated, Optional
 
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Form, Request, Response, Security
@@ -24,8 +24,8 @@ async def read_prowlarr(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    prowlarr_misconfigured: Optional[Any] = None,
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    prowlarr_misconfigured: Optional[object] = None,
 ):
     prowlarr_base_url = prowlarr_config.get_base_url(session)
     prowlarr_api_key = prowlarr_config.get_api_key(session)
@@ -54,8 +54,9 @@ async def read_prowlarr(
 def update_prowlarr_api_key(
     api_key: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
+    _ = admin_user
     prowlarr_config.set_api_key(session, api_key)
     flush_prowlarr_cache()
     return Response(status_code=204, headers={"HX-Refresh": "true"})
@@ -65,8 +66,9 @@ def update_prowlarr_api_key(
 def update_prowlarr_base_url(
     base_url: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
+    _ = admin_user
     prowlarr_config.set_base_url(session, base_url)
     flush_prowlarr_cache()
     return Response(status_code=204, headers={"HX-Refresh": "true"})
@@ -76,9 +78,11 @@ def update_prowlarr_base_url(
 def update_indexer_categories(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    categories: Annotated[list[int], Form(alias="c")] = [],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    categories: Annotated[list[int] | None, Form(alias="c")] = None,
 ):
+    if categories is None:
+        categories = []
     prowlarr_config.set_categories(session, categories)
     selected = set(categories)
     flush_prowlarr_cache()
@@ -101,9 +105,11 @@ async def update_selected_indexers(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    indexer_ids: Annotated[list[int], Form(alias="i")] = [],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    indexer_ids: Annotated[list[int] | None, Form(alias="i")] = None,
 ):
+    if indexer_ids is None:
+        indexer_ids = []
     prowlarr_config.set_indexers(session, indexer_ids)
 
     indexers = await get_indexers(session, client_session)

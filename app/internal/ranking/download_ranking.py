@@ -64,6 +64,7 @@ class CompareSource:
         self, index: int
     ) -> Callable[[RankSource, RankSource, int], int]:
         def default_compare(a: RankSource, b: RankSource, next_compare: int) -> int:
+            _, _, _ = a, b, next_compare
             return 0
 
         if index < len(self.compare_order):
@@ -82,7 +83,7 @@ class CompareSource:
                 quality_range = quality_config.get_range(
                     self.session, "quality_unknown_audio"
                 )
-            case "unknown" | _:
+            case "unknown":
                 quality_range = quality_config.get_range(
                     self.session, "quality_unknown"
                 )

@@ -83,7 +83,7 @@ class Audiobook(BaseSQLModel, table=True):
     )
     downloaded: bool = False
 
-    requests: list["AudiobookRequest"] = Relationship(back_populates="audiobook")
+    requests: list["AudiobookRequest"] = Relationship(back_populates="audiobook")  # pyright: ignore[reportAny]
 
     model_config: SQLModelConfig = cast(
         SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))
@@ -115,7 +115,7 @@ class AudiobookRequest(BaseSQLModel, table=True):
         ),
     )
 
-    audiobook: Audiobook = Relationship(back_populates="requests")
+    audiobook: Audiobook = Relationship(back_populates="requests")  # pyright: ignore[reportAny]
 
     model_config: SQLModelConfig = cast(
         SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))

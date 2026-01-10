@@ -60,11 +60,11 @@ class UsersListResponse(BaseModel):
 @router.get("/", response_model=UsersListResponse)
 def list_users(
     session: Annotated[Session, Depends(get_session)],
-    current_user: DetailedUser = Security(APIKeyAuth(GroupEnum.admin)),
-    limit: int = Query(
-        50, ge=1, le=100, description="Maximum number of users to return"
-    ),
-    offset: int = Query(0, ge=0, description="Number of users to skip"),
+    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    limit: Annotated[
+        int, Query(ge=1, le=100, description="Maximum number of users to return")
+    ] = 50,
+    offset: Annotated[int, Query(ge=0, description="Number of users to skip")] = 0,
 ):
     """
     Returns a paginated list of all users with their basic information.
@@ -83,7 +83,7 @@ def list_users(
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user(
-    current_user: DetailedUser = Security(APIKeyAuth()),
+    current_user: Annotated[DetailedUser, Security(APIKeyAuth())],
 ):
     """
     Returns information about the user associated with the provided API key.
@@ -97,7 +97,7 @@ def get_current_user(
 def get_user(
     username: str,
     session: Annotated[Session, Depends(get_session)],
-    current_user: DetailedUser = Security(APIKeyAuth(GroupEnum.admin)),
+    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     """
     Returns detailed information about the specified user.
@@ -118,7 +118,7 @@ def get_user(
 def create_new_user(
     user_data: UserCreate,
     session: Annotated[Session, Depends(get_session)],
-    current_user: DetailedUser = Security(APIKeyAuth(GroupEnum.admin)),
+    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     """
     Creates a new user with the specified username, password, and group.
@@ -160,7 +160,7 @@ def update_user(
     username: str,
     user_data: UserUpdate,
     session: Annotated[Session, Depends(get_session)],
-    current_user: DetailedUser = Security(APIKeyAuth(GroupEnum.admin)),
+    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     """
     Updates the specified user's password and/or group.
@@ -208,7 +208,7 @@ def update_user(
 def delete_user(
     username: str,
     session: Annotated[Session, Depends(get_session)],
-    current_user: DetailedUser = Security(APIKeyAuth(GroupEnum.admin)),
+    current_user: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     """
     Permanently removes the specified user from the system.

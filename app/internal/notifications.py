@@ -24,8 +24,10 @@ def _replace_variables(
     book_authors: Optional[str] = None,
     book_narrators: Optional[str] = None,
     event_type: Optional[str] = None,
-    other_replacements: dict[str, str] = {},
+    other_replacements: dict[str, str] | None = None,
 ):
+    if other_replacements is None:
+        other_replacements = {}
     if user:
         template = template.replace("{eventUser}", user.username)
         if user.extra_data:
@@ -77,8 +79,10 @@ async def send_notification(
     notification: Notification,
     requester: Optional[User] = None,
     book_asin: Optional[str] = None,
-    other_replacements: dict[str, str] = {},
+    other_replacements: dict[str, str] | None = None,
 ):
+    if other_replacements is None:
+        other_replacements = {}
     book_title = None
     book_authors = None
     book_narrators = None
@@ -102,7 +106,7 @@ async def send_notification(
     )
 
     if notification.body_type == NotificationBodyTypeEnum.json:
-        body = json.loads(body, strict=False)
+        body = json.loads(body, strict=False)  # pyright: ignore[reportAny]
 
     logger.info(
         "Sending notification",
@@ -136,8 +140,10 @@ async def send_all_notifications(
     event_type: EventEnum,
     requester: Optional[User] = None,
     book_asin: Optional[str] = None,
-    other_replacements: dict[str, str] = {},
+    other_replacements: dict[str, str] | None = None,
 ):
+    if other_replacements is None:
+        other_replacements = {}
     with open_session() as session:
         notifications = session.exec(
             select(Notification).where(
@@ -170,9 +176,11 @@ async def send_manual_notification(
     notification: Notification,
     book: ManualBookRequest,
     requester: Optional[User] = None,
-    other_replacements: dict[str, str] = {},
+    other_replacements: dict[str, str] | None = None,
 ):
     """Send a notification for manual book requests"""
+    if other_replacements is None:
+        other_replacements = {}
     try:
         book_authors = ",".join(book.authors)
         book_narrators = ",".join(book.narrators)
@@ -188,7 +196,7 @@ async def send_manual_notification(
         )
 
         if notification.body_type == NotificationBodyTypeEnum.json:
-            body = json.loads(body)
+            body = json.loads(body)  # pyright: ignore[reportAny]
 
         logger.info(
             "Sending manual notification",

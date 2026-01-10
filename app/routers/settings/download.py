@@ -16,7 +16,7 @@ router = APIRouter(prefix="/download")
 def read_download(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     auto_download = quality_config.get_auto_download(session)
     flac_range = quality_config.get_range(session, "quality_flac")
@@ -66,8 +66,8 @@ def update_download(
     name_ratio: Annotated[int, Form()],
     title_ratio: Annotated[int, Form()],
     session: Annotated[Session, Depends(get_session)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     auto_download: Annotated[bool, Form()] = False,
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
 ):
     flac = QualityRange(from_kbits=flac_from, to_kbits=flac_to)
     m4b = QualityRange(from_kbits=m4b_from, to_kbits=m4b_to)
@@ -111,8 +111,9 @@ def update_download(
 @router.delete("")
 def reset_download_setings(
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
+    _ = admin_user
     quality_config.reset_all(session)
     return Response(status_code=204, headers={"HX-Refresh": "true"})
 
@@ -123,7 +124,7 @@ def add_indexer_flag(
     session: Annotated[Session, Depends(get_session)],
     flag: Annotated[str, Form()],
     score: Annotated[int, Form()],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     flags = quality_config.get_indexer_flags(session)
     if not any(f.flag == flag for f in flags):
@@ -144,7 +145,7 @@ def remove_indexer_flag(
     request: Request,
     flag: str,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     flags = quality_config.get_indexer_flags(session)
     flags = [f for f in flags if f.flag != flag]

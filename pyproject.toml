@@ -31,6 +31,7 @@ dependencies = [
     "apscheduler>=3.11.0",
     "psycopg2-binary>=2.9.10",
     "jinja2-htmlmin>=1.0.1",
+    "cryptography>=46.0.3",
 ]
 
 # setuptools by default expects a "src" folder structure
@@ -45,10 +46,11 @@ profile = "jinja"
 ignore = "H021"
 
 [tool.basedpyright]
+typeCheckingMode = "strict"
 include = ["app"]
-failOnWarnings = false
 reportDeprecated = false
 reportUnusedCallResult = false
+allowedUntypedLibraries = ["apscheduler", "torrent_parser"]
 
 [dependency-groups]
 dev = ["basedpyright>=1.36.2", "djlint", "ruff>=0.14.10"]

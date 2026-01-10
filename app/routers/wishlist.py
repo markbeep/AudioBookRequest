@@ -245,7 +245,7 @@ async def downloaded_manual(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     book_request = session.get(ManualBookRequest, id)
     if book_request:
@@ -309,8 +309,8 @@ async def delete_manual(
 async def refresh_source(
     asin: str,
     background_task: BackgroundTasks,
+    user: Annotated[DetailedUser, Security(ABRAuth())],
     force_refresh: bool = False,
-    user: DetailedUser = Security(ABRAuth()),
 ):
     # causes the sources to be placed into cache once they're done
     with open_session() as session:

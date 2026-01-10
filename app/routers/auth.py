@@ -1,7 +1,7 @@
 import base64
 import secrets
 import time
-from typing import Annotated, Optional
+from typing import Annotated, Optional, cast
 from urllib.parse import urlencode, urljoin
 
 import jwt
@@ -17,6 +17,7 @@ from fastapi import (
     status,
 )
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.internal.auth.authentication import (
@@ -131,7 +132,7 @@ def login_access_token(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    redirect_uri: str = Form("/"),
+    redirect_uri: Annotated[str, Form()] = "/",
 ):
     user = authenticate_user(session, form_data.username, form_data.password)
     if not user:
@@ -146,6 +147,11 @@ def login_access_token(
     return Response(
         status_code=status.HTTP_200_OK, headers={"HX-Redirect": redirect_uri}
     )
+
+
+class _AccessTokenBody(BaseModel):
+    access_token: str | None = None
+    expires_in: Optional[int] = None
 
 
 @router.get("/oidc")
@@ -185,31 +191,51 @@ async def login_oidc(
         "client_secret": client_secret,
         "redirect_uri": auth_redirect_uri,
     }
-    async with client_session.post(
-        token_endpoint,
-        data=data,
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-    ) as response:
-        body = await response.json()
 
-    access_token: Optional[str] = body.get("access_token")
-    if not access_token:
+    try:
+        async with client_session.post(
+            token_endpoint,
+            data=data,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        ) as response:
+            body = _AccessTokenBody.model_validate(await response.json())
+    except Exception as e:
+        logger.error("Failed to extract OIDC access token from body", error=str(e))
+        raise InvalidOIDCConfiguration(
+            "Failed to extract OIDC access token from body"
+        ) from e
+
+    if not body.access_token:
         return Response(status_code=status.HTTP_401_UNAUTHORIZED)
 
     async with client_session.get(
         userinfo_endpoint,
-        headers={"Authorization": f"Bearer {access_token}"},
+        headers={"Authorization": f"Bearer {body.access_token}"},
     ) as response:
-        userinfo = await response.json()
+        userinfo = cast(object, await response.json())
+        if not isinstance(userinfo, dict):
+            logger.error(
+                "Invalid OIDC userinfo response",
+                userinfo_type=type(userinfo).__name__,
+            )
+            raise InvalidOIDCConfiguration("Invalid OIDC userinfo response")
 
-    username = userinfo.get(username_claim)
-    if not username:
-        raise InvalidOIDCConfiguration("Missing username claim")
+    username = userinfo.get(username_claim)  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+    if not username or not isinstance(username, str):
+        raise InvalidOIDCConfiguration("Missing valid string username claim")
 
     if group_claim:
-        groups: list[str] | str = userinfo.get(group_claim, [])
+        groups = cast(object, userinfo.get(group_claim, []))  # pyright: ignore[reportUnknownMemberType]
         if isinstance(groups, str):
             groups = groups.split(" ")
+        if not isinstance(groups, list):
+            logger.warning(
+                "Invalid OIDC group claim type, expected list or string. Defaulted to empty groups list",
+                group_claim_type=type(groups).__name__,
+                username=username,
+            )
+            groups = []
+        groups = [str(g) for g in groups if isinstance(g, str)]  # pyright: ignore[reportUnknownVariableType]
     else:
         groups = []
 
@@ -237,9 +263,8 @@ async def login_oidc(
     session.add(user)
     session.commit()
 
-    expires_in: int = body.get(
-        "expires_in",
-        auth_config.get_access_token_expiry_minutes(session) * 60,
+    expires_in: int = (
+        body.expires_in or auth_config.get_access_token_expiry_minutes(session) * 60
     )
     expires = int(time.time() + expires_in)
 
@@ -247,12 +272,22 @@ async def login_oidc(
     request.session["exp"] = expires
 
     if state:
-        decoded = jwt.decode(
-            state,
-            auth_config.get_auth_secret(session),
-            algorithms=["HS256"],
+        decoded = cast(
+            object,
+            jwt.decode(
+                state,
+                auth_config.get_auth_secret(session),
+                algorithms=["HS256"],
+            ),
         )
-        redirect_uri = decoded.get("redirect_uri", "/")
+        if (
+            isinstance(decoded, dict)
+            and "redirect_uri" in decoded
+            and isinstance(decoded["redirect_uri"], str)
+        ):
+            redirect_uri = decoded["redirect_uri"]
+        else:
+            redirect_uri = "/"
     else:
         redirect_uri = "/"
 

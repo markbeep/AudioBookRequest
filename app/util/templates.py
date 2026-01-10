@@ -1,3 +1,5 @@
+# pyright: reportUnknownMemberType=false
+
 from jinja2_htmlmin import minify_loader
 from jinja2 import Environment, FileSystemLoader
 from typing import Any, Mapping, overload
@@ -22,10 +24,17 @@ templates = Jinja2Blocks(
     )
 )
 
-templates.env.filters["zfill"] = lambda val, num: str(val).zfill(num)
-templates.env.filters["toJSstring"] = (
-    lambda val: f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'"
-)
+
+def _zfill(val: str | int | float, num: int) -> str:
+    return str(val).zfill(num)
+
+
+def _to_js_string(val: str | int | float) -> str:
+    return f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'"
+
+
+templates.env.filters["zfill"] = _zfill
+templates.env.filters["toJSstring"] = _to_js_string
 templates.env.globals["vars"] = vars
 templates.env.globals["getattr"] = getattr
 templates.env.globals["version"] = Settings().app.version
@@ -44,13 +53,13 @@ def template_response(
     name: str,
     request: Request,
     user: DetailedUser,
-    context: dict[str, Any],
+    context: dict[str, Any],  # pyright: ignore[reportExplicitAny]
     status_code: int = 200,
     headers: Mapping[str, str] | None = None,
     media_type: str | None = None,
     background: BackgroundTask | None = None,
     *,
-    block_names: list[str] = [],
+    block_names: list[str] = ...,
 ) -> Response: ...
 
 
@@ -59,7 +68,7 @@ def template_response(
     name: str,
     request: Request,
     user: DetailedUser,
-    context: dict[str, Any],
+    context: dict[str, Any],  # pyright: ignore[reportExplicitAny]
     status_code: int = 200,
     headers: Mapping[str, str] | None = None,
     media_type: str | None = None,
@@ -73,12 +82,12 @@ def template_response(
     name: str,
     request: Request,
     user: DetailedUser,
-    context: dict[str, Any],
+    context: dict[str, Any],  # pyright: ignore[reportExplicitAny]
     status_code: int = 200,
     headers: Mapping[str, str] | None = None,
     media_type: str | None = None,
     background: BackgroundTask | None = None,
-    **kwargs: Any,
+    **kwargs: Any,  # pyright: ignore[reportAny, reportExplicitAny]
 ) -> Response:
     """Template response wrapper to make sure required arguments are passed everywhere"""
     copy = context.copy()
@@ -91,5 +100,5 @@ def template_response(
         headers=headers,
         media_type=media_type,
         background=background,
-        **kwargs,
+        **kwargs,  # pyright: ignore[reportAny]
     )

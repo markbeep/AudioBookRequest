@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 import json
-from typing import Any, override
+from typing import override
 from urllib.parse import urlencode, urljoin
+
+from pydantic import BaseModel
 
 from app.internal.indexers.abstract import (
     AbstractIndexer,
@@ -18,7 +20,7 @@ from app.util.log import logger
 
 class MamConfigurations(Configurations):
     mam_session_id: IndexerConfiguration[str] = IndexerConfiguration(
-        type=str,
+        type_=str,
         display_name="MAM Session ID",
         required=True,
     )
@@ -29,9 +31,44 @@ class ValuedMamConfigurations(ValuedConfigurations):
     mam_session_id: str
 
 
+class _Result(BaseModel):
+    id: int
+    author_info: str | None = None
+    narrator_info: str | None = None
+    personal_freeleech: int
+    free: int
+    fl_vip: int
+    vip: int
+    filetype: str
+
+    @property
+    def authors(self) -> list[str]:
+        """Response type of authors and narrators is a stringified json object"""
+
+        if not self.author_info:
+            return []
+        content = json.loads(self.author_info)  # pyright: ignore[reportAny]
+        if isinstance(content, dict):
+            return list(x for x in content.values() if isinstance(x, str))  # pyright: ignore[reportUnknownVariableType]
+        return []
+
+    @property
+    def narrators(self) -> list[str]:
+        if not self.narrator_info:
+            return []
+        content = json.loads(self.narrator_info)  # pyright: ignore[reportAny]
+        if isinstance(content, dict):
+            return list(x for x in content.values() if isinstance(x, str))  # pyright: ignore[reportUnknownVariableType]
+        return []
+
+
+class _MamResponse(BaseModel):
+    data: list[_Result]
+
+
 class MamIndexer(AbstractIndexer[MamConfigurations]):
     name: str = "MyAnonamouse"
-    results: dict[str, dict[str, Any]] = dict()
+    results: dict[int, _Result] = dict()
 
     @override
     @staticmethod
@@ -41,7 +78,7 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
         return MamConfigurations()
 
     @override
-    async def setup(
+    async def setup(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         book: Audiobook,
         container: SessionContainer,
@@ -68,25 +105,29 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
 
         session_id = configurations.mam_session_id
 
-        async with container.client_session.get(
-            url, cookies={"mam_id": session_id}
-        ) as response:
-            if response.status == 403:
-                logger.error(
-                    "Mam: Failed to authenticate", response=await response.text()
-                )
-                return
-            if not response.ok:
-                logger.error("Mam: Failed to query", response=await response.text())
-                return
-            search_results = await response.json()
-
-        if "error" in search_results:
-            logger.error("Mam: Error in response", error=search_results["error"])
+        try:
+            async with container.client_session.get(
+                url, cookies={"mam_id": session_id}
+            ) as response:
+                if response.status == 403:
+                    logger.error(
+                        "Mam: Failed to authenticate", response=await response.text()
+                    )
+                    return
+                if not response.ok:
+                    logger.error("Mam: Failed to query", response=await response.text())
+                    return
+                json_body = await response.json()  # pyright: ignore[reportAny]
+                if "error" in json_body:
+                    logger.error("Mam: Error in response", error=json_body["error"])
+                    return
+                search_results = _MamResponse.model_validate(json_body)
+        except Exception as e:
+            logger.error("Mam: Exception during search", exception=e)
             return
 
-        for result in search_results["data"]:
-            self.results[str(result["id"])] = result
+        for result in search_results.data:
+            self.results[result.id] = result
         logger.info("Mam: Retrieved results", results_amount=len(self.results))
 
     @override
@@ -106,32 +147,29 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
         container: SessionContainer,
     ):
         mam_id = source.guid.split("/")[-1]
-        result = self.results.get(mam_id)
+        if not mam_id.isdigit():
+            return
+        mam_id_int = int(mam_id)
+        result = self.results.get(mam_id_int)
         if result is None:
             return
 
-        # response type of authors and narrators is a stringified json object
-        source.book_metadata.authors = list(
-            json.loads(result.get("author_info", "{}")).values()
-        )
-
-        source.book_metadata.narrators = list(
-            json.loads(result.get("narrator_info", "{}")).values()
-        )
+        source.book_metadata.authors = result.authors
+        source.book_metadata.narrators = result.narrators
 
         indexer_flags: set[str] = set(source.indexer_flags)
-        if result["personal_freeleech"] == 1:
+        if result.personal_freeleech == 1:
             indexer_flags.add("personal_freeleech")
             indexer_flags.add("freeleech")
-        if result["free"] == 1:
+        if result.free == 1:
             indexer_flags.add("free")
             indexer_flags.add("freeleech")
-        if result["fl_vip"] == 1:
+        if result.fl_vip == 1:
             indexer_flags.add("fl_vip")
             indexer_flags.add("freeleech")
-        if result["vip"] == 1:
+        if result.vip == 1:
             indexer_flags.add("vip")
 
         source.indexer_flags = list(indexer_flags)
 
-        source.book_metadata.filetype = result["filetype"]
+        source.book_metadata.filetype = result.filetype

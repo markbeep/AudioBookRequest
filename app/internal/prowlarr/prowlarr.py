@@ -2,11 +2,11 @@ import json
 import posixpath
 from datetime import datetime
 import time
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 from urllib.parse import urlencode
 
 from aiohttp import ClientResponse, ClientSession
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from sqlmodel import Session
 from torf import BdecodeError, MetainfoError, ReadError, Torrent
 
@@ -77,7 +77,7 @@ class ProwlarrConfig(StringConfigCache[ProwlarrConfigKey]):
         categories = self.get(session, "prowlarr_categories")
         if categories is None:
             return [3030]
-        return json.loads(categories)
+        return json.loads(categories)  # pyright: ignore[reportAny]
 
     def set_categories(self, session: Session, categories: list[int]):
         self.set(session, "prowlarr_categories", json.dumps(categories))
@@ -86,7 +86,7 @@ class ProwlarrConfig(StringConfigCache[ProwlarrConfigKey]):
         indexers = self.get(session, "prowlarr_indexers")
         if indexers is None:
             return []
-        return json.loads(indexers)
+        return json.loads(indexers)  # pyright: ignore[reportAny]
 
     def set_indexers(self, session: Session, indexers: list[int]):
         self.set(session, "prowlarr_indexers", json.dumps(indexers))
@@ -194,6 +194,35 @@ async def start_download(
         return response
 
 
+class _ProwlarrResultBase(BaseModel):
+    guid: str
+    indexerId: int
+    indexer: str
+    title: str
+    size: int
+    infoUrl: Optional[str]
+    indexerFlags: list[str]
+    downloadUrl: Optional[str]
+    magnetUrl: Optional[str]
+    publishDate: str
+
+
+class _ProwlarrTorrentResult(_ProwlarrResultBase):
+    protocol: Literal["torrent"]
+    seeders: int = 0
+    leechers: int = 0
+
+
+class _ProwlarrUsenetResult(_ProwlarrResultBase):
+    protocol: Literal["usenet"]
+    grabs: int = 0
+
+
+_ProwlarrSearchResult = TypeAdapter(
+    list[_ProwlarrTorrentResult | _ProwlarrUsenetResult]
+)
+
+
 async def query_prowlarr(
     session: Session,
     client_session: ClientSession,
@@ -243,12 +272,14 @@ async def query_prowlarr(
             headers={"X-Api-Key": api_key, "Accept": "application/json"},
         ) as response:
             prowlarr_text = await response.text()
-            search_results = await response.json()
             if not response.ok:
                 logger.error(
                     "Prowlarr: Failed to query", response=await response.text()
                 )
                 return []
+            search_results = _ProwlarrSearchResult.validate_python(
+                await response.json()
+            )
     except TimeoutError as e:
         elapsed_time = time.time() - start_time
         logger.error(
@@ -275,48 +306,44 @@ async def query_prowlarr(
     sources: list[ProwlarrSource] = []
     for result in search_results:
         try:
-            if result["protocol"] not in ["torrent", "usenet"]:
+            if result.protocol not in ["torrent", "usenet"]:
                 logger.info(
-                    "Skipping source with unknown protocol", protocol=result["protocol"]
+                    "Skipping source with unknown protocol", protocol=result.protocol
                 )
                 continue
-            if result["protocol"] == "torrent":
+            if result.protocol == "torrent":
                 sources.append(
                     TorrentSource(
                         protocol="torrent",
-                        guid=result["guid"],
-                        indexer_id=result["indexerId"],
-                        indexer=result["indexer"],
-                        title=result["title"],
-                        seeders=result.get("seeders", 0),
-                        leechers=result.get("leechers", 0),
-                        size=result.get("size", 0),
-                        info_url=result.get("infoUrl"),
-                        indexer_flags=[
-                            x.lower() for x in result.get("indexerFlags", [])
-                        ],
-                        download_url=result.get("downloadUrl"),
-                        magnet_url=result.get("magnetUrl"),
-                        publish_date=datetime.fromisoformat(result["publishDate"]),
+                        guid=result.guid,
+                        indexer_id=result.indexerId,
+                        indexer=result.indexer,
+                        title=result.title,
+                        seeders=result.seeders,
+                        leechers=result.leechers,
+                        size=result.size,
+                        info_url=result.infoUrl,
+                        indexer_flags=[x.lower() for x in result.indexerFlags],
+                        download_url=result.downloadUrl,
+                        magnet_url=result.magnetUrl,
+                        publish_date=datetime.fromisoformat(result.publishDate),
                     )
                 )
             else:
                 sources.append(
                     UsenetSource(
                         protocol="usenet",
-                        guid=result["guid"],
-                        indexer_id=result["indexerId"],
-                        indexer=result["indexer"],
-                        title=result["title"],
-                        grabs=result.get("grabs"),
-                        size=result.get("size", 0),
-                        info_url=result.get("infoUrl"),
-                        indexer_flags=[
-                            x.lower() for x in result.get("indexerFlags", [])
-                        ],
-                        download_url=result.get("downloadUrl"),
-                        magnet_url=result.get("magnetUrl"),
-                        publish_date=datetime.fromisoformat(result["publishDate"]),
+                        guid=result.guid,
+                        indexer_id=result.indexerId,
+                        indexer=result.indexer,
+                        title=result.title,
+                        grabs=result.grabs,
+                        size=result.size,
+                        info_url=result.infoUrl,
+                        indexer_flags=[x.lower() for x in result.indexerFlags],
+                        download_url=result.downloadUrl,
+                        magnet_url=result.magnetUrl,
+                        publish_date=datetime.fromisoformat(result.publishDate),
                     )
                 )
         except KeyError as e:
@@ -345,6 +372,9 @@ class IndexerResponse(BaseModel):
     @property
     def ok(self) -> bool:
         return self.state == "ok"
+
+
+_IndexerList = TypeAdapter(list[Indexer])
 
 
 async def get_indexers(
@@ -384,11 +414,9 @@ async def get_indexers(
                     error=f"{response.status}: {response.reason}",
                 )
 
-            json_response = await response.json()
-
-            for indexer in json_response:
-                indexer_obj = Indexer.model_validate(indexer)
-                prowlarr_indexer_cache.set(indexer_obj, str(indexer_obj.id))
+            indexers = _IndexerList.validate_python(await response.json())
+            for indexer in indexers:
+                prowlarr_indexer_cache.set(indexer, str(indexer.id))
 
         return IndexerResponse(
             indexers={

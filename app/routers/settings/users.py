@@ -23,7 +23,7 @@ router = APIRouter(prefix="/users")
 def read_users(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     users = session.exec(select(User)).all()
     is_oidc = auth_config.get_login_type(session) == LoginTypeEnum.oidc
@@ -46,7 +46,7 @@ def create_new_user(
     password: Annotated[str, Form()],
     group: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     if username.strip() == "":
         raise ToastException("Invalid username", "error")
@@ -85,7 +85,7 @@ def delete_user(
     request: Request,
     username: str,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     if username == admin_user.username:
         raise ToastException("Cannot delete own user", "error")
@@ -114,7 +114,7 @@ def update_user(
     request: Request,
     username: str,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     group: Annotated[Optional[GroupEnum], Form()] = None,
     extra_data: Annotated[Optional[str], Form()] = None,
 ):
