@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 import pydantic
 from aiohttp import ClientSession
 from sqlalchemy import CursorResult, delete
+from sqlalchemy.exc import InvalidRequestError
 from sqlmodel import Session, col, not_, select
 
 from app.internal.env_settings import Settings
@@ -242,11 +243,21 @@ async def list_audible_books(
     cache_result = search_cache.get(cache_key)
 
     if cache_result and time.time() - cache_result.timestamp < REFETCH_TTL:
-        for book in cache_result.value:
-            # add back books to the session so we can access their attributes
-            session.add(book)
-        logger.debug("Using cached search result", query=query, region=audible_region)
-        return cache_result.value
+        try:
+            for book in cache_result.value:
+                # add back books to the session so we can access their attributes
+                session.add(book)
+                session.refresh(book)
+            logger.debug(
+                "Using cached search result", query=query, region=audible_region
+            )
+            return cache_result.value
+        except InvalidRequestError:
+            logger.debug(
+                "Cached search result contained deleted book, refetching",
+                query=query,
+                region=audible_region,
+            )
 
     params = {
         "num_results": num_results,

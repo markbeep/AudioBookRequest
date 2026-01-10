@@ -47,8 +47,8 @@ ignore = "H021"
 [tool.basedpyright]
 include = ["app"]
 failOnWarnings = false
-strictGenericNarrowing = true
 reportDeprecated = false
+reportUnusedCallResult = false
 
 [dependency-groups]
 dev = ["basedpyright>=1.36.2", "djlint", "ruff>=0.14.10"]

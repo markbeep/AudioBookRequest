@@ -98,7 +98,7 @@ def downgrade() -> None:
         sa.Column("release_date", sa.DateTime(), nullable=False),
         sa.Column("runtime_length_min", sa.Integer(), nullable=False),
         sa.Column("asin", sa.VARCHAR(), nullable=False),
-        sa.Column("id", sa.CHAR(length=32), nullable=False),
+        sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(
             "updated_at",
             sa.DateTime(),

@@ -66,6 +66,7 @@ async def read_search(
         if audible_regions.get(region) is None:
             raise HTTPException(status_code=400, detail="Invalid region")
         if query:
+            clear_old_book_caches(session)
             results = await list_audible_books(
                 session=session,
                 client_session=client_session,
@@ -87,8 +88,6 @@ async def read_search(
         ]
 
         prowlarr_configured = prowlarr_config.is_valid(session)
-
-        clear_old_book_caches(session)
 
         return template_response(
             "search.html",
@@ -247,23 +246,34 @@ async def delete_request(
     request: Request,
     asin: str,
     session: Annotated[Session, Depends(get_session)],
-    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
     downloaded: Optional[bool] = None,
 ):
-    _ = session.execute(
-        delete(AudiobookRequest).where(col(AudiobookRequest.asin) == asin)
-    )
-    session.commit()
+    if user.is_admin():
+        session.execute(
+            delete(AudiobookRequest).where(col(AudiobookRequest.asin) == asin)
+        )
+        session.commit()
+    else:
+        session.execute(
+            delete(AudiobookRequest).where(
+                (col(AudiobookRequest.asin) == asin)
+                & (col(AudiobookRequest.user_username) == user.username)
+            )
+        )
+        session.commit()
 
     results = get_wishlist_results(
-        session, None, "downloaded" if downloaded else "not_downloaded"
+        session,
+        None if user.is_admin() else user.username,
+        "downloaded" if downloaded else "not_downloaded",
     )
-    counts = get_wishlist_counts(session, admin_user)
+    counts = get_wishlist_counts(session, user)
 
     return template_response(
         "wishlist_page/wishlist.html",
         request,
-        admin_user,
+        user,
         {
             "results": results,
             "page": "downloaded" if downloaded else "wishlist",

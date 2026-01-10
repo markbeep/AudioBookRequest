@@ -84,7 +84,6 @@
                             hx-disabled-elt="this">{% include "icons/download.html" %}</button>
                   <button title="Remove"
                           class="btn btn-square"
-                          {% if not user.is_admin() %}disabled{% endif %}
                           hx-delete="{{ base_url }}/search/request/{{ book.asin }}{%- if page.__eq__('downloaded') -%}?downloaded=true{%- endif -%}"
                           hx-swap="outerHTML"
                           hx-target="#book-table-body"
@@ -97,6 +96,7 @@
                     <button class="btn btn-square"
                             title="Set as downloaded"
                             hx-patch="{{ base_url }}/wishlist/downloaded/{{ book.asin }}"
+                            {% if not user.is_admin() %}disabled{% endif %}
                             hx-swap="outerHTML"
                             hx-target="#book-table-body"
                             hx-disabled-elt="this">{% include "icons/checkmark.html" %}</button>
