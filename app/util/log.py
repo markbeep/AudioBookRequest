@@ -17,4 +17,4 @@ structlog.configure(
     cache_logger_on_first_use=False,
 )
 
-logger: structlog.stdlib.BoundLogger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()

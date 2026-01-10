@@ -32,7 +32,7 @@ etag_cache: dict[PathLike[str] | str, str] = {}
 
 
 def add_cache_headers(func: Callable[..., FileResponse]):
-    def wrapper(v: str):
+    def wrapper(v: object):
         file = func()
         etag = etag_cache.get(file.path)
         if not etag or Settings().app.debug:
@@ -129,10 +129,8 @@ def read_favicon_svg():
 
 
 @router.get("/")
-def read_root(
-    request: Request,
-    user: DetailedUser = Security(ABRAuth()),
-):
+def read_root(user: Annotated[DetailedUser, Security(ABRAuth())]):
+    _ = user
     return BaseUrlRedirectResponse("/search")
     # TODO: create a root page
     # return templates.TemplateResponse(

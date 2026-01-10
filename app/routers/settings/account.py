@@ -27,7 +27,7 @@ router = APIRouter(prefix="/account")
 def read_account(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    user: DetailedUser = Security(ABRAuth()),
+    user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     api_keys = session.exec(
         select(APIKey).where(APIKey.user_username == user.username)
@@ -47,7 +47,7 @@ def change_password(
     password: Annotated[str, Form()],
     confirm_password: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
-    user: DetailedUser = Security(ABRAuth()),
+    user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     if not is_correct_password(user, old_password):
         raise ToastException("Old password is incorrect", "error")
@@ -76,7 +76,7 @@ def create_new_api_key(
     request: Request,
     name: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
-    user: DetailedUser = Security(ABRAuth()),
+    user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     if not name.strip():
         raise ToastException("API key name cannot be empty", "error")
@@ -118,7 +118,7 @@ def delete_api_key(
     request: Request,
     api_key_id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
-    user: DetailedUser = Security(ABRAuth()),
+    user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     api_key = session.exec(
         select(APIKey).where(
@@ -153,7 +153,7 @@ def toggle_api_key(
     request: Request,
     api_key_id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
-    user: DetailedUser = Security(ABRAuth()),
+    user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     api_key = session.exec(
         select(APIKey).where(

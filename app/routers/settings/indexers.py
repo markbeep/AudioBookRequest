@@ -1,7 +1,7 @@
 import json
 import os
 from contextlib import asynccontextmanager
-from typing import Annotated, Any, Literal, Mapping, Optional, cast
+from typing import Annotated, Literal, Mapping, Optional, cast
 
 from aiohttp import ClientSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -38,6 +38,7 @@ async def check_indexer_file_changes():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _ = app
     scheduler = AsyncIOScheduler()
     scheduler.add_job(check_indexer_file_changes, "interval", seconds=15)
     scheduler.start()
@@ -50,7 +51,7 @@ router = APIRouter(prefix="/indexers", lifespan=lifespan)
 
 async def update_single_indexer(
     indexer_select: str,
-    values: Mapping[str, Any],
+    values: Mapping[str, object],
     session: Session,
     client_session: ClientSession,
     ignore_missing_booleans: bool = False,
@@ -79,19 +80,23 @@ async def update_single_indexer(
         value = values.get(key)
         if value is None:
             # forms do not include false checkboxes, so we handle missing booleans as false
-            if context.type is bool and not ignore_missing_booleans:
+            if context.type_ is bool and not ignore_missing_booleans:
                 value = False
             else:
                 logger.warning("Value is missing for key", key=key)
                 continue
-        if context.type is bool:
+        if context.type_ is bool:
             indexer_configuration_cache.set_bool(session, key, value == "on")
         else:
             indexer_configuration_cache.set(session, key, str(value))
 
-    if "enabled" in values:
+    if "enabled" in values and (
+        isinstance(e := values["enabled"], str)
+        or isinstance(e, bool)
+        or isinstance(e, int)
+    ):
         logger.debug("Setting enabled state", enabled=values["enabled"])
-        enabled = get_bool(values["enabled"]) or False
+        enabled = get_bool(e) or False
         await updated_context.indexer.set_enabled(
             session_container,
             enabled,
@@ -109,7 +114,7 @@ async def read_indexer_file(
         return
     try:
         with open(file_path, "r") as f:
-            values = json.load(f)
+            values = cast(object, json.load(f))
             global last_modified
             if (lm := os.path.getmtime(file_path)) == last_modified:
                 return
@@ -120,14 +125,22 @@ async def read_indexer_file(
 
     if not isinstance(values, dict):
         raise ValueError("File does not contain a valid JSON object")
-    values = cast(Mapping[Any, Any], values)
 
-    for key in values.keys():
-        if type(key) is not str:
+    for key in values.keys():  # pyright: ignore[reportUnknownVariableType]
+        if isinstance(key, str):
             raise ValueError("File contains non-string keys")
-    values = cast(Mapping[str, Any], values)
+    values = cast(Mapping[str, object], values)
 
     for indexer, indexer_values in values.items():
+        if not isinstance(indexer_values, dict):
+            raise ValueError(f"Indexer values for {indexer} is not a valid object/dict")
+        for key in indexer_values.keys():  # pyright: ignore[reportUnknownVariableType]
+            if not isinstance(key, str):
+                raise ValueError(
+                    f"Indexer values for {indexer} contains non-string keys"
+                )
+        indexer_values = cast(Mapping[str, object], indexer_values)
+
         await update_single_indexer(
             indexer,
             indexer_values,
@@ -147,7 +160,7 @@ async def read_indexers(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     file_path = indexer_config.get(session, "indexers_configuration_file")
     if file_path:
@@ -181,8 +194,9 @@ async def read_file_configuration(
     file_path: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
+    _ = admin_user
     if file_path.strip() == "":
         indexer_configuration_cache.set(session, "indexers_configuration_file", "")
         raise ToastException("Configuration file cleared", "success")
@@ -203,8 +217,9 @@ async def update_indexers(
     indexer_select: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
+    _ = admin_user
     values = dict(await request.form())
     values["enabled"] = values.get("enabled", "off")  # handle missing checkbox
     try:

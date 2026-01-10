@@ -1,3 +1,5 @@
+import aiohttp
+from app.internal.models import AudiobookSearchResult
 import uuid
 from typing import Annotated, Optional
 
@@ -12,8 +14,7 @@ from fastapi import (
     Request,
     Security,
 )
-from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, delete, select
 
 from app.internal import book_search
 from app.internal.auth.authentication import ABRAuth, DetailedUser
@@ -26,8 +27,7 @@ from app.internal.book_search import (
     list_audible_books,
 )
 from app.internal.models import (
-    BookRequest,
-    BookSearchResult,
+    AudiobookRequest,
     EventEnum,
     GroupEnum,
     ManualBookRequest,
@@ -40,34 +40,13 @@ from app.internal.notifications import (
 from app.internal.prowlarr.prowlarr import prowlarr_config
 from app.internal.query import query_sources
 from app.internal.ranking.quality import quality_config
-from app.routers.wishlist import get_wishlist_books, get_wishlist_counts
+from app.routers.wishlist import get_wishlist_results, get_wishlist_counts
 from app.util.connection import get_connection
 from app.util.db import get_session, open_session
+from app.util.log import logger
 from app.util.templates import template_response
 
 router = APIRouter(prefix="/search")
-
-
-def get_already_requested(session: Session, results: list[BookRequest], username: str):
-    books: list[BookSearchResult] = []
-    if len(results) > 0:
-        # check what books are already requested by the user
-        asins = {book.asin for book in results}
-        requested_books = set(
-            session.exec(
-                select(BookRequest.asin).where(
-                    col(BookRequest.asin).in_(asins),
-                    BookRequest.user_username == username,
-                )
-            ).all()
-        )
-
-        for book in results:
-            book_search = BookSearchResult.model_validate(book)
-            if book.asin in requested_books:
-                book_search.already_requested = True
-            books.append(book_search)
-    return books
 
 
 @router.get("")
@@ -75,58 +54,71 @@ async def read_search(
     request: Request,
     client_session: Annotated[ClientSession, Depends(get_connection)],
     session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
     query: Annotated[Optional[str], Query(alias="q")] = None,
     num_results: int = 20,
     page: int = 0,
-    region: audible_region_type = get_region_from_settings(),
-    user: DetailedUser = Security(ABRAuth()),
+    region: audible_region_type | None = None,
 ):
-    if audible_regions.get(region) is None:
-        raise HTTPException(status_code=400, detail="Invalid region")
-    if query:
-        results = await list_audible_books(
-            session=session,
-            client_session=client_session,
-            query=query,
-            num_results=num_results,
-            page=page,
-            audible_region=region,
+    try:
+        if region is None:
+            region = get_region_from_settings()
+        if audible_regions.get(region) is None:
+            raise HTTPException(status_code=400, detail="Invalid region")
+        if query:
+            clear_old_book_caches(session)
+            results = await list_audible_books(
+                session=session,
+                client_session=client_session,
+                query=query,
+                num_results=num_results,
+                page=page,
+                audible_region=region,
+            )
+        else:
+            results = []
+
+        results = [
+            AudiobookSearchResult(
+                book=book,
+                requests=book.requests,
+                username=user.username,
+            )
+            for book in results
+        ]
+
+        prowlarr_configured = prowlarr_config.is_valid(session)
+
+        return template_response(
+            "search.html",
+            request,
+            user,
+            {
+                "search_term": query or "",
+                "search_results": results,
+                "regions": audible_regions,
+                "selected_region": region,
+                "page": page,
+                "auto_start_download": quality_config.get_auto_download(session)
+                and user.is_above(GroupEnum.trusted),
+                "prowlarr_configured": prowlarr_configured,
+            },
         )
-    else:
-        results = []
-
-    books: list[BookSearchResult] = []
-    if len(results) > 0:
-        books = get_already_requested(session, results, user.username)
-
-    prowlarr_configured = prowlarr_config.is_valid(session)
-
-    clear_old_book_caches(session)
-
-    return template_response(
-        "search.html",
-        request,
-        user,
-        {
-            "search_term": query or "",
-            "search_results": books,
-            "regions": audible_regions,
-            "selected_region": region,
-            "page": page,
-            "auto_start_download": quality_config.get_auto_download(session)
-            and user.is_above(GroupEnum.trusted),
-            "prowlarr_configured": prowlarr_configured,
-        },
-    )
+    except Exception as e:
+        session.rollback()
+        logger.exception("Error during search", error=e)
+        raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/suggestions")
 async def search_suggestions(
     request: Request,
     query: Annotated[str, Query(alias="q")],
-    user: DetailedUser = Security(ABRAuth()),
-    region: audible_region_type = get_region_from_settings(),
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+    region: audible_region_type | None = None,
 ):
+    if region is None:
+        region = get_region_from_settings()
     async with ClientSession() as client_session:
         suggestions = await book_search.get_search_suggestions(
             client_session, query, region
@@ -142,8 +134,8 @@ async def search_suggestions(
 
 async def background_start_query(asin: str, requester: User, auto_download: bool):
     with open_session() as session:
-        async with ClientSession() as client_session:
-            await query_sources(
+        async with ClientSession(timeout=aiohttp.ClientTimeout(60)) as client_session:
+            _ = await query_sources(
                 asin=asin,
                 session=session,
                 client_session=client_session,
@@ -162,20 +154,33 @@ async def add_request(
     query: Annotated[Optional[str], Form()],
     page: Annotated[int, Form()],
     region: Annotated[audible_region_type, Form()],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
     num_results: Annotated[int, Form()] = 20,
-    user: DetailedUser = Security(ABRAuth()),
 ):
     book = await get_book_by_asin(client_session, asin, region)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    book.user_username = user.username
-    try:
-        session.add(book)
+    if not session.exec(
+        select(AudiobookRequest).where(
+            AudiobookRequest.asin == asin,
+            AudiobookRequest.user_username == user.username,
+        )
+    ).first():
+        book_request = AudiobookRequest(asin=asin, user_username=user.username)
+        session.add(book_request)
         session.commit()
-    except IntegrityError:
-        session.rollback()
-        pass  # ignore if already exists
+        logger.info(
+            "Added new audiobook request",
+            username=user.username,
+            asin=asin,
+        )
+    else:
+        logger.warning(
+            "User has already requested this book",
+            username=user.username,
+            asin=asin,
+        )
 
     background_task.add_task(
         send_all_notifications,
@@ -207,9 +212,14 @@ async def add_request(
     else:
         results = []
 
-    books: list[BookSearchResult] = []
-    if len(results) > 0:
-        books = get_already_requested(session, results, user.username)
+    results = [
+        AudiobookSearchResult(
+            book=book,
+            requests=book.requests,
+            username=user.username,
+        )
+        for book in results
+    ]
 
     prowlarr_configured = prowlarr_config.is_valid(session)
 
@@ -219,7 +229,7 @@ async def add_request(
         user,
         {
             "search_term": query or "",
-            "search_results": books,
+            "search_results": results,
             "regions": audible_regions,
             "selected_region": region,
             "page": page,
@@ -236,25 +246,36 @@ async def delete_request(
     request: Request,
     asin: str,
     session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
     downloaded: Optional[bool] = None,
-    admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
 ):
-    books = session.exec(select(BookRequest).where(BookRequest.asin == asin)).all()
-    if books:
-        [session.delete(b) for b in books]
+    if user.is_admin():
+        session.execute(
+            delete(AudiobookRequest).where(col(AudiobookRequest.asin) == asin)
+        )
+        session.commit()
+    else:
+        session.execute(
+            delete(AudiobookRequest).where(
+                (col(AudiobookRequest.asin) == asin)
+                & (col(AudiobookRequest.user_username) == user.username)
+            )
+        )
         session.commit()
 
-    books = get_wishlist_books(
-        session, None, "downloaded" if downloaded else "not_downloaded"
+    results = get_wishlist_results(
+        session,
+        None if user.is_admin() else user.username,
+        "downloaded" if downloaded else "not_downloaded",
     )
-    counts = get_wishlist_counts(session, admin_user)
+    counts = get_wishlist_counts(session, user)
 
     return template_response(
         "wishlist_page/wishlist.html",
         request,
-        admin_user,
+        user,
         {
-            "books": books,
+            "results": results,
             "page": "downloaded" if downloaded else "wishlist",
             "counts": counts,
             "update_tablist": True,
@@ -267,8 +288,8 @@ async def delete_request(
 async def read_manual(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
     id: Optional[uuid.UUID] = None,
-    user: DetailedUser = Security(ABRAuth()),
 ):
     book = None
     if id:
@@ -287,12 +308,12 @@ async def add_manual(
     background_task: BackgroundTasks,
     title: Annotated[str, Form()],
     author: Annotated[str, Form()],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
     narrator: Annotated[Optional[str], Form()] = None,
     subtitle: Annotated[Optional[str], Form()] = None,
     publish_date: Annotated[Optional[str], Form()] = None,
     info: Annotated[Optional[str], Form()] = None,
     id: Optional[uuid.UUID] = None,
-    user: DetailedUser = Security(ABRAuth()),
 ):
     if id:
         book_request = session.get(ManualBookRequest, id)

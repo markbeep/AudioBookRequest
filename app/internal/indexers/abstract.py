@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Any
 
 from aiohttp import ClientSession
 from pydantic import BaseModel
@@ -9,7 +8,7 @@ from app.internal.indexers.configuration import (
     Configurations,
     indexer_configuration_cache,
 )
-from app.internal.models import BookRequest, ProwlarrSource
+from app.internal.models import Audiobook, ProwlarrSource
 
 
 class SessionContainer(BaseModel, arbitrary_types_allowed=True):
@@ -34,11 +33,12 @@ class AbstractIndexer[T: Configurations](ABC):
     async def is_enabled(
         self,
         container: SessionContainer,
-        configurations: Any,
+        configurations: object,
     ) -> bool:
         """
         Returns true if the indexer is active and can be used.
         """
+        _ = configurations
         enabled_key = f"{self.name}_enabled"
         enabled = indexer_configuration_cache.get_bool(container.session, enabled_key)
         return enabled or False
@@ -54,9 +54,9 @@ class AbstractIndexer[T: Configurations](ABC):
     @abstractmethod
     async def setup(
         self,
-        request: BookRequest,
+        book: Audiobook,
         container: SessionContainer,
-        configurations: Any,
+        configurations: object,
     ) -> None:
         """
         Called initially when a book request is made.

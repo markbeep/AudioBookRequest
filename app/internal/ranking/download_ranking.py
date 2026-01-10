@@ -1,13 +1,13 @@
 import asyncio
 from functools import cmp_to_key
-from typing import Callable
+from typing import Callable, final
 
 import pydantic
 from aiohttp import ClientSession
 from rapidfuzz import fuzz, utils
 from sqlmodel import Session
 
-from app.internal.models import BookRequest, ProwlarrSource
+from app.internal.models import Audiobook, ProwlarrSource
 from app.internal.ranking.quality import quality_config
 from app.internal.ranking.quality_extract import Quality, extract_qualities
 
@@ -21,7 +21,7 @@ async def rank_sources(
     session: Session,
     client_session: ClientSession,
     sources: list[ProwlarrSource],
-    book: BookRequest,
+    book: Audiobook,
 ) -> list[ProwlarrSource]:
     async def get_qualities(source: ProwlarrSource):
         qualities = await extract_qualities(session, client_session, source, book)
@@ -36,8 +36,9 @@ async def rank_sources(
     return [rs.source for rs in rank_sources]
 
 
+@final
 class CompareSource:
-    def __init__(self, session: Session, book: BookRequest):
+    def __init__(self, session: Session, book: Audiobook):
         self.session = session
         self.book = book
         self.compare_order = [
@@ -63,6 +64,7 @@ class CompareSource:
         self, index: int
     ) -> Callable[[RankSource, RankSource, int], int]:
         def default_compare(a: RankSource, b: RankSource, next_compare: int) -> int:
+            _, _, _ = a, b, next_compare
             return 0
 
         if index < len(self.compare_order):
@@ -81,7 +83,7 @@ class CompareSource:
                 quality_range = quality_config.get_range(
                     self.session, "quality_unknown_audio"
                 )
-            case "unknown" | _:
+            case "unknown":
                 quality_range = quality_config.get_range(
                     self.session, "quality_unknown"
                 )

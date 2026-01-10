@@ -1,6 +1,7 @@
 from typing import Literal, Optional
 
 from aiohttp import ClientSession
+from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.util.cache import StringConfigCache
@@ -25,7 +26,19 @@ oidcConfigKey = Literal[
 class InvalidOIDCConfiguration(Exception):
     def __init__(self, detail: Optional[str] = None, **kwargs: object):
         super().__init__(**kwargs)
-        self.detail = detail
+        self.detail: str | None = detail
+
+
+class _OidcResponse(BaseModel):
+    authorization_endpoint: str
+    token_endpoint: str
+    userinfo_endpoint: str
+    end_session_endpoint: Optional[str] = None
+
+
+class _OidcScopeResponse(BaseModel):
+    scopes_supported: list[str] = []
+    claims_supported: list[str] = []
 
 
 class oidcConfig(StringConfigCache[oidcConfigKey]):
@@ -39,22 +52,18 @@ class oidcConfig(StringConfigCache[oidcConfigKey]):
         try:
             async with client_session.get(endpoint) as response:
                 if response.status == 200:
-                    data = await response.json()
+                    data = _OidcResponse.model_validate(await response.json())
                     self.set(
                         session,
                         "oidc_authorize_endpoint",
-                        data["authorization_endpoint"],
+                        data.authorization_endpoint,
                     )
-                    self.set(session, "oidc_token_endpoint", data["token_endpoint"])
-                    self.set(
-                        session, "oidc_userinfo_endpoint", data["userinfo_endpoint"]
-                    )
-                    if "end_session_endpoint" in data and not self.get(
+                    self.set(session, "oidc_token_endpoint", data.token_endpoint)
+                    self.set(session, "oidc_userinfo_endpoint", data.userinfo_endpoint)
+                    if data.end_session_endpoint and not self.get(
                         session, "oidc_logout_url"
                     ):
-                        self.set(
-                            session, "oidc_logout_url", data["end_session_endpoint"]
-                        )
+                        self.set(session, "oidc_logout_url", data.end_session_endpoint)
         except Exception as e:
             logger.error(f"Failed to set OIDC endpoint: {endpoint}. Error: {str(e)}")
             raise InvalidOIDCConfiguration(
@@ -78,16 +87,17 @@ class oidcConfig(StringConfigCache[oidcConfigKey]):
         async with client_session.get(endpoint) as response:
             if not response.ok:
                 return "Failed to fetch OIDC configuration"
-            data = await response.json()
+            data = _OidcScopeResponse.model_validate(await response.json())
 
         config_scope = self.get(session, "oidc_scope", "").split(" ")
-        provider_scope = data.get("scopes_supported")
+        provider_scope = data.scopes_supported
         if not provider_scope or not all(
             scope in provider_scope for scope in config_scope
         ):
-            return "Scopes are not all supported by the provider"
+            not_supported = set(config_scope) - set(provider_scope)
+            return f"Scopes are not all supported by the provider: [{', '.join(not_supported)}]"
 
-        provider_claims = data.get("claims_supported")
+        provider_claims = data.claims_supported
         if not provider_claims:
             return "Provider does not support or list claims"
 

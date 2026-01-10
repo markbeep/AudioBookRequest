@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Optional
+from typing import Annotated, Optional, cast
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, Security
 from sqlmodel import Session
@@ -25,17 +25,27 @@ async def update_indexer(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    admin_user: DetailedUser = Security(APIKeyAuth(GroupEnum.admin)),
+    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     """
     Update values of an indexer. The body needs to be a key-value mapping of the configuration values to update.
 
     Use the /configurations endpoint to get the list of configuration keys and their types.
     """
+
     try:
+        body = await request.json()  # pyright: ignore[reportAny]
+        if not isinstance(body, dict):
+            raise HTTPException(status_code=400, detail="Body must be a JSON object")
+        for key in body.keys():  # pyright: ignore[reportUnknownVariableType]
+            if not isinstance(key, str):
+                raise HTTPException(
+                    status_code=400, detail="All keys in the body must be strings"
+                )
+        body = cast(dict[str, object], body)
         await update_single_indexer(
             indexer,
-            await request.json(),
+            body,
             session,
             client_session,
             ignore_missing_booleans=True,
@@ -62,7 +72,7 @@ class StringConfigurationResponse(BaseSQLModel):
 async def get_indexer_configurations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    admin_user: DetailedUser = Security(APIKeyAuth(GroupEnum.admin)),
+    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     contexts = await get_indexer_contexts(
         SessionContainer(session=session, client_session=client_session),
@@ -76,9 +86,9 @@ async def get_indexer_configurations(
             StringConfigurationResponse(
                 name=key,
                 description=config.description,
-                default=str(config.default) if config.default is not None else None,
+                default=str(config.default) if config.default is not None else None,  # pyright: ignore[reportAny]
                 required=config.required,
-                type=config.type.__name__,
+                type=config.type_.__name__,
             )
             for key, config in context.configuration.items()
         ]

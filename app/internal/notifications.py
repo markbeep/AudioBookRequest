@@ -5,7 +5,7 @@ from aiohttp import ClientSession, InvalidUrlClientError
 from sqlmodel import Session, select
 
 from app.internal.models import (
-    BookRequest,
+    Audiobook,
     EventEnum,
     ManualBookRequest,
     Notification,
@@ -24,8 +24,10 @@ def _replace_variables(
     book_authors: Optional[str] = None,
     book_narrators: Optional[str] = None,
     event_type: Optional[str] = None,
-    other_replacements: dict[str, str] = {},
+    other_replacements: dict[str, str] | None = None,
 ):
+    if other_replacements is None:
+        other_replacements = {}
     if user:
         template = template.replace("{eventUser}", user.username)
         if user.extra_data:
@@ -77,14 +79,16 @@ async def send_notification(
     notification: Notification,
     requester: Optional[User] = None,
     book_asin: Optional[str] = None,
-    other_replacements: dict[str, str] = {},
+    other_replacements: dict[str, str] | None = None,
 ):
+    if other_replacements is None:
+        other_replacements = {}
     book_title = None
     book_authors = None
     book_narrators = None
     if book_asin:
         book = session.exec(
-            select(BookRequest).where(BookRequest.asin == book_asin)
+            select(Audiobook).where(Audiobook.asin == book_asin)
         ).first()
         if book:
             book_title = book.title
@@ -102,7 +106,7 @@ async def send_notification(
     )
 
     if notification.body_type == NotificationBodyTypeEnum.json:
-        body = json.loads(body, strict=False)
+        body = json.loads(body, strict=False)  # pyright: ignore[reportAny]
 
     logger.info(
         "Sending notification",
@@ -136,8 +140,10 @@ async def send_all_notifications(
     event_type: EventEnum,
     requester: Optional[User] = None,
     book_asin: Optional[str] = None,
-    other_replacements: dict[str, str] = {},
+    other_replacements: dict[str, str] | None = None,
 ):
+    if other_replacements is None:
+        other_replacements = {}
     with open_session() as session:
         notifications = session.exec(
             select(Notification).where(
@@ -145,22 +151,36 @@ async def send_all_notifications(
             )
         ).all()
         for notification in notifications:
-            await send_notification(
+            succ = await send_notification(
                 session=session,
                 notification=notification,
                 requester=requester,
                 book_asin=book_asin,
                 other_replacements=other_replacements,
             )
+            if succ:
+                logger.info(
+                    "Notification sent successfully",
+                    url=notification.url,
+                    asin=book_asin,
+                )
+            else:
+                logger.error(
+                    "Failed to send notification",
+                    url=notification.url,
+                    asin=book_asin,
+                )
 
 
 async def send_manual_notification(
     notification: Notification,
     book: ManualBookRequest,
     requester: Optional[User] = None,
-    other_replacements: dict[str, str] = {},
+    other_replacements: dict[str, str] | None = None,
 ):
     """Send a notification for manual book requests"""
+    if other_replacements is None:
+        other_replacements = {}
     try:
         book_authors = ",".join(book.authors)
         book_narrators = ",".join(book.narrators)
@@ -176,7 +196,7 @@ async def send_manual_notification(
         )
 
         if notification.body_type == NotificationBodyTypeEnum.json:
-            body = json.loads(body)
+            body = json.loads(body)  # pyright: ignore[reportAny]
 
         logger.info(
             "Sending manual notification",
@@ -198,8 +218,10 @@ async def send_manual_notification(
 async def send_all_manual_notifications(
     event_type: EventEnum,
     book_request: ManualBookRequest,
-    other_replacements: dict[str, str] = {},
+    other_replacements: dict[str, str] | None = None,
 ):
+    if other_replacements is None:
+        other_replacements = {}
     with open_session() as session:
         user = session.exec(
             select(User).where(User.username == book_request.user_username)
@@ -210,9 +232,13 @@ async def send_all_manual_notifications(
             )
         ).all()
         for notif in notifications:
-            await send_manual_notification(
+            succ = await send_manual_notification(
                 notification=notif,
                 book=book_request,
                 requester=user,
                 other_replacements=other_replacements,
             )
+            if succ:
+                logger.info("Manual notification sent successfully", url=notif.url)
+            else:
+                logger.error("Failed to send manual notification", url=notif.url)

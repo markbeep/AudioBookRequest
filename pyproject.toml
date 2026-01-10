@@ -31,6 +31,7 @@ dependencies = [
     "apscheduler>=3.11.0",
     "psycopg2-binary>=2.9.10",
     "jinja2-htmlmin>=1.0.1",
+    "cryptography>=46.0.3",
 ]
 
 # setuptools by default expects a "src" folder structure
@@ -44,16 +45,12 @@ package = false
 profile = "jinja"
 ignore = "H021"
 
-[tool.pyrefly]
-project-includes = ["app"]
-
-[tool.pyrefly.errors]
-deprecated = false
+[tool.basedpyright]
+typeCheckingMode = "strict"
+include = ["app"]
+reportDeprecated = false
+reportUnusedCallResult = false
+allowedUntypedLibraries = ["apscheduler", "torrent_parser"]
 
 [dependency-groups]
-dev = [
-    "djlint",
-    "pyrefly>=0.46.2",
-    "ruff>=0.14.10",
-    "ty>=0.0.8",
-]
+dev = ["basedpyright>=1.36.2", "djlint", "ruff>=0.14.10"]

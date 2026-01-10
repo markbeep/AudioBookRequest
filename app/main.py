@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Awaitable, Callable
 from urllib.parse import quote_plus, urlencode
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware import Middleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlmodel import select
 
@@ -77,6 +78,7 @@ async def redirect_to_login(request: Request, exc: RequiresLoginException):
 
 @app.exception_handler(InvalidOIDCConfiguration)
 async def redirect_to_invalid_oidc(request: Request, exc: InvalidOIDCConfiguration):
+    _ = request
     path = "/auth/invalid-oidc"
     if exc.detail:
         path += f"?error={quote_plus(exc.detail)}"
@@ -103,7 +105,10 @@ async def raise_toast(request: Request, exc: ToastException):
 
 
 @app.middleware("http")
-async def redirect_to_init(request: Request, call_next: Any):
+async def redirect_to_init(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[StreamingResponse]],
+):
     """
     Initial redirect if no user exists. We force the user to create a new login
     """
