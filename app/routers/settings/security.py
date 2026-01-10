@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Form, Request, Response, Security
@@ -71,16 +71,16 @@ async def update_security(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
-    access_token_expiry: Annotated[Optional[int], Form()] = None,
-    min_password_length: Annotated[Optional[int], Form()] = None,
-    oidc_endpoint: Annotated[Optional[str], Form()] = None,
-    oidc_client_id: Annotated[Optional[str], Form()] = None,
-    oidc_client_secret: Annotated[Optional[str], Form()] = None,
-    oidc_scope: Annotated[Optional[str], Form()] = None,
-    oidc_username_claim: Annotated[Optional[str], Form()] = None,
-    oidc_group_claim: Annotated[Optional[str], Form()] = None,
-    oidc_redirect_https: Annotated[Optional[bool], Form()] = None,
-    oidc_logout_url: Annotated[Optional[str], Form()] = None,
+    access_token_expiry: Annotated[int | None, Form()] = None,
+    min_password_length: Annotated[int | None, Form()] = None,
+    oidc_endpoint: Annotated[str | None, Form()] = None,
+    oidc_client_id: Annotated[str | None, Form()] = None,
+    oidc_client_secret: Annotated[str | None, Form()] = None,
+    oidc_scope: Annotated[str | None, Form()] = None,
+    oidc_username_claim: Annotated[str | None, Form()] = None,
+    oidc_group_claim: Annotated[str | None, Form()] = None,
+    oidc_redirect_https: Annotated[bool | None, Form()] = None,
+    oidc_logout_url: Annotated[str | None, Form()] = None,
 ):
     if (
         login_type in [LoginTypeEnum.basic, LoginTypeEnum.forms]

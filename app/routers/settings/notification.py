@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Annotated, Optional, cast
+from typing import Annotated, cast
 
 from aiohttp import ClientResponseError
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, Security
@@ -72,7 +72,7 @@ def _upsert_notification(
     headers: str,
     admin_user: DetailedUser,
     session: Session,
-    notification_id: Optional[uuid.UUID] = None,
+    notification_id: uuid.UUID | None = None,
 ):
     try:
         headers_json = json.loads(headers or "{}")  # pyright: ignore[reportAny]

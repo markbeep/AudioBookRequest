@@ -1,6 +1,6 @@
 # pyright: reportAny=false
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 from sqlmodel import Session
@@ -11,8 +11,8 @@ from app.util.log import logger
 
 class IndexerConfiguration[T: (str, int, bool, float, None)](BaseModel):
     display_name: str
-    description: Optional[str] = None
-    default: Optional[T] = None
+    description: str | None = None
+    default: T | None = None
     required: bool = False
     type_: type[T] = Field(exclude=True)
 
@@ -84,7 +84,7 @@ def create_valued_configuration(
         if not isinstance(_value, IndexerConfiguration):
             logger.debug("Skipping key", key=key)
             continue
-        value: IndexerConfiguration[Any] = _value  # pyright: ignore[reportExplicitAny, reportUnknownVariableType]
+        value: IndexerConfiguration[Any] = _value  # pyright: ignore[reportExplicitAny]
 
         config_value = indexer_configuration_cache.get(session, key)
         if config_value is None:

@@ -1,7 +1,7 @@
 import asyncio
 import time
 from datetime import datetime
-from typing import Literal, Optional, TypedDict, cast
+from typing import Literal, TypedDict, cast
 from urllib.parse import urlencode
 
 from aiohttp import ClientSession
@@ -69,10 +69,10 @@ class _AudnexusResponse(BaseModel):
 
     asin: str
     title: str
-    subtitle: Optional[str]
+    subtitle: str | None
     authors: list[_Author]
     narrators: list[_Author]
-    image: Optional[str]
+    image: str | None
     releaseDate: str
     runtimeLengthMin: int
 
@@ -81,7 +81,7 @@ async def _get_audnexus_book(
     session: ClientSession,
     asin: str,
     region: audible_region_type,
-) -> Optional[Audiobook]:
+) -> Audiobook | None:
     """
     https://audnex.us/#tag/Books/operation/getBookById
     """
@@ -121,19 +121,19 @@ class _AudimetaResponse(BaseModel):
 
     asin: str
     title: str
-    subtitle: Optional[str]
+    subtitle: str | None
     authors: list[_Author]
     narrators: list[_Author]
-    imageUrl: Optional[str]
+    imageUrl: str | None
     releaseDate: str
-    lengthMinutes: Optional[int]
+    lengthMinutes: int | None
 
 
 async def _get_audimeta_book(
     session: ClientSession,
     asin: str,
     region: audible_region_type,
-) -> Optional[Audiobook]:
+) -> Audiobook | None:
     """
     https://audimeta.de/api-docs/#/book/get_book__asin_
     """
@@ -171,7 +171,7 @@ async def get_book_by_asin(
     session: ClientSession,
     asin: str,
     audible_region: audible_region_type | None = None,
-) -> Optional[Audiobook]:
+) -> Audiobook | None:
     if audible_region is None:
         audible_region = get_region_from_settings()
     book = await _get_audimeta_book(session, asin, audible_region)

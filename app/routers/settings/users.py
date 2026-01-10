@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Security
 from sqlmodel import Session, select
@@ -115,8 +115,8 @@ def update_user(
     username: str,
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
-    group: Annotated[Optional[GroupEnum], Form()] = None,
-    extra_data: Annotated[Optional[str], Form()] = None,
+    group: Annotated[GroupEnum | None, Form()] = None,
+    extra_data: Annotated[str | None, Form()] = None,
 ):
     updated: list[str] = []
     user = session.exec(select(User).where(User.username == username)).one_or_none()

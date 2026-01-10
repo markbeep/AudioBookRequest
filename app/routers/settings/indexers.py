@@ -1,7 +1,7 @@
 import json
 import os
 from contextlib import asynccontextmanager
-from typing import Annotated, Literal, Mapping, Optional, cast
+from typing import Annotated, Literal, Mapping, cast
 
 from aiohttp import ClientSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -67,7 +67,7 @@ async def update_single_indexer(
         session_container, check_required=False, return_disabled=True
     )
 
-    updated_context: Optional[IndexerContext] = None
+    updated_context: IndexerContext | None = None
     for context in contexts:
         if context.indexer.name == indexer_select:
             updated_context = context
@@ -106,7 +106,7 @@ async def update_single_indexer(
 
 
 async def read_indexer_file(
-    session: Session, client_session: ClientSession, *, file_path: Optional[str] = None
+    session: Session, client_session: ClientSession, *, file_path: str | None = None
 ):
     if not file_path:
         file_path = indexer_config.get(session, "indexers_configuration_file")

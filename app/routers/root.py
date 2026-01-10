@@ -33,6 +33,7 @@ etag_cache: dict[PathLike[str] | str, str] = {}
 
 def add_cache_headers(func: Callable[..., FileResponse]):
     def wrapper(v: object):
+        _ = v
         file = func()
         etag = etag_cache.get(file.path)
         if not etag or Settings().app.debug:

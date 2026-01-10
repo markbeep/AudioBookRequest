@@ -1,7 +1,7 @@
 import aiohttp
 from app.internal.models import AudiobookSearchResult
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated
 
 from aiohttp import ClientSession
 from fastapi import (
@@ -55,7 +55,7 @@ async def read_search(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(ABRAuth())],
-    query: Annotated[Optional[str], Query(alias="q")] = None,
+    query: Annotated[str | None, Query(alias="q")] = None,
     num_results: int = 20,
     page: int = 0,
     region: audible_region_type | None = None,
@@ -151,7 +151,7 @@ async def add_request(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     background_task: BackgroundTasks,
-    query: Annotated[Optional[str], Form()],
+    query: Annotated[str | None, Form()],
     page: Annotated[int, Form()],
     region: Annotated[audible_region_type, Form()],
     user: Annotated[DetailedUser, Security(ABRAuth())],
@@ -247,7 +247,7 @@ async def delete_request(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(ABRAuth())],
-    downloaded: Optional[bool] = None,
+    downloaded: bool | None = None,
 ):
     if user.is_admin():
         session.execute(
@@ -289,7 +289,7 @@ async def read_manual(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(ABRAuth())],
-    id: Optional[uuid.UUID] = None,
+    id: uuid.UUID | None = None,
 ):
     book = None
     if id:
@@ -309,11 +309,11 @@ async def add_manual(
     title: Annotated[str, Form()],
     author: Annotated[str, Form()],
     user: Annotated[DetailedUser, Security(ABRAuth())],
-    narrator: Annotated[Optional[str], Form()] = None,
-    subtitle: Annotated[Optional[str], Form()] = None,
-    publish_date: Annotated[Optional[str], Form()] = None,
-    info: Annotated[Optional[str], Form()] = None,
-    id: Optional[uuid.UUID] = None,
+    narrator: Annotated[str | None, Form()] = None,
+    subtitle: Annotated[str | None, Form()] = None,
+    publish_date: Annotated[str | None, Form()] = None,
+    info: Annotated[str | None, Form()] = None,
+    id: uuid.UUID | None = None,
 ):
     if id:
         book_request = session.get(ManualBookRequest, id)

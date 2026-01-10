@@ -2,7 +2,7 @@ import secrets
 import time
 from datetime import datetime
 from math import inf
-from typing import Annotated, Optional, final
+from typing import Annotated, final
 
 import pydantic
 from argon2 import PasswordHasher
@@ -36,7 +36,7 @@ class DetailedUser(User):
 def raise_for_invalid_password(
     session: Session,
     password: str,
-    confirm_password: Optional[str] = None,
+    confirm_password: str | None = None,
     ignore_confirm: bool = False,
 ):
     if not ignore_confirm and password != confirm_password:
@@ -65,7 +65,7 @@ def is_correct_password(user: User, password: str) -> bool:
         return False
 
 
-def authenticate_user(session: Session, username: str, password: str) -> Optional[User]:
+def authenticate_user(session: Session, username: str, password: str) -> User | None:
     user = session.get(User, username)
     if not user:
         return None
@@ -88,7 +88,7 @@ def create_user(
     password: str,
     group: GroupEnum = GroupEnum.untrusted,
     root: bool = False,
-    extra_data: Optional[str] = None,
+    extra_data: str | None = None,
 ) -> User:
     password_hash = ph.hash(password)
     return User(
@@ -135,7 +135,7 @@ class APIKeyAuth(SecurityBase):
         self,
         request: Request,
         session: Annotated[Session, Depends(get_session)],
-    ) -> Optional[DetailedUser]:
+    ) -> DetailedUser | None:
         api_key = await self.api_key_header(request)
         if api_key is None:
             if self.auto_error:
@@ -161,7 +161,7 @@ class APIKeyAuth(SecurityBase):
         )
         return user
 
-    def _authenticate_api_key(self, session: Session, key: str) -> Optional[User]:
+    def _authenticate_api_key(self, session: Session, key: str) -> User | None:
         api_keys = session.exec(select(APIKey)).all()
 
         for api_key in api_keys:
@@ -187,7 +187,7 @@ class APIKeyAuth(SecurityBase):
 
 
 class RequiresLoginException(Exception):
-    def __init__(self, detail: Optional[str] = None, **kwargs: object):
+    def __init__(self, detail: str | None = None, **kwargs: object):
         super().__init__(**kwargs)
         self.detail: str | None = detail
 
@@ -196,8 +196,8 @@ class RequiresLoginException(Exception):
 class ABRAuth(SecurityBase):
     def __init__(self, lowest_allowed_group: GroupEnum = GroupEnum.untrusted):
         self.lowest_allowed_group = lowest_allowed_group
-        self.oidc_scheme: Optional[OpenIdConnect] = None
-        self.none_user: Optional[User] = None
+        self.oidc_scheme: OpenIdConnect | None = None
+        self.none_user: User | None = None
         self.security = HTTPBasic()
         self.model = SecurityBaseModel(
             type=SecuritySchemeType.openIdConnect, description="ABR Authentication"

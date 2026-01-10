@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Form, Request, Response, Security
@@ -25,7 +25,7 @@ async def read_prowlarr(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
-    prowlarr_misconfigured: Optional[object] = None,
+    prowlarr_misconfigured: object | None = None,
 ):
     prowlarr_base_url = prowlarr_config.get_base_url(session)
     prowlarr_api_key = prowlarr_config.get_api_key(session)

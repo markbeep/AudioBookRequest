@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 
 from aiohttp import ClientSession, InvalidUrlClientError
 from sqlmodel import Session, select
@@ -19,11 +18,11 @@ from app.util.log import logger
 
 def _replace_variables(
     template: str,
-    user: Optional[User] = None,
-    book_title: Optional[str] = None,
-    book_authors: Optional[str] = None,
-    book_narrators: Optional[str] = None,
-    event_type: Optional[str] = None,
+    user: User | None = None,
+    book_title: str | None = None,
+    book_authors: str | None = None,
+    book_narrators: str | None = None,
+    event_type: str | None = None,
     other_replacements: dict[str, str] | None = None,
 ):
     if other_replacements is None:
@@ -77,8 +76,8 @@ async def _send(
 async def send_notification(
     session: Session,
     notification: Notification,
-    requester: Optional[User] = None,
-    book_asin: Optional[str] = None,
+    requester: User | None = None,
+    book_asin: str | None = None,
     other_replacements: dict[str, str] | None = None,
 ):
     if other_replacements is None:
@@ -138,8 +137,8 @@ async def send_notification(
 
 async def send_all_notifications(
     event_type: EventEnum,
-    requester: Optional[User] = None,
-    book_asin: Optional[str] = None,
+    requester: User | None = None,
+    book_asin: str | None = None,
     other_replacements: dict[str, str] | None = None,
 ):
     if other_replacements is None:
@@ -175,7 +174,7 @@ async def send_all_notifications(
 async def send_manual_notification(
     notification: Notification,
     book: ManualBookRequest,
-    requester: Optional[User] = None,
+    requester: User | None = None,
     other_replacements: dict[str, str] | None = None,
 ):
     """Send a notification for manual book requests"""

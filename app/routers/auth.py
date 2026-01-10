@@ -1,7 +1,7 @@
 import base64
 import secrets
 import time
-from typing import Annotated, Optional, cast
+from typing import Annotated, cast
 from urllib.parse import urlencode, urljoin
 
 import jwt
@@ -151,7 +151,7 @@ def login_access_token(
 
 class _AccessTokenBody(BaseModel):
     access_token: str | None = None
-    expires_in: Optional[int] = None
+    expires_in: int | None = None
 
 
 @router.get("/oidc")
@@ -160,7 +160,7 @@ async def login_oidc(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     code: str,
-    state: Optional[str] = None,
+    state: str | None = None,
 ):
     token_endpoint = oidc_config.get(session, "oidc_token_endpoint")
     userinfo_endpoint = oidc_config.get(session, "oidc_userinfo_endpoint")
@@ -310,7 +310,7 @@ async def login_oidc(
 def invalid_oidc(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    error: Optional[str] = None,
+    error: str | None = None,
 ):
     if auth_config.get_login_type(session) != LoginTypeEnum.oidc:
         return Response(status_code=status.HTTP_404_NOT_FOUND)

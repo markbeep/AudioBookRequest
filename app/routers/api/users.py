@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 from pydantic import BaseModel, Field
@@ -37,19 +37,15 @@ class UserCreate(BaseModel):
         GroupEnum.untrusted, description="User group (untrusted, trusted, admin)"
     )
     root: bool = Field(False, description="Whether to create as root admin user")
-    extra_data: Optional[str] = Field(
-        None, description="Optional extra data for the user"
-    )
+    extra_data: str | None = Field(None, description="Optional extra data for the user")
 
 
 class UserUpdate(BaseModel):
-    password: Optional[str] = Field(
+    password: str | None = Field(
         None, min_length=1, description="New password (optional)"
     )
-    group: Optional[GroupEnum] = Field(None, description="New user group (optional)")
-    extra_data: Optional[str] = Field(
-        None, description="Optional extra data for the user"
-    )
+    group: GroupEnum | None = Field(None, description="New user group (optional)")
+    extra_data: str | None = Field(None, description="Optional extra data for the user")
 
 
 class UsersListResponse(BaseModel):

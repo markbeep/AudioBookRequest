@@ -1,6 +1,6 @@
 # what is currently being queried
 from contextlib import contextmanager
-from typing import Literal, Optional
+from typing import Literal
 
 import pydantic
 from aiohttp import ClientSession
@@ -31,10 +31,10 @@ def manage_queried(asin: str):
 
 
 class QueryResult(pydantic.BaseModel):
-    sources: Optional[list[ProwlarrSource]]
+    sources: list[ProwlarrSource] | None
     book: Audiobook
     state: Literal["ok", "querying", "uncached"]
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
     @property
     def ok(self) -> bool:

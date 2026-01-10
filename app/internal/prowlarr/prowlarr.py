@@ -2,7 +2,7 @@ import json
 import posixpath
 from datetime import datetime
 import time
-from typing import Literal, Optional
+from typing import Literal
 from urllib.parse import urlencode
 
 from aiohttp import ClientResponse, ClientSession
@@ -52,13 +52,13 @@ class ProwlarrConfig(StringConfigCache[ProwlarrConfigKey]):
             and self.get_api_key(session) is not None
         )
 
-    def get_api_key(self, session: Session) -> Optional[str]:
+    def get_api_key(self, session: Session) -> str | None:
         return self.get(session, "prowlarr_api_key")
 
     def set_api_key(self, session: Session, api_key: str):
         self.set(session, "prowlarr_api_key", api_key)
 
-    def get_base_url(self, session: Session) -> Optional[str]:
+    def get_base_url(self, session: Session) -> str | None:
         path = self.get(session, "prowlarr_base_url")
         if path:
             return path.rstrip("/")
@@ -105,7 +105,7 @@ def flush_prowlarr_cache():
 
 async def _get_torrent_info_hash(
     client_session: ClientSession, download_url: str
-) -> Optional[str]:
+) -> str | None:
     logger.debug("Fetching torrent info hash", download_url=download_url)
     async with client_session.get(download_url) as r:
         if not r.ok:
@@ -130,7 +130,7 @@ async def start_download(
     indexer_id: int,
     requester: User,
     book_asin: str,
-    prowlarr_source: Optional[ProwlarrSource] = None,
+    prowlarr_source: ProwlarrSource | None = None,
 ) -> ClientResponse:
     prowlarr_config.raise_if_invalid(session)
     base_url = prowlarr_config.get_base_url(session)
@@ -200,10 +200,10 @@ class _ProwlarrResultBase(BaseModel):
     indexer: str
     title: str
     size: int
-    infoUrl: Optional[str]
-    indexerFlags: list[str]
-    downloadUrl: Optional[str]
-    magnetUrl: Optional[str]
+    infoUrl: str | None = None
+    indexerFlags: list[str] = []
+    downloadUrl: str | None = None
+    magnetUrl: str | None = None
     publishDate: str
 
 
@@ -227,10 +227,10 @@ async def query_prowlarr(
     session: Session,
     client_session: ClientSession,
     book: Audiobook,
-    indexer_ids: Optional[list[int]] = None,
+    indexer_ids: list[int] | None = None,
     force_refresh: bool = False,
     only_return_if_cached: bool = False,
-) -> Optional[list[ProwlarrSource]]:
+) -> list[ProwlarrSource] | None:
     query = book.title
 
     base_url = prowlarr_config.get_base_url(session)
@@ -300,7 +300,7 @@ async def query_prowlarr(
     logger.info(
         "Prowlarr query completed",
         elapsed_time_seconds=elapsed_time,
-        results=search_results,
+        results_size=len(search_results),
     )
 
     sources: list[ProwlarrSource] = []
@@ -361,7 +361,7 @@ async def query_prowlarr(
 class IndexerResponse(BaseModel):
     indexers: dict[int, Indexer] = {}
     state: Literal["ok", "missingUrlKey", "failedFetch"]
-    error: Optional[str] = None
+    error: str | None = None
 
     @property
     def json_string(self) -> str:

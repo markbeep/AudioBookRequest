@@ -1,5 +1,4 @@
 import pathlib
-from typing import Optional
 
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -37,7 +36,7 @@ class ApplicationSettings(BaseModel):
     init_root_username: str = ""
     init_root_password: str = ""
 
-    def get_force_login_type(self) -> Optional[LoginTypeEnum]:
+    def get_force_login_type(self) -> LoginTypeEnum | None:
         if self.force_login_type.strip():
             try:
                 login_type = LoginTypeEnum(self.force_login_type.strip().lower())

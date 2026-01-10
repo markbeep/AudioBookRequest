@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from aiohttp import ClientSession
 from pydantic import BaseModel
@@ -24,7 +24,7 @@ oidcConfigKey = Literal[
 
 
 class InvalidOIDCConfiguration(Exception):
-    def __init__(self, detail: Optional[str] = None, **kwargs: object):
+    def __init__(self, detail: str | None = None, **kwargs: object):
         super().__init__(**kwargs)
         self.detail: str | None = detail
 
@@ -33,7 +33,7 @@ class _OidcResponse(BaseModel):
     authorization_endpoint: str
     token_endpoint: str
     userinfo_endpoint: str
-    end_session_endpoint: Optional[str] = None
+    end_session_endpoint: str | None = None
 
 
 class _OidcScopeResponse(BaseModel):
@@ -77,7 +77,7 @@ class oidcConfig(StringConfigCache[oidcConfigKey]):
 
     async def validate(
         self, session: Session, client_session: ClientSession
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Returns None if valid, the error message otherwise
         """

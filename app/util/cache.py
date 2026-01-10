@@ -1,6 +1,6 @@
 import time
 from abc import ABC
-from typing import Optional, overload
+from typing import overload
 
 from sqlmodel import Session, select
 
@@ -10,7 +10,7 @@ from app.internal.models import Config
 class SimpleCache[VT, *KTs]:
     _cache: dict[tuple[*KTs], tuple[int, VT]] = {}
 
-    def get(self, source_ttl: int, *query: *KTs) -> Optional[VT]:
+    def get(self, source_ttl: int, *query: *KTs) -> VT | None:
         hit = self._cache.get(query)
         if not hit:
             return None
@@ -39,14 +39,12 @@ class StringConfigCache[L: str](ABC):
     _cache: dict[L, str] = {}
 
     @overload
-    def get(self, session: Session, key: L) -> Optional[str]: ...
+    def get(self, session: Session, key: L) -> str | None: ...
 
     @overload
     def get(self, session: Session, key: L, default: str) -> str: ...
 
-    def get(
-        self, session: Session, key: L, default: Optional[str] = None
-    ) -> Optional[str]:
+    def get(self, session: Session, key: L, default: str | None = None) -> str | None:
         if key in self._cache:
             return self._cache[key]
         return (
@@ -73,14 +71,14 @@ class StringConfigCache[L: str](ABC):
             del self._cache[key]
 
     @overload
-    def get_int(self, session: Session, key: L) -> Optional[int]: ...
+    def get_int(self, session: Session, key: L) -> int | None: ...
 
     @overload
     def get_int(self, session: Session, key: L, default: int) -> int: ...
 
     def get_int(
-        self, session: Session, key: L, default: Optional[int] = None
-    ) -> Optional[int]:
+        self, session: Session, key: L, default: int | None = None
+    ) -> int | None:
         val = self.get(session, key)
         if val:
             return int(val)
@@ -89,7 +87,7 @@ class StringConfigCache[L: str](ABC):
     def set_int(self, session: Session, key: L, value: int):
         self.set(session, key, str(value))
 
-    def get_bool(self, session: Session, key: L) -> Optional[bool]:
+    def get_bool(self, session: Session, key: L) -> bool | None:
         try:
             val = self.get_int(session, key)
         except ValueError:  # incase if the db has an old bool string instead of an int

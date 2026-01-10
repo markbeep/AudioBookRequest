@@ -186,6 +186,8 @@ Website can be visited at http://localhost:8000.
 2. Tailwind is used in combination with [DaisyUI](https://daisyui.com). Download the source files using the following commands:
 
 ```sh
+just install_daisy
+# or manually
 curl -sLo static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs
 curl -sLo static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
 ```

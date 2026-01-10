@@ -3,7 +3,7 @@ import json
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Literal, Optional, Union, cast
+from typing import Annotated, Literal, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 from sqlmodel import JSON, Column, DateTime, Field, SQLModel, func
@@ -28,7 +28,7 @@ class User(BaseSQLModel, table=True):
         sa_column_kwargs={"server_default": "untrusted"},
     )
     root: bool = False
-    extra_data: Optional[str] = None
+    extra_data: str | None = None
 
     # TODO: Add last_login
     # last_login: datetime = Field(
@@ -66,10 +66,10 @@ class Audiobook(BaseSQLModel, table=True):
 
     asin: str = Field(primary_key=True)
     title: str
-    subtitle: Optional[str]
+    subtitle: str | None
     authors: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     narrators: list[str] = Field(default_factory=list, sa_column=Column(JSON))
-    cover_image: Optional[str]
+    cover_image: str | None
     release_date: datetime
     runtime_length_min: int
     updated_at: datetime = Field(
@@ -152,11 +152,11 @@ class ManualBookRequest(BaseSQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_username: str = Field(foreign_key="user.username", ondelete="CASCADE")
     title: str
-    subtitle: Optional[str] = None
+    subtitle: str | None = None
     authors: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     narrators: list[str] = Field(default_factory=list, sa_column=Column(JSON))
-    publish_date: Optional[str] = None
-    additional_info: Optional[str] = None
+    publish_date: str | None = None
+    additional_info: str | None = None
     updated_at: datetime = Field(
         default_factory=datetime.now,
         sa_column=Column(
@@ -176,11 +176,11 @@ class ManualBookRequest(BaseSQLModel, table=True):
 class BookMetadata(BaseSQLModel):
     """extra metadata that can be added to sources to better rank them"""
 
-    title: Optional[str] = None
-    subtitle: Optional[str] = None
+    title: str | None = None
+    subtitle: str | None = None
     authors: list[str] = []
     narrators: list[str] = []
-    filetype: Optional[str] = None
+    filetype: str | None = None
 
 
 class BaseSource(BaseSQLModel):
@@ -190,10 +190,10 @@ class BaseSource(BaseSQLModel):
     title: str
     size: int  # in bytes
     publish_date: datetime
-    info_url: Optional[str]
+    info_url: str | None
     indexer_flags: list[str]
-    download_url: Optional[str] = None
-    magnet_url: Optional[str] = None
+    download_url: str | None = None
+    magnet_url: str | None = None
 
     book_metadata: BookMetadata = BookMetadata()
 
@@ -269,7 +269,7 @@ class APIKey(BaseSQLModel, table=True):
             nullable=False,
         ),
     )
-    last_used: Optional[datetime] = Field(
+    last_used: datetime | None = Field(
         default=None,
         sa_column=Column(
             type_=DateTime,

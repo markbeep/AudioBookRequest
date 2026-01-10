@@ -3,35 +3,34 @@ name = "AudioBookRequest"
 version = "1.8.0"
 requires-python = ">= 3.12"
 readme = "README.md"
-# no explicit versioning unless required. the uv.lock file is for that
 dependencies = [
-    "aiohttp",
-    "alembic",
-    "argon2-cffi",
-    "argon2-cffi-bindings",
-    "fastapi[standard]",
-    "itsdangerous",
-    "jinja2",
-    "jinja2-fragments",
-    "pydantic",
-    "pydantic-settings",
-    "pydantic-core",
-    "pyjwt",
-    "sqlmodel",
-    "terminaltables",
-    "torrent-parser",
-    "typer",
-    "urllib3",
-    "rapidfuzz",
-    "python-multipart",
-    "requests",
-    "structlog",
-    "torf>=4.3.0",
-    "markdown>=3.8.2",
-    "apscheduler>=3.11.0",
-    "psycopg2-binary>=2.9.10",
-    "jinja2-htmlmin>=1.0.1",
+    "aiohttp>=3.13.3",
+    "alembic>=1.18.0",
+    "apscheduler>=3.11.2",
+    "argon2-cffi>=25.1.0",
+    "argon2-cffi-bindings>=25.1.0",
     "cryptography>=46.0.3",
+    "fastapi[standard]>=0.128.0",
+    "itsdangerous>=2.2.0",
+    "jinja2>=3.1.6",
+    "jinja2-fragments>=1.11.0",
+    "jinja2-htmlmin>=1.0.1",
+    "markdown>=3.10",
+    "psycopg2-binary>=2.9.11",
+    "pydantic>=2.12.5",
+    "pydantic-core>=2.41.5",
+    "pydantic-settings>=2.12.0",
+    "pyjwt>=2.10.1",
+    "python-multipart>=0.0.21",
+    "rapidfuzz>=3.14.3",
+    "requests>=2.32.5",
+    "sqlmodel>=0.0.31",
+    "structlog>=25.5.0",
+    "terminaltables>=3.1.10",
+    "torf>=4.3.0",
+    "torrent-parser>=0.4.1",
+    "typer>=0.21.1",
+    "urllib3>=2.6.3",
 ]
 
 # setuptools by default expects a "src" folder structure
@@ -46,11 +45,11 @@ profile = "jinja"
 ignore = "H021"
 
 [tool.basedpyright]
-typeCheckingMode = "strict"
+typeCheckingMode = "all"
 include = ["app"]
 reportDeprecated = false
 reportUnusedCallResult = false
 allowedUntypedLibraries = ["apscheduler", "torrent_parser"]
 
 [dependency-groups]
-dev = ["basedpyright>=1.36.2", "djlint", "ruff>=0.14.10"]
+dev = ["basedpyright>=1.37.1", "djlint>=1.36.4", "ruff>=0.14.11"]

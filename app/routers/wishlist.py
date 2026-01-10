@@ -4,7 +4,7 @@ from sqlalchemy.orm import InstrumentedAttribute, selectinload
 from app.internal.models import AudiobookWishlistResult
 from app.internal.models import Audiobook
 import uuid
-from typing import Annotated, Literal, Optional, cast
+from typing import Annotated, Literal, cast
 
 from aiohttp import ClientSession
 from fastapi import (
@@ -53,9 +53,7 @@ class WishlistCounts(BaseModel):
     manual: int
 
 
-def get_wishlist_counts(
-    session: Session, user: Optional[User] = None
-) -> WishlistCounts:
+def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistCounts:
     """
     If a non-admin user is given, only count requests for that user.
     Admins can see and get counts for all requests.
@@ -95,7 +93,7 @@ def get_wishlist_counts(
 
 def get_wishlist_results(
     session: Session,
-    username: Optional[str] = None,
+    username: str | None = None,
     response_type: Literal["all", "downloaded", "not_downloaded"] = "all",
 ) -> list[AudiobookWishlistResult]:
     """

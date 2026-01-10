@@ -1,5 +1,5 @@
 import json
-from typing import Annotated, Optional, cast
+from typing import Annotated, cast
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, Security
 from sqlmodel import Session
@@ -60,8 +60,8 @@ async def update_indexer(
 
 class StringConfigurationResponse(BaseSQLModel):
     name: str
-    description: Optional[str] = None
-    default: Optional[str] = None
+    description: str | None = None
+    default: str | None = None
     required: bool
     type: str
 
