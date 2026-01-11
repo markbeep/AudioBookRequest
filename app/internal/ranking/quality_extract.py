@@ -8,7 +8,7 @@ from aiohttp import ClientSession
 from sqlmodel import Session
 
 from app.internal.models import Audiobook, ProwlarrSource
-from app.internal.prowlarr.prowlarr import prowlarr_config
+from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.quality import FileFormat
 
 # HACK: Disabled because it doesn't work well with ratelimiting

@@ -3,18 +3,20 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Security
 from sqlmodel import Session, select
 
-from app.internal.auth.authentication import (
-    ABRAuth,
-    DetailedUser,
-    create_user,
-    raise_for_invalid_password,
-)
+from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.models import GroupEnum, User
 from app.util.db import get_session
 from app.util.templates import template_response
 from app.util.toast import ToastException
+from app.routers.api.users import (
+    UserUpdate,
+    create_new_user as api_create_new_user,
+    delete_user as api_delete_user,
+    update_user as api_update_user,
+    UserCreate,
+)
 
 router = APIRouter(prefix="/users")
 
@@ -51,23 +53,23 @@ def create_new_user(
     if username.strip() == "":
         raise ToastException("Invalid username", "error")
 
-    try:
-        raise_for_invalid_password(session, password, ignore_confirm=True)
-    except HTTPException as e:
-        raise ToastException(e.detail, "error")
-
     if group not in GroupEnum.__members__:
         raise ToastException("Invalid group selected", "error")
 
-    group = GroupEnum[group]
-
-    user = session.exec(select(User).where(User.username == username)).first()
-    if user:
-        raise ToastException("Username already exists", "error")
-
-    user = create_user(username, password, group)
-    session.add(user)
-    session.commit()
+    try:
+        api_create_new_user(
+            UserCreate(
+                username=username,
+                password=password,
+                group=GroupEnum[group],
+                root=False,
+                extra_data=None,
+            ),
+            session,
+            admin_user,
+        )
+    except HTTPException as e:
+        raise ToastException(e.detail, "error")
 
     users = session.exec(select(User)).all()
 
@@ -87,16 +89,10 @@ def delete_user(
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
-    if username == admin_user.username:
-        raise ToastException("Cannot delete own user", "error")
-
-    user = session.exec(select(User).where(User.username == username)).one_or_none()
-    if user and user.root:
-        raise ToastException("Cannot delete root user", "error")
-
-    if user:
-        session.delete(user)
-        session.commit()
+    try:
+        api_delete_user(username, session, admin_user)
+    except HTTPException as e:
+        raise ToastException(e.detail, "error")
 
     users = session.exec(select(User)).all()
 
@@ -118,26 +114,28 @@ def update_user(
     group: Annotated[GroupEnum | None, Form()] = None,
     extra_data: Annotated[str | None, Form()] = None,
 ):
-    updated: list[str] = []
-    user = session.exec(select(User).where(User.username == username)).one_or_none()
-    if user:
-        if extra_data is not None:
-            updated.append("extra data")
-            user.extra_data = extra_data.strip() if extra_data.strip() != "" else None
-        if group is not None:
-            if user.root:
-                raise ToastException("Cannot change root user's group", "error")
-            user.group = group
-            updated.append("group")
-        session.add(user)
-        session.commit()
+    try:
+        api_update_user(
+            admin_user,
+            session=session,
+            username=username,
+            user_data=UserUpdate(
+                password=None,
+                group=group,
+                extra_data=extra_data,
+            ),
+        )
+    except HTTPException as e:
+        raise ToastException(e.detail, "error")
 
-    if not updated:
+    if group is None and extra_data is None:
         success_msg = "No changes made"
-    elif updated == ["extra data"]:
-        success_msg = "Updated user extra data"
-    elif updated == ["group"]:
+    elif group is not None and extra_data is not None:
+        success_msg = "Updated group and extra data"
+    elif group is not None:
         success_msg = "Updated group"
+    elif extra_data is not None:
+        success_msg = "Updated extra data"
     else:
         success_msg = "Updated user"
 

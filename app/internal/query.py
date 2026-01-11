@@ -8,13 +8,10 @@ from aiohttp import ClientSession
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
+from app.internal.prowlarr.util import prowlarr_config
 from app.util.db import get_session
 from app.internal.models import Audiobook, ProwlarrSource, User
-from app.internal.prowlarr.prowlarr import (
-    prowlarr_config,
-    query_prowlarr,
-    start_download,
-)
+from app.internal.prowlarr.prowlarr import query_prowlarr, start_download
 from app.internal.ranking.download_ranking import rank_sources
 
 querying: set[str] = set()

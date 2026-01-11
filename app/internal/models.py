@@ -1,3 +1,4 @@
+import html
 from sqlmodel._compat import SQLModelConfig
 import json
 import uuid
@@ -253,7 +254,13 @@ class Notification(BaseSQLModel, table=True):
 
     @property
     def serialized_headers(self):
-        return json.dumps(self.headers)
+        return html.escape(json.dumps(self.headers))
+
+
+class APIKeyResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    enabled: bool
 
 
 class APIKey(BaseSQLModel, table=True):

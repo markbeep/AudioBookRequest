@@ -7,10 +7,21 @@ from sqlmodel import Session
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.models import GroupEnum
 from app.internal.prowlarr.indexer_categories import indexer_categories
-from app.internal.prowlarr.prowlarr import (
-    flush_prowlarr_cache,
-    get_indexers,
-    prowlarr_config,
+from app.internal.prowlarr.prowlarr import get_indexers
+from app.internal.prowlarr.util import flush_prowlarr_cache, prowlarr_config
+from app.routers.api.settings.prowlarr import (
+    UpdateApiKey,
+    UpdateBaseUrl,
+    UpdateCategories,
+)
+from app.routers.api.settings.prowlarr import (
+    update_indexer_categories as api_update_indexer_categories,
+)
+from app.routers.api.settings.prowlarr import (
+    update_prowlarr_api_key as api_update_prowlarr_api_key,
+)
+from app.routers.api.settings.prowlarr import (
+    update_prowlarr_base_url as api_update_prowlarr_base_url,
 )
 from app.util.connection import get_connection
 from app.util.db import get_session
@@ -56,9 +67,7 @@ def update_prowlarr_api_key(
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
-    _ = admin_user
-    prowlarr_config.set_api_key(session, api_key)
-    flush_prowlarr_cache()
+    api_update_prowlarr_api_key(UpdateApiKey(api_key=api_key), session, admin_user)
     return Response(status_code=204, headers={"HX-Refresh": "true"})
 
 
@@ -68,9 +77,7 @@ def update_prowlarr_base_url(
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
-    _ = admin_user
-    prowlarr_config.set_base_url(session, base_url)
-    flush_prowlarr_cache()
+    api_update_prowlarr_base_url(UpdateBaseUrl(base_url=base_url), session, admin_user)
     return Response(status_code=204, headers={"HX-Refresh": "true"})
 
 
@@ -83,9 +90,12 @@ def update_indexer_categories(
 ):
     if categories is None:
         categories = []
-    prowlarr_config.set_categories(session, categories)
+
+    api_update_indexer_categories(
+        UpdateCategories(categories=categories), session, admin_user
+    )
+
     selected = set(categories)
-    flush_prowlarr_cache()
 
     return template_response(
         "settings_page/prowlarr.html",

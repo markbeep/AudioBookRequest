@@ -74,6 +74,9 @@
     {% endif %}
 
     {% if api_keys %}
+    {% if success %}
+    <script>toast("{{success|safe}}", "success");</script>
+    {% endif %}
     <div class="overflow-x-auto">
       <table class="table w-full">
         <thead>

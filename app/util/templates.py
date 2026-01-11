@@ -1,5 +1,6 @@
 # pyright: reportUnknownMemberType=false
 
+import html
 from jinja2_htmlmin import minify_loader
 from jinja2 import Environment, FileSystemLoader
 from typing import Any, Mapping, overload
@@ -30,7 +31,7 @@ def _zfill(val: str | int | float, num: int) -> str:
 
 
 def _to_js_string(val: str | int | float) -> str:
-    return f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'"
+    return html.escape(f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'")
 
 
 templates.env.filters["zfill"] = _zfill

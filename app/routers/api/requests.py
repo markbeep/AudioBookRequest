@@ -33,11 +33,8 @@ from app.internal.notifications import (
     send_all_manual_notifications,
     send_all_notifications,
 )
-from app.internal.prowlarr.prowlarr import (
-    ProwlarrMisconfigured,
-    prowlarr_config,
-    start_download,
-)
+from app.internal.prowlarr.prowlarr import start_download
+from app.internal.prowlarr.util import ProwlarrMisconfigured, prowlarr_config
 from app.internal.query import query_sources, QueryResult, background_start_query
 from app.internal.ranking.quality import quality_config
 from app.internal.db_queries import get_wishlist_results

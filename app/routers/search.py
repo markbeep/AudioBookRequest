@@ -24,7 +24,7 @@ from app.internal.models import (
     GroupEnum,
     ManualBookRequest,
 )
-from app.internal.prowlarr.prowlarr import prowlarr_config
+from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.quality import quality_config
 from app.internal.db_queries import get_wishlist_results, get_wishlist_counts
 from app.util.connection import get_connection
