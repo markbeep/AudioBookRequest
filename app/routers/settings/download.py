@@ -6,6 +6,12 @@ from sqlmodel import Session
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.models import GroupEnum
 from app.internal.ranking.quality import IndexerFlag, QualityRange, quality_config
+from app.routers.api.settings.download import (
+    UpdateDownloadSettings,
+)
+from app.routers.api.settings.download import (
+    update_download_settings as api_update_download_settings,
+)
 from app.util.db import get_session
 from app.util.templates import template_response
 
@@ -77,15 +83,21 @@ def update_download(
     )
     unknown = QualityRange(from_kbits=unknown_from, to_kbits=unknown_to)
 
-    quality_config.set_auto_download(session, auto_download)
-    quality_config.set_range(session, "quality_flac", flac)
-    quality_config.set_range(session, "quality_m4b", m4b)
-    quality_config.set_range(session, "quality_mp3", mp3)
-    quality_config.set_range(session, "quality_unknown_audio", unknown_audio)
-    quality_config.set_range(session, "quality_unknown", unknown)
-    quality_config.set_min_seeders(session, min_seeders)
-    quality_config.set_name_exists_ratio(session, name_ratio)
-    quality_config.set_title_exists_ratio(session, title_ratio)
+    api_update_download_settings(
+        UpdateDownloadSettings(
+            auto_download=auto_download,
+            flac_range=flac,
+            m4b_range=m4b,
+            mp3_range=mp3,
+            unknown_audio_range=unknown_audio,
+            unknown_range=unknown,
+            min_seeders=min_seeders,
+            name_ratio=name_ratio,
+            title_ratio=title_ratio,
+        ),
+        session,
+        admin_user,
+    )
 
     return template_response(
         "settings_page/download.html",

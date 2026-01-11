@@ -153,10 +153,10 @@ def create_new_user(
 
 @router.put("/{username}", response_model=UserResponse)
 def update_user(
+    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    session: Annotated[Session, Depends(get_session)],
     username: str,
     user_data: UserUpdate,
-    session: Annotated[Session, Depends(get_session)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     """
     Updates the specified user's password and/or group.
@@ -186,10 +186,19 @@ def update_user(
                 detail=e.detail,
             )
 
+        # create user to get pw hash
         updated_user = create_user(
-            username, user_data.password, user.group, extra_data=user.extra_data
+            username,
+            user_data.password,
+            user.group,
+            extra_data=user.extra_data,
         )
         user.password = updated_user.password
+
+    if user_data.extra_data is not None:
+        user.extra_data = (
+            user_data.extra_data.strip() if user_data.extra_data.strip() != "" else None
+        )
 
     if user_data.group is not None:
         user.group = user_data.group
