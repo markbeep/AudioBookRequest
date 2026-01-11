@@ -12,7 +12,7 @@ from app.internal.models import (
     User,
 )
 from app.util import json_type
-from app.util.db import open_session
+from app.util.db import get_session
 from app.util.log import logger
 
 
@@ -143,7 +143,7 @@ async def send_all_notifications(
 ):
     if other_replacements is None:
         other_replacements = {}
-    with open_session() as session:
+    with next(get_session()) as session:
         notifications = session.exec(
             select(Notification).where(
                 Notification.event == event_type, Notification.enabled
@@ -221,7 +221,7 @@ async def send_all_manual_notifications(
 ):
     if other_replacements is None:
         other_replacements = {}
-    with open_session() as session:
+    with next(get_session()) as session:
         user = session.exec(
             select(User).where(User.username == book_request.user_username)
         ).first()
