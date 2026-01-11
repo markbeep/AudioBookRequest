@@ -1,5 +1,3 @@
-from contextlib import contextmanager
-
 from sqlalchemy import create_engine
 from sqlmodel import Session, text
 
@@ -16,15 +14,6 @@ else:
 
 
 def get_session():
-    with Session(engine) as session:
-        if not Settings().db.use_postgres:
-            session.execute(text("PRAGMA foreign_keys=ON"))
-        yield session
-
-
-# TODO: couldn't get a single function to work with FastAPI and allow for session creation wherever
-@contextmanager
-def open_session():
     with Session(engine) as session:
         if not Settings().db.use_postgres:
             session.execute(text("PRAGMA foreign_keys=ON"))

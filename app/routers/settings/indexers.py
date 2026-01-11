@@ -16,7 +16,7 @@ from app.internal.models import GroupEnum
 from app.internal.prowlarr.prowlarr import flush_prowlarr_cache
 from app.util.cache import StringConfigCache
 from app.util.connection import get_connection
-from app.util.db import get_session, open_session
+from app.util.db import get_session
 from app.util.json_type import get_bool
 from app.util.log import logger
 from app.util.templates import template_response
@@ -28,7 +28,7 @@ last_modified = 0
 
 
 async def check_indexer_file_changes():
-    with open_session() as session:
+    with next(get_session()) as session:
         async with ClientSession() as client_session:
             try:
                 await read_indexer_file(session, client_session)

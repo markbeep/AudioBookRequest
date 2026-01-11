@@ -1,12 +1,14 @@
-# what is currently being queried
+# To dermine what is currently being queried:
 from contextlib import contextmanager
 from typing import Literal
 
 import pydantic
+import aiohttp
 from aiohttp import ClientSession
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
+from app.util.db import get_session
 from app.internal.models import Audiobook, ProwlarrSource, User
 from app.internal.prowlarr.prowlarr import (
     prowlarr_config,
@@ -108,3 +110,15 @@ async def query_sources(
             book=book,
             state="ok",
         )
+
+
+async def background_start_query(asin: str, requester: User, auto_download: bool):
+    with next(get_session()) as session:
+        async with ClientSession(timeout=aiohttp.ClientTimeout(60)) as client_session:
+            await query_sources(
+                asin=asin,
+                session=session,
+                client_session=client_session,
+                start_auto_download=auto_download,
+                requester=requester,
+            )

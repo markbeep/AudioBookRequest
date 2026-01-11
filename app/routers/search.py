@@ -1,5 +1,3 @@
-import aiohttp
-from app.internal.models import AudiobookSearchResult
 import uuid
 from typing import Annotated
 
@@ -14,37 +12,36 @@ from fastapi import (
     Request,
     Security,
 )
-from sqlmodel import Session, col, delete, select
+from sqlmodel import Session
 
-from app.internal import book_search
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.book_search import (
     audible_region_type,
     audible_regions,
-    clear_old_book_caches,
-    get_book_by_asin,
     get_region_from_settings,
-    list_audible_books,
 )
 from app.internal.models import (
-    AudiobookRequest,
-    EventEnum,
     GroupEnum,
     ManualBookRequest,
-    User,
-)
-from app.internal.notifications import (
-    send_all_manual_notifications,
-    send_all_notifications,
 )
 from app.internal.prowlarr.prowlarr import prowlarr_config
-from app.internal.query import query_sources
 from app.internal.ranking.quality import quality_config
-from app.routers.wishlist import get_wishlist_results, get_wishlist_counts
+from app.internal.db_queries import get_wishlist_results, get_wishlist_counts
 from app.util.connection import get_connection
-from app.util.db import get_session, open_session
+from app.util.db import get_session
 from app.util.log import logger
 from app.util.templates import template_response
+from app.routers.api.search import (
+    search_books,
+    search_suggestions as api_search_suggestions,
+)
+from app.routers.api.requests import (
+    create_request,
+    delete_request as api_delete_request,
+    create_manual_request,
+    ManualRequest,
+    update_manual_request,
+)
 
 router = APIRouter(prefix="/search")
 
@@ -60,32 +57,18 @@ async def read_search(
     page: int = 0,
     region: audible_region_type | None = None,
 ):
+    if region is None:
+        region = get_region_from_settings()
     try:
-        if region is None:
-            region = get_region_from_settings()
-        if audible_regions.get(region) is None:
-            raise HTTPException(status_code=400, detail="Invalid region")
-        if query:
-            clear_old_book_caches(session)
-            results = await list_audible_books(
-                session=session,
-                client_session=client_session,
-                query=query,
-                num_results=num_results,
-                page=page,
-                audible_region=region,
-            )
-        else:
-            results = []
-
-        results = [
-            AudiobookSearchResult(
-                book=book,
-                requests=book.requests,
-                username=user.username,
-            )
-            for book in results
-        ]
+        results = await search_books(
+            client_session=client_session,
+            session=session,
+            user=user,
+            query=query,
+            num_results=num_results,
+            page=page,
+            region=region,
+        )
 
         prowlarr_configured = prowlarr_config.is_valid(session)
 
@@ -117,31 +100,14 @@ async def search_suggestions(
     user: Annotated[DetailedUser, Security(ABRAuth())],
     region: audible_region_type | None = None,
 ):
-    if region is None:
-        region = get_region_from_settings()
-    async with ClientSession() as client_session:
-        suggestions = await book_search.get_search_suggestions(
-            client_session, query, region
-        )
-        return template_response(
-            "search.html",
-            request,
-            user,
-            {"suggestions": suggestions},
-            block_name="search_suggestions",
-        )
-
-
-async def background_start_query(asin: str, requester: User, auto_download: bool):
-    with open_session() as session:
-        async with ClientSession(timeout=aiohttp.ClientTimeout(60)) as client_session:
-            _ = await query_sources(
-                asin=asin,
-                session=session,
-                client_session=client_session,
-                start_auto_download=auto_download,
-                requester=requester,
-            )
+    suggestions = await api_search_suggestions(query, user, region)
+    return template_response(
+        "search.html",
+        request,
+        user,
+        {"suggestions": suggestions},
+        block_name="search_suggestions",
+    )
 
 
 @router.post("/request/{asin}")
@@ -157,69 +123,33 @@ async def add_request(
     user: Annotated[DetailedUser, Security(ABRAuth())],
     num_results: Annotated[int, Form()] = 20,
 ):
-    book = await get_book_by_asin(client_session, asin, region)
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    if not session.exec(
-        select(AudiobookRequest).where(
-            AudiobookRequest.asin == asin,
-            AudiobookRequest.user_username == user.username,
-        )
-    ).first():
-        book_request = AudiobookRequest(asin=asin, user_username=user.username)
-        session.add(book_request)
-        session.commit()
-        logger.info(
-            "Added new audiobook request",
-            username=user.username,
+    try:
+        await create_request(
             asin=asin,
-        )
-    else:
-        logger.warning(
-            "User has already requested this book",
-            username=user.username,
-            asin=asin,
-        )
-
-    background_task.add_task(
-        send_all_notifications,
-        event_type=EventEnum.on_new_request,
-        requester=User.model_validate(user),
-        book_asin=asin,
-    )
-
-    if quality_config.get_auto_download(session) and user.is_above(GroupEnum.trusted):
-        # start querying and downloading if auto download is enabled
-        background_task.add_task(
-            background_start_query,
-            asin=asin,
-            requester=User.model_validate(user),
-            auto_download=True,
-        )
-
-    if audible_regions.get(region) is None:
-        raise HTTPException(status_code=400, detail="Invalid region")
-    if query:
-        results = await list_audible_books(
             session=session,
             client_session=client_session,
+            background_task=background_task,
+            user=user,
+            region=region,
+        )
+    except HTTPException as e:
+        logger.warning(
+            e.detail,
+            username=user.username,
+            asin=asin,
+        )
+
+    results = []
+    if query:
+        results = await search_books(
+            client_session=client_session,
+            session=session,
+            user=user,
             query=query,
             num_results=num_results,
             page=page,
-            audible_region=region,
+            region=region,
         )
-    else:
-        results = []
-
-    results = [
-        AudiobookSearchResult(
-            book=book,
-            requests=book.requests,
-            username=user.username,
-        )
-        for book in results
-    ]
 
     prowlarr_configured = prowlarr_config.is_valid(session)
 
@@ -249,19 +179,7 @@ async def delete_request(
     user: Annotated[DetailedUser, Security(ABRAuth())],
     downloaded: bool | None = None,
 ):
-    if user.is_admin():
-        session.execute(
-            delete(AudiobookRequest).where(col(AudiobookRequest.asin) == asin)
-        )
-        session.commit()
-    else:
-        session.execute(
-            delete(AudiobookRequest).where(
-                (col(AudiobookRequest.asin) == asin)
-                & (col(AudiobookRequest.user_username) == user.username)
-            )
-        )
-        session.commit()
+    await api_delete_request(asin, session, user)
 
     results = get_wishlist_results(
         session,
@@ -315,34 +233,18 @@ async def add_manual(
     info: Annotated[str | None, Form()] = None,
     id: uuid.UUID | None = None,
 ):
-    if id:
-        book_request = session.get(ManualBookRequest, id)
-        if not book_request:
-            raise HTTPException(status_code=404, detail="Book request not found")
-        book_request.title = title
-        book_request.subtitle = subtitle
-        book_request.authors = author.split(",")
-        book_request.narrators = narrator.split(",") if narrator else []
-        book_request.publish_date = publish_date
-        book_request.additional_info = info
-    else:
-        book_request = ManualBookRequest(
-            user_username=user.username,
-            title=title,
-            authors=author.split(","),
-            narrators=narrator.split(",") if narrator else [],
-            subtitle=subtitle,
-            publish_date=publish_date,
-            additional_info=info,
-        )
-    session.add(book_request)
-    session.commit()
-
-    background_task.add_task(
-        send_all_manual_notifications,
-        event_type=EventEnum.on_new_request,
-        book_request=ManualBookRequest.model_validate(book_request),
+    req_body = ManualRequest(
+        title=title,
+        author=author,
+        narrator=narrator,
+        subtitle=subtitle,
+        publish_date=publish_date,
+        info=info,
     )
+    if id:
+        await update_manual_request(id, req_body, session, user)
+    else:
+        await create_manual_request(req_body, session, background_task, user)
 
     auto_download = quality_config.get_auto_download(session)
 

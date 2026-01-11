@@ -19,7 +19,7 @@ from app.internal.book_search import clear_old_book_caches
 from app.internal.env_settings import Settings
 from app.internal.models import User
 from app.routers import api, auth, root, search, settings, wishlist
-from app.util.db import open_session
+from app.util.db import get_session
 from app.util.fetch_js import fetch_scripts
 from app.util.redirect import BaseUrlRedirectResponse
 from app.util.templates import templates
@@ -28,7 +28,7 @@ from app.util.toast import ToastException
 # intialize js dependencies or throw an error if not in debug mode
 fetch_scripts(Settings().app.debug)
 
-with open_session() as session:
+with next(get_session()) as session:
     auth_secret = auth_config.get_auth_secret(session)
     initialize_force_login_type(session)
     clear_old_book_caches(session)
@@ -119,7 +119,7 @@ async def redirect_to_init(
         and not request.url.path.startswith("/static")
         and request.method == "GET"
     ):
-        with open_session() as session:
+        with next(get_session()) as session:
             user_count = session.exec(select(func.count()).select_from(User)).one()
             if user_count == 0:
                 return BaseUrlRedirectResponse("/init")
