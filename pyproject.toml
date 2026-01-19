@@ -1,7 +1,7 @@
 [project]
 name = "AudioBookRequest"
 version = "1.8.0"
-requires-python = ">= 3.12"
+requires-python = ">= 3.14"
 readme = "README.md"
 dependencies = [
     "aiohttp>=3.13.3",

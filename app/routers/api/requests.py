@@ -13,6 +13,8 @@ from fastapi import (
 from pydantic import BaseModel
 from sqlmodel import Session, asc, col, select, delete
 
+from app.internal.audiobookshelf.client import background_abs_trigger_scan
+from app.internal.audiobookshelf.config import abs_config
 from app.internal.auth.authentication import APIKeyAuth, DetailedUser
 from app.internal.book_search import (
     get_book_by_asin,
@@ -321,6 +323,7 @@ async def list_sources(
 @router.post("/{asin}/download")
 async def download_book(
     asin: str,
+    background_task: BackgroundTasks,
     body: DownloadSourceBody,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
@@ -345,6 +348,9 @@ async def download_book(
         book.downloaded = True
         session.add(book)
         session.commit()
+
+    if abs_config.is_valid(session):
+        background_task.add_task(background_abs_trigger_scan)
 
     return Response(status_code=204)
 

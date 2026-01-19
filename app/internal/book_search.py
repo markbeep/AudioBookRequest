@@ -10,6 +10,8 @@ from sqlalchemy import CursorResult, delete
 from sqlalchemy.exc import InvalidRequestError
 from sqlmodel import Session, col, not_, select
 
+from app.internal.audiobookshelf.client import abs_mark_downloaded_flags
+from app.internal.audiobookshelf.config import abs_config
 from app.internal.env_settings import Settings
 from app.internal.models import Audiobook, AudiobookRequest
 from app.util.log import logger
@@ -394,6 +396,12 @@ async def list_audible_books(
         book = books.get(asin_obj.asin)
         if book:
             ordered.append(book)
+
+    try:
+        if abs_config.is_valid(session):
+            await abs_mark_downloaded_flags(session, client_session, ordered)
+    except Exception as e:
+        logger.error("Failed to mark ABS downloaded flags on search results", error=e)
 
     search_cache[cache_key] = CacheResult(
         value=ordered,

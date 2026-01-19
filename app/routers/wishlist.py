@@ -13,6 +13,8 @@ from fastapi import (
 )
 from sqlmodel import Session
 
+from app.internal.audiobookshelf.client import background_abs_trigger_scan
+from app.internal.audiobookshelf.config import abs_config
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.db_queries import (
     get_all_manual_requests,
@@ -86,6 +88,9 @@ async def update_downloaded(
     results = get_wishlist_results(session, username, "not_downloaded")
     counts = get_wishlist_counts(session, admin_user)
 
+    if abs_config.is_valid(session):
+        background_task.add_task(background_abs_trigger_scan)
+
     return template_response(
         "wishlist_page/wishlist.html",
         request,
@@ -128,6 +133,9 @@ async def downloaded_manual(
 
     books = get_all_manual_requests(session, admin_user)
     counts = get_wishlist_counts(session, admin_user)
+
+    if abs_config.is_valid(session):
+        background_task.add_task(background_abs_trigger_scan)
 
     return template_response(
         "wishlist_page/manual.html",
@@ -211,6 +219,7 @@ async def list_sources(
 
 @router.post("/sources/{asin}")
 async def download_book(
+    background_task: BackgroundTasks,
     asin: str,
     guid: Annotated[str, Form()],
     indexer_id: Annotated[int, Form()],
@@ -219,7 +228,14 @@ async def download_book(
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     body = DownloadSourceBody(guid=guid, indexer_id=indexer_id)
-    return await api_download_book(asin, body, session, client_session, admin_user)
+    return await api_download_book(
+        background_task=background_task,
+        asin=asin,
+        body=body,
+        session=session,
+        client_session=client_session,
+        admin_user=admin_user,
+    )
 
 
 @router.post("/auto-download/{asin}")
