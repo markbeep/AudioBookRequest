@@ -210,6 +210,8 @@ search_suggestions_cache: dict[str, CacheResult[list[str]]] = {}
 
 
 class _AudibleSuggestionsResponse(BaseModel):
+    """Used for type-checking audible search suggestions response"""
+
     class _Items(BaseModel):
         class _Item(BaseModel):
             class _Model(BaseModel):
@@ -365,11 +367,20 @@ async def list_audible_books(
     # do not fetch book results we already have locally
     asins = set(asin_obj.asin for asin_obj in audible_response.products)
     books = get_existing_books(session, asins)
-    for key in books.keys():
-        asins.remove(key)
+    missing_asins = {a for a in asins if a not in books.keys()}
+    logger.debug(
+        "Search results fetched",
+        query=query,
+        region=audible_region,
+        total_results=len(audible_response.products),
+        cached_results=len(books),
+        missing_results=len(missing_asins),
+    )
 
     # book ASINs we do not have => fetch and store
-    coros = [get_book_by_asin(client_session, asin, audible_region) for asin in asins]
+    coros = [
+        get_book_by_asin(client_session, asin, audible_region) for asin in missing_asins
+    ]
     new_books = await asyncio.gather(*coros)
     new_books = [b for b in new_books if b]
 
@@ -401,10 +412,7 @@ async def list_audible_books(
 
 
 def get_existing_books(session: Session, asins: set[str]) -> dict[str, Audiobook]:
-    books = list(
-        session.exec(select(Audiobook).where(col(Audiobook.asin).in_(asins))).all()
-    )
-
+    books = session.exec(select(Audiobook).where(col(Audiobook.asin).in_(asins))).all()
     ok_books: list[Audiobook] = []
     for b in books:
         if b.updated_at.timestamp() + REFETCH_TTL < time.time():

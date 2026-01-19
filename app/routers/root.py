@@ -130,14 +130,15 @@ def read_favicon_svg():
 
 
 @router.get("/")
-def read_root(user: Annotated[DetailedUser, Security(ABRAuth())]):
-    _ = user
-    return BaseUrlRedirectResponse("/search")
-    # TODO: create a root page
-    # return templates.TemplateResponse(
-    #     "root.html",
-    #     {"request": request, "user": user},
-    # )
+def read_root(request: Request, user: Annotated[DetailedUser, Security(ABRAuth())]):
+    return templates.TemplateResponse(
+        "root.html",
+        {
+            "request": request,
+            "user": user,
+            "initial_page": True,
+        },
+    )
 
 
 @router.get("/init")

@@ -10,6 +10,7 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
+    Response,
     Security,
 )
 from sqlmodel import Session
@@ -117,10 +118,10 @@ async def add_request(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     background_task: BackgroundTasks,
-    query: Annotated[str | None, Form()],
-    page: Annotated[int, Form()],
-    region: Annotated[audible_region_type, Form()],
     user: Annotated[DetailedUser, Security(ABRAuth())],
+    query: Annotated[str | None, Form()] = None,
+    page: Annotated[int, Form()] = 0,
+    region: Annotated[audible_region_type | None, Form()] = None,
     num_results: Annotated[int, Form()] = 20,
 ):
     try:
@@ -152,6 +153,10 @@ async def add_request(
         )
 
     prowlarr_configured = prowlarr_config.is_valid(session)
+
+    if query is None:
+        # TODO: hacky way to refresh requests added to recommendations
+        return Response(status_code=204, headers={"HX-Refresh": "true"})
 
     return template_response(
         "search.html",

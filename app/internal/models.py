@@ -123,18 +123,6 @@ class AudiobookRequest(BaseSQLModel, table=True):
     )
 
 
-class AudiobookSearchResult(BaseModel):
-    book: Audiobook
-    requests: list[AudiobookRequest]
-    username: str
-
-    @property
-    def already_requested(self):
-        if self.username:
-            return any(req.user_username == self.username for req in self.requests)
-        return len(self.requests) > 0
-
-
 class AudiobookWishlistResult(BaseModel):
     book: Audiobook
     requests: list[AudiobookRequest]
