@@ -10,6 +10,7 @@ from sqlmodel import Session
 from app.internal.models import Audiobook, ProwlarrSource
 from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.quality import FileFormat
+from app.util.connection import USER_AGENT
 
 # HACK: Disabled because it doesn't work well with ratelimiting
 # We instead completely rely on the title and size of the complete torrent
@@ -89,7 +90,7 @@ async def extract_qualities(
             for _ in range(3):
                 async with client_session.get(
                     source.download_url,
-                    headers={"X-Api-Key": api_key},
+                    headers={"X-Api-Key": api_key, "User-Agent": USER_AGENT},
                 ) as response:
                     if response.status == 500:
                         continue

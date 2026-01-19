@@ -28,6 +28,7 @@ from app.internal.prowlarr.util import (
     prowlarr_indexer_cache,
     prowlarr_source_cache,
 )
+from app.util.connection import USER_AGENT
 from app.util.log import logger
 
 
@@ -35,7 +36,9 @@ async def _get_torrent_info_hash(
     client_session: ClientSession, download_url: str
 ) -> str | None:
     logger.debug("Fetching torrent info hash", download_url=download_url)
-    async with client_session.get(download_url) as r:
+    async with client_session.get(
+        download_url, headers={"User-Agent": USER_AGENT}
+    ) as r:
         if not r.ok:
             logger.error("Failed to fetch torrent", download_url=download_url)
             return None
@@ -67,7 +70,7 @@ async def start_download(
 
     url = posixpath.join(base_url, "api/v1/search")
     logger.debug("Starting download", guid=guid)
-    headers = {"X-Api-Key": api_key}
+    headers = {"X-Api-Key": api_key, "User-Agent": USER_AGENT}
 
     async with client_session.post(
         url,
@@ -197,7 +200,11 @@ async def query_prowlarr(
     try:
         async with client_session.get(
             url,
-            headers={"X-Api-Key": api_key, "Accept": "application/json"},
+            headers={
+                "X-Api-Key": api_key,
+                "Accept": "application/json",
+                "User-Agent": USER_AGENT,
+            },
         ) as response:
             prowlarr_text = await response.text()
             if not response.ok:
@@ -335,7 +342,7 @@ async def get_indexers(
 
         async with client_session.get(
             url,
-            headers={"X-Api-Key": api_key},
+            headers={"X-Api-Key": api_key, "User-Agent": USER_AGENT},
         ) as response:
             if not response.ok:
                 logger.error("Failed to fetch indexers", response=response)

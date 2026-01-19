@@ -31,7 +31,7 @@ from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.auth.oidc_config import InvalidOIDCConfiguration, oidc_config
 from app.internal.models import GroupEnum, User
-from app.util.connection import get_connection
+from app.util.connection import USER_AGENT, get_connection
 from app.util.db import get_session
 from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse
@@ -196,7 +196,10 @@ async def login_oidc(
         async with client_session.post(
             token_endpoint,
             data=data,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": USER_AGENT,
+            },
         ) as response:
             body = _AccessTokenBody.model_validate(await response.json())
     except Exception as e:
@@ -210,7 +213,10 @@ async def login_oidc(
 
     async with client_session.get(
         userinfo_endpoint,
-        headers={"Authorization": f"Bearer {body.access_token}"},
+        headers={
+            "Authorization": f"Bearer {body.access_token}",
+            "User-Agent": USER_AGENT,
+        },
     ) as response:
         userinfo = cast(object, await response.json())
         if not isinstance(userinfo, dict):

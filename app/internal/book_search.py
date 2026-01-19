@@ -14,6 +14,7 @@ from app.internal.audiobookshelf.client import abs_mark_downloaded_flags
 from app.internal.audiobookshelf.config import abs_config
 from app.internal.env_settings import Settings
 from app.internal.models import Audiobook, AudiobookRequest
+from app.util.connection import USER_AGENT
 from app.util.log import logger
 
 REFETCH_TTL = 60 * 60 * 24 * 7  # 1 week
@@ -80,7 +81,7 @@ class _AudnexusResponse(BaseModel):
 
 
 async def _get_audnexus_book(
-    session: ClientSession,
+    client_session: ClientSession,
     asin: str,
     region: audible_region_type,
 ) -> Audiobook | None:
@@ -89,9 +90,9 @@ async def _get_audnexus_book(
     """
     logger.debug("Fetching book from Audnexus", asin=asin, region=region)
     try:
-        async with session.get(
+        async with client_session.get(
             f"https://api.audnex.us/books/{asin}?region={region}",
-            headers={"Client-Agent": "audiobookrequest"},
+            headers={"Client-Agent": "audiobookrequest", "User-Agent": USER_AGENT},
         ) as response:
             if not response.ok:
                 logger.warning(
@@ -132,7 +133,7 @@ class _AudimetaResponse(BaseModel):
 
 
 async def _get_audimeta_book(
-    session: ClientSession,
+    client_session: ClientSession,
     asin: str,
     region: audible_region_type,
 ) -> Audiobook | None:
@@ -141,9 +142,9 @@ async def _get_audimeta_book(
     """
     logger.debug("Fetching book from Audimeta", asin=asin, region=region)
     try:
-        async with session.get(
+        async with client_session.get(
             f"https://audimeta.de/book/{asin}?region={region}",
-            headers={"Client-Agent": "audiobookrequest"},
+            headers={"Client-Agent": "audiobookrequest", "User-Agent": USER_AGENT},
         ) as response:
             if not response.ok:
                 logger.warning(
@@ -170,13 +171,13 @@ async def _get_audimeta_book(
 
 
 async def get_book_by_asin(
-    session: ClientSession,
+    client_session: ClientSession,
     asin: str,
     audible_region: audible_region_type | None = None,
 ) -> Audiobook | None:
     if audible_region is None:
         audible_region = get_region_from_settings()
-    book = await _get_audimeta_book(session, asin, audible_region)
+    book = await _get_audimeta_book(client_session, asin, audible_region)
     if book:
         return book
     logger.debug(
@@ -184,7 +185,7 @@ async def get_book_by_asin(
         asin=asin,
         region=audible_region,
     )
-    book = await _get_audnexus_book(session, asin, audible_region)
+    book = await _get_audnexus_book(client_session, asin, audible_region)
     if book:
         return book
     logger.warning(
@@ -268,7 +269,9 @@ async def get_search_suggestions(
     url = base_url + urlencode(params)
 
     try:
-        async with client_session.get(url) as response:
+        async with client_session.get(
+            url, headers={"User-Agent": USER_AGENT}
+        ) as response:
             response.raise_for_status()
             suggestions = _AudibleSuggestionsResponse.model_validate(
                 await response.json()
@@ -352,7 +355,9 @@ async def list_audible_books(
     url = base_url + urlencode(params)
 
     try:
-        async with client_session.get(url) as response:
+        async with client_session.get(
+            url, headers={"User-Agent": USER_AGENT}
+        ) as response:
             response.raise_for_status()
             audible_response = _AudibleSearchResponse.model_validate(
                 await response.json()

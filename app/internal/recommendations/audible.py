@@ -16,6 +16,7 @@ from app.internal.book_search import (
     list_audible_books,
     store_new_books,
 )
+from app.util.connection import USER_AGENT
 from app.util.log import logger
 
 
@@ -175,7 +176,9 @@ async def list_similar_audible_books(
 
     ordered: list[Audiobook] = []
     try:
-        async with client_session.get(base_url, params=params) as response:
+        async with client_session.get(
+            base_url, params=params, headers={"User-Agent": USER_AGENT}
+        ) as response:
             response.raise_for_status()
             sims = _AudibleSimsResponse.model_validate(await response.json())
 

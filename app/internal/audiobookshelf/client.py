@@ -18,6 +18,7 @@ from app.internal.audiobookshelf.types import (
     ABSPodcastItem,
 )
 from app.internal.models import Audiobook
+from app.util.connection import USER_AGENT
 from app.util.db import get_session
 from app.util.log import logger
 
@@ -25,7 +26,7 @@ from app.util.log import logger
 def _headers(session: Session) -> dict[str, str]:
     token = abs_config.get_api_token(session)
     assert token is not None
-    return {"Authorization": f"Bearer {token}"}
+    return {"Authorization": f"Bearer {token}", "User-Agent": USER_AGENT}
 
 
 class _LibraryArray(BaseModel):
