@@ -9,6 +9,24 @@
     hx-target="this" x-data="{ selected: '{{ indexers[0].indexer.name }}' }">
     <h2 class="text-lg">Indexer Settings</h2>
     <p class="text-sm opacity-60">Extra indexer settings that add additional metadata to sources.</p>
+    <div class="form-control">
+      <label class="label cursor-pointer">
+        <span class="label-text">Enable MAM Metadata Integration</span>
+        <input name="mam_metadata_enabled" type="checkbox" class="toggle" {% if mam_metadata_enabled %}checked{% endif %}/>
+      </label>
+      <p class="text-xs opacity-60">
+        When enabled, the system will attempt to fetch metadata from MyAnonaMouse and generate an OPF file after a successful book download.
+      </p>
+    </div>
+    <div class="flex items-center mt-2">
+        <button type="button" class="btn btn-sm btn-outline"
+                hx-post="{{ base_url }}/settings/indexers/test-mam-connection"
+                hx-include="closest form"
+                hx-trigger="click">
+            <span class="loading loading-spinner htmx-indicator"></span>
+            Test MAM Connection
+        </button>
+    </div>
     <label for="indexer-select">Indexer</label>
     <select id="indexer-select" name="indexer_select" class="select w-full" x-model="selected">
       {% for ctxt in indexers %}<option value="{{ ctxt.indexer.name }}">{{ ctxt.indexer.name }}</option>{% endfor %}

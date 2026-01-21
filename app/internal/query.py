@@ -1,4 +1,4 @@
-# To dermine what is currently being queried:
+import os
 from contextlib import contextmanager
 from typing import Literal
 
@@ -10,13 +10,25 @@ from sqlmodel import Session, select
 
 from app.internal.audiobookshelf.client import abs_trigger_scan
 from app.internal.audiobookshelf.config import abs_config
-from app.internal.models import Audiobook, ProwlarrSource, User
+from app.internal.env_settings import Settings
+from app.internal.indexers.mam import (
+    fetch_mam_book_details,
+    MamIndexer,
+    MamConfigurations,
+    ValuedMamConfigurations,
+    SessionContainer,
+)
+from app.internal.indexers.configuration import create_valued_configuration
+from app.internal.metadata import generate_opf_for_mam
+from app.internal.models import Audiobook, AudiobookRequest, ProwlarrSource, User
 from app.internal.prowlarr.prowlarr import query_prowlarr, start_download
 from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.download_ranking import rank_sources
 from app.util.db import get_session
+from app.util.log import logger
 
 querying: set[str] = set()
+settings = Settings()
 
 
 @contextmanager
@@ -82,7 +94,7 @@ async def query_sources(
 
         ranked = await rank_sources(session, client_session, sources, book)
 
-        # start download if requested
+        # Handle auto-download
         if start_auto_download and not book.downloaded and len(ranked) > 0:
             resp = await start_download(
                 session=session,
@@ -101,7 +113,46 @@ async def query_sources(
                     b.downloaded = True
                     session.add(b)
                 session.commit()
-                # Try to trigger an ABS scan to pick up new media
+
+                # Process MAM metadata if enabled
+                if settings.app.mam_metadata_enabled:
+                    config_obj = await MamIndexer.get_configurations(
+                        SessionContainer(session=session, client_session=client_session)
+                    )
+                    valued = create_valued_configuration(config_obj, session)
+                    mam_config = ValuedMamConfigurations(
+                        mam_session_id=str(getattr(valued, "mam_session_id") or "")
+                    )
+
+                    requests = session.exec(
+                        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+                    ).all()
+
+                    for req in requests:
+                        if req.mam_id:
+                            details = await fetch_mam_book_details(
+                                container=SessionContainer(
+                                    session=session, client_session=client_session
+                                ),
+                                configurations=mam_config,
+                                mam_id=req.mam_id,
+                            )
+                            if details:
+                                opf = generate_opf_for_mam(details)
+                                
+                                # Use a temporary spot for metadata output
+                                out_dir = "/tmp/audiobook_metadata"
+                                os.makedirs(out_dir, exist_ok=True)
+                                out_path = os.path.join(out_dir, f"{details.display_title}.opf")
+                                
+                                try:
+                                    with open(out_path, "w", encoding="utf-8") as f:
+                                        f.write(opf)
+                                    logger.info("Saved MAM metadata file", path=out_path)
+                                except Exception as e:
+                                    logger.error("Failed to save metadata", error=str(e))
+
+                # Trigger scan if library is connected
                 try:
                     if abs_config.is_valid(session):
                         await abs_trigger_scan(session, client_session)

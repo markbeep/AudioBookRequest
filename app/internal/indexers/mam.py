@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+import re
 import json
 from typing import override
 from urllib.parse import urlencode, urljoin
@@ -12,10 +12,97 @@ from app.internal.indexers.abstract import (
 from app.internal.indexers.configuration import (
     Configurations,
     IndexerConfiguration,
-    ValuedConfigurations,
 )
+from app.internal.indexers.mam_models import _Result, _MamResponse
 from app.internal.models import Audiobook, ProwlarrSource
 from app.util.log import logger
+
+# Mimic browser headers to avoid detection
+MAM_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+MAM_HEADERS = {
+    "User-Agent": MAM_USER_AGENT,
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.myanonamouse.net/tor/browse.php",
+    "X-Requested-With": "XMLHttpRequest",
+}
+
+async def fetch_mam_book_details(
+    container: SessionContainer,
+    configurations: "ValuedMamConfigurations",
+    mam_id: int,
+) -> _Result | None:
+    """
+    Get detailed metadata for a specific book from MAM.
+    """
+    params = {
+        "tor[id]": mam_id,
+        "tor[main_cat]": [13],
+    }
+
+    url = urljoin(
+        "https://www.myanonamouse.net",
+        f"/tor/js/loadSearchJSONbasic.php?{urlencode(params, doseq=True)}",
+    )
+
+    session_id = configurations.mam_session_id
+    if session_id.startswith("mam_id="):
+        session_id = session_id[7:]
+
+    logger.info("Mam: Fetching book details", mam_id=mam_id)
+    try:
+        async with container.client_session.get(
+            url, cookies={"mam_id": session_id}, headers=MAM_HEADERS
+        ) as response:
+            if response.status == 403:
+                logger.error("Mam: Auth failed (403). Check session ID.", mam_id=mam_id)
+                return None
+            
+            if not response.ok:
+                logger.error("Mam: Request failed", status=response.status, mam_id=mam_id)
+                return None
+
+            try:
+                json_body = await response.json()
+            except Exception as e:
+                text = await response.text()
+                logger.error("Mam: Parse error", error=str(e), sample=text[:100])
+                return None
+
+            if "error" in json_body:
+                logger.error("Mam: API error", error=json_body["error"], mam_id=mam_id)
+                return None
+
+            search_results = _MamResponse.model_validate(json_body)
+            if search_results.data:
+                result = search_results.data[0]
+                logger.info("Mam: Found book info", title=result.display_title, mam_id=mam_id)
+
+                # Try to get the synopsis image from the book page
+                try:
+                    book_page_url = f"https://www.myanonamouse.net/t/{mam_id}"
+                    async with container.client_session.get(
+                        book_page_url, cookies={"mam_id": session_id}, headers=MAM_HEADERS
+                    ) as page_response:
+                        if page_response.ok:
+                            html_content = await page_response.text()
+                            match = re.search(
+                                r'<div id="synopsis".*?<img src="(.*?)"',
+                                html_content,
+                                re.DOTALL,
+                            )
+                            if match:
+                                result.synopsis_image = match.group(1)
+                except Exception as e:
+                    logger.debug("Mam: Failed to scrape image", error=str(e))
+
+                return result
+            else:
+                logger.warning("Mam: Book not found", mam_id=mam_id)
+                return None
+    except Exception as e:
+        logger.error("Mam: Fetch error", error=str(e), mam_id=mam_id)
+        return None
 
 
 class MamConfigurations(Configurations):
@@ -26,49 +113,15 @@ class MamConfigurations(Configurations):
     )
 
 
-@dataclass
-class ValuedMamConfigurations(ValuedConfigurations):
+class ValuedMamConfigurations(BaseModel):
     mam_session_id: str
-
-
-class _Result(BaseModel):
-    id: int
-    author_info: str | None = None
-    narrator_info: str | None = None
-    personal_freeleech: int
-    free: int
-    fl_vip: int
-    vip: int
-    filetype: str
-
-    @property
-    def authors(self) -> list[str]:
-        """Response type of authors and narrators is a stringified json object"""
-
-        if not self.author_info:
-            return []
-        content = json.loads(self.author_info)  # pyright: ignore[reportAny]
-        if isinstance(content, dict):
-            return list(x for x in content.values() if isinstance(x, str))  # pyright: ignore[reportUnknownVariableType]
-        return []
-
-    @property
-    def narrators(self) -> list[str]:
-        if not self.narrator_info:
-            return []
-        content = json.loads(self.narrator_info)  # pyright: ignore[reportAny]
-        if isinstance(content, dict):
-            return list(x for x in content.values() if isinstance(x, str))  # pyright: ignore[reportUnknownVariableType]
-        return []
-
-
-class _MamResponse(BaseModel):
-    data: list[_Result]
 
 
 class MamIndexer(AbstractIndexer[MamConfigurations]):
     name: str = "MyAnonamouse"
-    results: dict[int, _Result] = dict()
+
+    def __init__(self):
+        self.results: dict[int, _Result] = {}
 
     @override
     @staticmethod
@@ -78,7 +131,7 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
         return MamConfigurations()
 
     @override
-    async def setup(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def setup(
         self,
         book: Audiobook,
         container: SessionContainer,
@@ -89,11 +142,11 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
 
         params = {
             "tor[text]": book.title,
-            "tor[main_cat]": [13],  # MAM audiobook category
+            "tor[main_cat]": [13],
             "tor[searchIn]": "torrents",
             "tor[srchIn][author]": "true",
             "tor[srchIn][title]": "true",
-            "tor[searchType]": "active",  # only search for torrents with at least 1 seeder.
+            "tor[searchType]": "active",
             "startNumber": 0,
             "perpage": 100,
         }
@@ -104,31 +157,41 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
         )
 
         session_id = configurations.mam_session_id
+        if session_id.startswith("mam_id="):
+            session_id = session_id[7:]
 
         try:
+            logger.info("Mam: Searching for book", title=book.title)
             async with container.client_session.get(
-                url, cookies={"mam_id": session_id}
+                url, 
+                cookies={"mam_id": session_id}, 
+                headers=MAM_HEADERS
             ) as response:
                 if response.status == 403:
-                    logger.error(
-                        "Mam: Failed to authenticate", response=await response.text()
-                    )
+                    logger.error("Mam: Search auth failed (403)")
                     return
                 if not response.ok:
-                    logger.error("Mam: Failed to query", response=await response.text())
+                    logger.error("Mam: Search failed", status=response.status)
                     return
-                json_body = await response.json()  # pyright: ignore[reportAny]
+                
+                try:
+                    json_body = await response.json()
+                except Exception as e:
+                    logger.error("Mam: Search parse error", error=str(e))
+                    return
+                
                 if "error" in json_body:
-                    logger.error("Mam: Error in response", error=json_body["error"])
+                    logger.error("Mam: Search API error", error=json_body["error"])
                     return
+                
                 search_results = _MamResponse.model_validate(json_body)
+                logger.info("Mam: Found results", count=len(search_results.data))
         except Exception as e:
-            logger.error("Mam: Exception during search", exception=e)
+            logger.error("Mam: Search exception", error=str(e))
             return
 
         for result in search_results.data:
             self.results[result.id] = result
-        logger.info("Mam: Retrieved results", results_amount=len(self.results))
 
     @override
     async def is_matching_source(
@@ -146,9 +209,11 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
         source: ProwlarrSource,
         container: SessionContainer,
     ):
+        from app.internal.metadata import generate_opf_for_mam
         mam_id = source.guid.split("/")[-1]
         if not mam_id.isdigit():
             return
+        
         mam_id_int = int(mam_id)
         result = self.results.get(mam_id_int)
         if result is None:
@@ -157,19 +222,16 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
         source.book_metadata.authors = result.authors
         source.book_metadata.narrators = result.narrators
 
-        indexer_flags: set[str] = set(source.indexer_flags)
+        flags: set[str] = set(source.indexer_flags)
         if result.personal_freeleech == 1:
-            indexer_flags.add("personal_freeleech")
-            indexer_flags.add("freeleech")
+            flags.update(["personal_freeleech", "freeleech"])
         if result.free == 1:
-            indexer_flags.add("free")
-            indexer_flags.add("freeleech")
+            flags.update(["free", "freeleech"])
         if result.fl_vip == 1:
-            indexer_flags.add("fl_vip")
-            indexer_flags.add("freeleech")
+            flags.update(["fl_vip", "freeleech"])
         if result.vip == 1:
-            indexer_flags.add("vip")
+            flags.add("vip")
 
-        source.indexer_flags = list(indexer_flags)
-
+        source.indexer_flags = list(flags)
         source.book_metadata.filetype = result.filetype
+        source.book_metadata.metadata_file_content = generate_opf_for_mam(result)

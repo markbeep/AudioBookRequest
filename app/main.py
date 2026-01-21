@@ -99,8 +99,9 @@ async def raise_toast(request: Request, exc: ToastException):
     return templates.TemplateResponse(
         "base.html",
         context,
+        status_code=200,
         block_name="toast_block",
-        headers={"HX-Retarget": "#toast-block"}
+        headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"}
         | ({"HX-Refresh": "true"} if exc.force_refresh else {}),
     )
 

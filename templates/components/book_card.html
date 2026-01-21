@@ -30,9 +30,10 @@
 
     <!-- Book Info -->
     {% if book.asin %}
-    <a class="text-sm text-primary font-bold pt-1" title="{{ book.title }}" target="_blank"
-        href="https://audible.com/pd/{{ book.asin }}?ipRedirectOverride=true"
-        style="display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+    <a href="{{ base_url }}/book/{{ book.asin }}" 
+       class="text-sm text-primary font-bold pt-1 hover:underline" 
+       title="{{ book.title }}"
+       style="display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
         {{ book.title }}
     </a>
     {% else %}

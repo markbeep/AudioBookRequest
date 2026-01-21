@@ -70,6 +70,7 @@ class Audiobook(BaseSQLModel, table=True):
     subtitle: str | None
     authors: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     narrators: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    series: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     cover_image: str | None
     release_date: datetime
     runtime_length_min: int
@@ -117,6 +118,7 @@ class AudiobookRequest(BaseSQLModel, table=True):
     )
 
     audiobook: Audiobook = Relationship(back_populates="requests")  # pyright: ignore[reportAny]
+    mam_id: int | None = Field(default=None, index=True)
 
     model_config: SQLModelConfig = cast(
         SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))
@@ -156,6 +158,7 @@ class ManualBookRequest(BaseSQLModel, table=True):
         ),
     )
     downloaded: bool = False
+    mam_id: int | None = Field(default=None, index=True)
 
     model_config: SQLModelConfig = cast(
         SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))
@@ -170,6 +173,7 @@ class BookMetadata(BaseSQLModel):
     authors: list[str] = []
     narrators: list[str] = []
     filetype: str | None = None
+    metadata_file_content: str | None = None
 
 
 class BaseSource(BaseSQLModel):

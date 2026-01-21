@@ -1,3 +1,4 @@
+import re
 import asyncio
 import time
 from datetime import datetime
@@ -75,6 +76,7 @@ class _AudnexusResponse(BaseModel):
     subtitle: str | None
     authors: list[_Author]
     narrators: list[_Author]
+    series: list[_Author] | None = None
     image: str | None
     releaseDate: str
     runtimeLengthMin: int
@@ -112,6 +114,7 @@ async def _get_audnexus_book(
         subtitle=audnexus_response.subtitle,
         authors=[author["name"] for author in audnexus_response.authors],
         narrators=[narrator["name"] for narrator in audnexus_response.narrators],
+        series=[s["name"] for s in audnexus_response.series] if audnexus_response.series else [],
         cover_image=audnexus_response.image,
         release_date=datetime.fromisoformat(audnexus_response.releaseDate),
         runtime_length_min=audnexus_response.runtimeLengthMin,
@@ -127,6 +130,7 @@ class _AudimetaResponse(BaseModel):
     subtitle: str | None
     authors: list[_Author]
     narrators: list[_Author]
+    series: list[str] | None = None
     imageUrl: str | None
     releaseDate: str
     lengthMinutes: int | None
@@ -164,6 +168,7 @@ async def _get_audimeta_book(
         subtitle=audimeta_response.subtitle,
         authors=[author["name"] for author in audimeta_response.authors],
         narrators=[narrator["name"] for narrator in audimeta_response.narrators],
+        series=audimeta_response.series or [],
         cover_image=audimeta_response.imageUrl,
         release_date=datetime.fromisoformat(audimeta_response.releaseDate),
         runtime_length_min=audimeta_response.lengthMinutes or 0,
@@ -451,6 +456,7 @@ def store_new_books(session: Session, books: list[Audiobook]):
         b.subtitle = new_book.subtitle
         b.authors = new_book.authors
         b.narrators = new_book.narrators
+        b.series = new_book.series
         b.cover_image = new_book.cover_image
         b.release_date = new_book.release_date
         b.runtime_length_min = new_book.runtime_length_min

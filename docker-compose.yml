@@ -8,8 +8,9 @@ services:
         - VERSION=local
     volumes:
       - ./config:/config
+      - ./testing/metadata_output/:/tmp/audiobook_metadata
     ports:
-      - "8000:8000"
+      - "8697:8000"
 
   gotify:
     image: gotify/server

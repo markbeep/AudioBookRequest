@@ -33,6 +33,9 @@ class ApplicationSettings(BaseModel):
     force_login_type: str = ""
     """Forces the login type used. If set, the login type cannot be changed in the UI."""
 
+    mam_metadata_enabled: bool = False
+    """Enables MAM metadata fetching and OPF generation."""
+
     init_root_username: str = ""
     init_root_password: str = ""
 

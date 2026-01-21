@@ -31,6 +31,7 @@ dependencies = [
     "torrent-parser>=0.4.1",
     "typer>=0.21.1",
     "urllib3>=2.6.3",
+    "beautifulsoup4>=4.12.3",
 ]
 
 # setuptools by default expects a "src" folder structure

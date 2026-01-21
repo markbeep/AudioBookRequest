@@ -90,3 +90,16 @@
 .changelog a {
   @apply underline;
 }
+
+.htmx-indicator {
+  display: none;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+  display: inline-block;
+}
+
+.htmx-request.btn {
+  @apply pointer-events-none opacity-50;
+}

@@ -97,10 +97,10 @@
                   {% endif %}
                 </button>
               </div>
-              <a class="text-sm text-primary font-bold pt-1"
-                 title="Title"
-                 target="_blank"
-                 href="https://audible{{ regions[selected_region] }}/pd/{{ book.asin }}?ipRedirectOverride=true">
+              <a href="{{ base_url }}/book/{{ book.asin }}" 
+                 class="text-sm text-primary font-bold pt-1 hover:underline"
+                 title="{{ book.title }}"
+                 style="display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                 {{ book.title }}
               </a>
               {% if book.subtitle %}

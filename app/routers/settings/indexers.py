@@ -1,21 +1,24 @@
 import json
 import os
+import aiohttp
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal, Mapping, cast
 
 from aiohttp import ClientSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import APIRouter, Depends, FastAPI, Form, Request, Security
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.indexers.abstract import SessionContainer
-from app.internal.indexers.configuration import indexer_configuration_cache
+from app.internal.indexers.mam import fetch_mam_book_details, MamIndexer, ValuedMamConfigurations
+from app.internal.indexers.configuration import indexer_configuration_cache, create_valued_configuration
 from app.internal.indexers.indexer_util import (
     get_indexer_contexts,
     update_single_indexer,
 )
-from app.internal.models import GroupEnum
+from app.internal.models import Config, GroupEnum
+from app.internal.env_settings import Settings
 from app.util.cache import StringConfigCache
 from app.util.connection import get_connection
 from app.util.db import get_session
@@ -122,6 +125,9 @@ async def read_indexers(
         return_disabled=True,
     )
 
+    mam_config_db = session.exec(select(Config).where(Config.key == "mam_metadata_enabled")).first()
+    mam_metadata_enabled = mam_config_db.value == "True" if mam_config_db else False
+
     return template_response(
         "settings_page/indexers.html",
         request,
@@ -130,6 +136,7 @@ async def read_indexers(
             "page": "indexers",
             "indexers": contexts,
             "file_path": file_path or "",
+            "mam_metadata_enabled": mam_metadata_enabled,
         },
     )
 
@@ -166,7 +173,18 @@ async def update_indexers(
 ):
     _ = admin_user
     values = dict(await request.form())
-    values["enabled"] = values.get("enabled", "off")  # handle missing checkbox
+    
+    # Save MAM metadata toggle
+    mam_metadata_enabled = values.get("mam_metadata_enabled", "off") == "on"
+    current_settings = session.exec(select(Config).where(Config.key == "mam_metadata_enabled")).first()
+    if current_settings:
+        current_settings.value = str(mam_metadata_enabled)
+        session.add(current_settings)
+    else:
+        session.add(Config(key="mam_metadata_enabled", value=str(mam_metadata_enabled)))
+    session.commit()
+
+    values["enabled"] = values.get("enabled", "off")
     try:
         await update_single_indexer(
             indexer_select,
@@ -178,3 +196,51 @@ async def update_indexers(
         raise ToastException(str(e), "error")
 
     raise ToastException("Indexers updated", "success")
+
+
+@router.post("/test-mam-connection")
+async def test_mam_connection(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    client_session: Annotated[aiohttp.ClientSession, Depends(get_connection)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+):
+    _ = admin_user
+    form_data = await request.form()
+    
+    config_obj = await MamIndexer.get_configurations(
+        SessionContainer(session=session, client_session=client_session)
+    )
+    valued = create_valued_configuration(config_obj, session)
+    
+    # Check for temporary unsaved ID
+    session_id = str(form_data.get("mam_session_id") or getattr(valued, "mam_session_id") or "")
+
+    mam_config = ValuedMamConfigurations(mam_session_id=session_id)
+
+    if not mam_config.mam_session_id:
+        raise ToastException("MAM Session ID is required.", "error")
+
+    logger.info("Testing MAM connection...")
+    try:
+        from app.internal.models import Audiobook
+        test_book = Audiobook(title="Audiobook", asin="test", authors=["test"], narrators=["test"])
+        
+        indexer = MamIndexer()
+        await indexer.setup(
+            book=test_book,
+            container=SessionContainer(session=session, client_session=client_session),
+            configurations=mam_config,
+        )
+        
+        if len(indexer.results) > 0:
+            logger.info("MAM connection test passed")
+            raise ToastException("Connection successful!", "success")
+        else:
+            logger.warning("MAM connection test failed: no results")
+            raise ToastException("Connection failed: no books found (check your session ID).", "error")
+    except ToastException:
+        raise
+    except Exception as e:
+        logger.error("MAM connection error", error=str(e))
+        raise ToastException(f"Connection error: {e}", "error")

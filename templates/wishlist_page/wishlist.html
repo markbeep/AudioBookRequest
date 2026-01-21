@@ -55,12 +55,11 @@
                 </td>
                 <td>
                   <div class="flex flex-col">
-                    <a preload
-                       href="{{ base_url }}/search?q={{ book.title+' ' +(book.authors|join(",") ) }}"
-                       class="font-bold text-primary line-clamp-4"
+                    <a href="{{ base_url }}/book/{{ book.asin }}" 
+                       class="font-bold text-primary line-clamp-4 hover:underline"
                        title="{{ book.title }}">{{ book.title }}</a>
                     {% if book.subtitle %}
-                      <span class="font-semibold line-clamp-4" title="{{ book.subtitle }}">{{ book.subtitle }}</span>
+                      <span class="font-semibold line-clamp-4 text-xs opacity-70" title="{{ book.subtitle }}">{{ book.subtitle }}</span>
                     {% endif %}
                   </div>
                 </td>

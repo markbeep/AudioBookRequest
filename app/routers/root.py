@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import Annotated, Callable
 from urllib.parse import urlencode
 
+import aiohttp
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, Security
 from fastapi.responses import FileResponse
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.internal.auth.authentication import (
     ABRAuth,
@@ -17,11 +18,14 @@ from app.internal.auth.authentication import (
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.env_settings import Settings
-from app.internal.models import GroupEnum
+from app.internal.indexers.mam import fetch_mam_book_details, MamIndexer, ValuedMamConfigurations, SessionContainer
+from app.internal.indexers.configuration import create_valued_configuration
+from app.internal.models import GroupEnum, Audiobook, AudiobookRequest, Config
+from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse
-from app.util.templates import templates
+from app.util.templates import templates, template_response
 
 router = APIRouter()
 
@@ -128,6 +132,201 @@ def read_toastifycss():
 def read_favicon_svg():
     return FileResponse(root / "favicon.svg", media_type="image/svg+xml")
 
+
+@router.get("/book/{asin}")
+async def get_book_details_page(
+    request: Request,
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    client_session: Annotated[aiohttp.ClientSession, Depends(get_connection)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+):
+    book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    mam_meta_config = session.exec(select(Config).where(Config.key == "mam_metadata_enabled")).first()
+    mam_enabled = mam_meta_config.value == "True" if mam_meta_config else False
+
+    mam_data = None
+    if mam_enabled:
+        logger.debug("MAM integration is active, checking metadata", book=book.title)
+        config_obj = await MamIndexer.get_configurations(
+            SessionContainer(session=session, client_session=client_session)
+        )
+        valued = create_valued_configuration(config_obj, session)
+        mam_config = ValuedMamConfigurations(
+            mam_session_id=str(getattr(valued, "mam_session_id") or "")
+        )
+        
+        if not mam_config.mam_session_id:
+            logger.warning("MAM metadata is enabled but no session ID is set")
+        else:
+            req = session.exec(select(AudiobookRequest).where(AudiobookRequest.asin == asin)).first()
+
+            if req and req.mam_id:
+                mam_data = await fetch_mam_book_details(
+                    container=SessionContainer(session=session, client_session=client_session),
+                    configurations=mam_config,
+                    mam_id=req.mam_id,
+                )
+            else:
+                # Try a lookup by title since we don't have an ID link yet
+                from urllib.parse import urlencode, urljoin
+                from app.internal.indexers.mam import MAM_HEADERS
+                from app.internal.indexers.mam_models import _MamResponse
+
+                search_url = urljoin(
+                    "https://www.myanonamouse.net",
+                    f"/tor/js/loadSearchJSONbasic.php?{urlencode({
+                        'tor[text]': book.title,
+                        'tor[main_cat]': '13',
+                        'tor[searchIn]': 'torrents',
+                        'tor[searchType]': 'active',
+                        'startNumber': 0,
+                        'perpage': 5,
+                    }, doseq=True)}",
+                )
+                
+                try:
+                    async with client_session.get(search_url, cookies={"mam_id": mam_config.mam_session_id}, headers=MAM_HEADERS) as resp:
+                        if resp.ok:
+                            json_data = await resp.json()
+                            if "data" in json_data:
+                                results = _MamResponse.model_validate(json_data)
+                                if results.data:
+                                    mam_data = results.data[0]
+                except Exception as e:
+                    logger.error("Failed to lookup book on MAM", error=str(e))
+
+    return template_response(
+        "book_details.html",
+        request,
+        user,
+        {"book": book, "mam_data": mam_data},
+    )
+
+@router.get("/book-details-modal/{asin}")
+async def get_book_details_modal(
+    request: Request,
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    client_session: Annotated[aiohttp.ClientSession, Depends(get_connection)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+):
+    book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
+
+    mam_data = None
+    if book and Settings().app.mam_metadata_enabled:
+        config_obj = await MamIndexer.get_configurations(
+            SessionContainer(session=session, client_session=client_session)
+        )
+        valued = create_valued_configuration(config_obj, session)
+        mam_config = ValuedMamConfigurations(
+            mam_session_id=str(getattr(valued, "mam_session_id") or "")
+        )
+        req = session.exec(select(AudiobookRequest).where(AudiobookRequest.asin == asin)).first()
+
+        if req and req.mam_id:
+            mam_data = await fetch_mam_book_details(
+                container=SessionContainer(session=session, client_session=client_session),
+                configurations=mam_config,
+                mam_id=req.mam_id,
+            )
+
+    return template_response(
+        "components/book_details_modal.html",
+        request,
+        user,
+        {"book": book, "mam_data": mam_data},
+    )
+
+@router.get("/book/{asin}/download-opf")
+async def download_opf_file(
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    client_session: Annotated[aiohttp.ClientSession, Depends(get_connection)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+):
+    book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    mam_meta_config = session.exec(select(Config).where(Config.key == "mam_metadata_enabled")).first()
+    mam_enabled = mam_meta_config.value == "True" if mam_meta_config else False
+
+    if not mam_enabled:
+        raise HTTPException(status_code=400, detail="MAM Metadata is disabled")
+
+    config_obj = await MamIndexer.get_configurations(
+        SessionContainer(session=session, client_session=client_session)
+    )
+    valued = create_valued_configuration(config_obj, session)
+    mam_config = ValuedMamConfigurations(
+        mam_session_id=str(getattr(valued, "mam_session_id") or "")
+    )
+
+    if not mam_config.mam_session_id:
+        raise HTTPException(status_code=400, detail="MAM is not configured")
+
+    mam_data = None
+    req = session.exec(select(AudiobookRequest).where(AudiobookRequest.asin == asin)).first()
+
+    if req and req.mam_id:
+        mam_data = await fetch_mam_book_details(
+            container=SessionContainer(session=session, client_session=client_session),
+            configurations=mam_config,
+            mam_id=req.mam_id,
+        )
+    else:
+        from urllib.parse import urlencode, urljoin
+        from app.internal.indexers.mam import MAM_HEADERS
+        from app.internal.indexers.mam_models import _MamResponse
+
+        search_url = urljoin(
+            "https://www.myanonamouse.net",
+            f"/tor/js/loadSearchJSONbasic.php?{urlencode({
+                'tor[text]': book.title,
+                'tor[main_cat]': '13',
+                'tor[searchIn]': 'torrents',
+                'tor[searchType]': 'active',
+                'startNumber': 0,
+                'perpage': 5,
+            }, doseq=True)}",
+        )
+        try:
+            async with client_session.get(search_url, cookies={"mam_id": mam_config.mam_session_id}, headers=MAM_HEADERS) as resp:
+                if resp.ok:
+                    json_data = await resp.json()
+                    if "data" in json_data:
+                        results = _MamResponse.model_validate(json_data)
+                        if results.data:
+                            mam_data = results.data[0]
+        except Exception:
+            pass
+
+    if not mam_data:
+        raise HTTPException(status_code=404, detail="Could not find metadata for this book")
+
+    from app.internal.metadata import generate_opf_for_mam
+    content = generate_opf_for_mam(mam_data)
+    
+    # Store temporary file
+    temp = Path("/tmp/audiobook_metadata")
+    temp.mkdir(parents=True, exist_ok=True)
+    
+    clean_name = "".join([c for c in book.title if c.isalnum() or c in (' ', '.', '_')]).rstrip()
+    fname = f"{clean_name}.opf"
+    fpath = temp / f"{asin}.opf"
+
+    with open(fpath, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    return FileResponse(
+        path=fpath,
+        filename=fname,
+        media_type="application/xml",
+    )
 
 @router.get("/")
 def read_root(request: Request, user: Annotated[DetailedUser, Security(ABRAuth())]):
