@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Form, Request, Response, Security
@@ -93,3 +93,49 @@ def update_abs_check_downloaded(
         check_downloaded=check_downloaded,
     )
     return Response(status_code=204, headers={"HX-Refresh": "true"})
+
+@router.post("/test")
+async def test_abs(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    client_session: Annotated[ClientSession, Depends(get_connection)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    base_url: Annotated[Optional[str], Form()] = None,
+    api_token: Annotated[Optional[str], Form()] = None,
+):
+    from app.internal.audiobookshelf.client import abs_get_libraries
+    from app.internal.audiobookshelf.config import abs_config
+    
+    # Temporarily override config for the test if values provided
+    if base_url:
+        abs_config.set_base_url(session, base_url)
+    if api_token and api_token != "":
+        abs_config.set_api_token(session, api_token)
+
+    try:
+        libs = await abs_get_libraries(session, client_session)
+        if libs:
+            return template_response(
+                "base.html",
+                request,
+                None,
+                {"toast_success": f"ABS connection successful! Found {len(libs)} libraries."},
+                headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"},
+                block_name="toast_block"
+            )
+        else:
+            return template_response(
+                "base.html",
+                request,
+                None,
+                {"toast_info": "ABS connection successful, but no libraries found."},
+                headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"},
+                block_name="toast_block"
+            )
+    except Exception as e:
+        return template_response(
+            "scripts/toast.html",
+            request,
+            None,
+            {"message": f"ABS connection failed: {str(e)}", "type": "error"},
+        )

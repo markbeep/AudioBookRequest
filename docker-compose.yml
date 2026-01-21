@@ -1,6 +1,6 @@
 services:
   web:
-    # start with `docker-compose --profile local up`
+    # start with `docker compose --profile local up`
     profiles: [local]
     build:
       context: .
@@ -9,8 +9,13 @@ services:
     volumes:
       - ./config:/config
       - ./testing/metadata_output/:/tmp/audiobook_metadata
+      - ./library:/library
+      - ./data/qbittorrent/downloads:/downloads
     ports:
       - "8697:8000"
+    depends_on:
+      - psql
+      - qbittorrent
 
   gotify:
     image: gotify/server
@@ -29,3 +34,18 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8081
+    volumes:
+      - ./data/qbittorrent/config:/config
+      - ./data/qbittorrent/downloads:/downloads
+    ports:
+      - "8081:8081"
+      - "6881:6881"
+      - "6881:6881/udp"
+    restart: unless-stopped

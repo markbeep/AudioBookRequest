@@ -24,6 +24,7 @@ from app.util.fetch_js import fetch_scripts
 from app.util.redirect import BaseUrlRedirectResponse
 from app.util.templates import templates
 from app.util.toast import ToastException
+from app.internal.processing.monitor import start_monitor
 
 # intialize js dependencies or throw an error if not in debug mode
 fetch_scripts(Settings().app.debug)
@@ -46,6 +47,10 @@ app = FastAPI(
     root_path=Settings().app.base_url.rstrip("/"),
     redirect_slashes=False,
 )
+
+@app.on_event("startup")
+async def startup_event():
+    await start_monitor()
 
 app.include_router(auth.router, include_in_schema=False)
 app.include_router(recommendations.router, include_in_schema=False)

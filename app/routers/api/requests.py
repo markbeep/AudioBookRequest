@@ -330,6 +330,20 @@ async def download_book(
     admin_user: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     try:
+        # We need the source details to pass it to start_download if direct qBit is used.
+        # However, start_download currently only takes guid and indexer_id from the body.
+        # For now, let's just make sure we handle the response type.
+        
+        # To support direct qBit from manual download button, we might need to fetch the source from cache
+        from app.internal.prowlarr.util import prowlarr_source_cache
+        from app.internal.models import Audiobook
+        
+        book = session.get(Audiobook, asin)
+        sources = prowlarr_source_cache.get(prowlarr_config.get_source_ttl(session), book.title if book else "")
+        source = None
+        if sources:
+            source = next((s for s in sources if s.guid == body.guid and s.indexer_id == body.indexer_id), None)
+
         resp = await start_download(
             session=session,
             client_session=client_session,
@@ -337,10 +351,19 @@ async def download_book(
             indexer_id=body.indexer_id,
             requester=admin_user,
             book_asin=asin,
+            prowlarr_source=source,
         )
     except ProwlarrMisconfigured as e:
         raise HTTPException(status_code=500, detail=str(e))
-    if not resp.ok:
+    
+    # Check success based on type
+    success = False
+    if isinstance(resp, bool):
+        success = resp
+    else:
+        success = resp.ok
+
+    if not success:
         raise HTTPException(status_code=500, detail="Failed to start download")
 
     book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()

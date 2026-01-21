@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Form, Request, Response, Security
@@ -137,3 +137,48 @@ async def update_selected_indexers(
         },
         block_name="indexer",
     )
+
+@router.post("/test")
+async def test_prowlarr(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    client_session: Annotated[ClientSession, Depends(get_connection)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    base_url: Annotated[Optional[str], Form()] = None,
+    api_key: Annotated[Optional[str], Form()] = None,
+):
+    from app.internal.prowlarr.prowlarr import get_indexers
+    
+    # Temporarily override config for the test
+    if base_url:
+        prowlarr_config.set_base_url(session, base_url)
+    if api_key and api_key != "":
+        prowlarr_config.set_api_key(session, api_key)
+
+    try:
+        response = await get_indexers(session, client_session)
+        if response.ok:
+            return template_response(
+                "base.html",
+                request,
+                None,
+                {"toast_success": f"Prowlarr connection successful! Found {len(response.indexers)} indexers."},
+                headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"},
+                block_name="toast_block"
+            )
+        else:
+            return template_response(
+                "base.html",
+                request,
+                None,
+                {"toast_error": f"Prowlarr connection failed: {response.error}"},
+                headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"},
+                block_name="toast_block"
+            )
+    except Exception as e:
+        return template_response(
+            "scripts/toast.html",
+            request,
+            None,
+            {"message": f"Prowlarr connection failed: {str(e)}", "type": "error"},
+        )

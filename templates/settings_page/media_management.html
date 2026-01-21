@@ -1,0 +1,62 @@
+{% extends "settings_page/base.html" %}
+{% block head %}
+<title>Settings - Media Management</title>
+{% endblock head %}
+{% block content %}
+<div class="flex flex-col gap-2">
+    <h2 class="text-lg">Media Management</h2>
+    <p class="text-sm opacity-70 mb-4">Configure how books are processed, moved, and renamed after downloading.</p>
+
+    {% block media_form %}
+    <form class="flex flex-col gap-4" 
+          hx-put="{{ base_url }}/settings/media-management"
+          hx-target="this"
+          hx-swap="outerHTML">
+        {% if success %}<script>toast("{{success|safe}}", "success");</script>{% endif %}
+        <div class="flex flex-col w-full">
+            <label for="library-path" class="font-bold">Library Root Path</label>
+            <input id="library-path" name="library_path" type="text" value="{{ library_path or '' }}" placeholder="/mnt/audiobooks" class="input w-full" required />
+            <p class="text-xs opacity-60">The base directory where your audiobook library is stored.</p>
+        </div>
+
+        <div class="flex flex-col w-full">
+            <label for="folder-pattern" class="font-bold">Folder Pattern</label>
+            <input id="folder-pattern" name="folder_pattern" type="text" value="{{ folder_pattern }}" class="input w-full" required />
+            <div class="text-[10px] opacity-60 mt-1">
+                Available tags: <span class="badge badge-xs">{author}</span> <span class="badge badge-xs">{title}</span> <span class="badge badge-xs">{series}</span> <span class="badge badge-xs">{series_index}</span> <span class="badge badge-xs">{year}</span> <span class="badge badge-xs">{asin}</span>
+            </div>
+            <p class="text-xs opacity-60">Example: {author}/{series}/{title} ({year})</p>
+        </div>
+
+        <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-4">
+                <span class="label-text font-bold">Use Series Folders</span>
+                <input type="checkbox" name="use_series_folders" class="checkbox checkbox-primary" {% if use_series_folders %}checked{% endif %} />
+            </label>
+            <p class="text-xs opacity-60">If enabled, books that are part of a series will be placed in a series subfolder regardless of the pattern.</p>
+        </div>
+
+        <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-4">
+                <span class="label-text font-bold">Use Hardlinks</span>
+                <input type="checkbox" name="use_hardlinks" class="checkbox checkbox-primary" {% if use_hardlinks %}checked{% endif %} />
+            </label>
+            <p class="text-xs opacity-60">If enabled, the system will try to hardlink files instead of copying them. This saves space while allowing you to continue seeding in qBittorrent. <i>Note: Only works on the same filesystem.</i></p>
+        </div>
+
+        <button class="btn btn-primary mt-4">Save Media Management Settings</button>
+    </form>
+    {% endblock media_form %}
+
+    <div class="mt-8 p-4 bg-base-200 rounded-lg">
+        <h3 class="font-bold mb-2">Metadata Generation</h3>
+        <p class="text-sm opacity-80">The system will automatically generate the following files in the book folder during processing:</p>
+        <ul class="list-disc list-inside text-xs opacity-70 mt-2">
+            <li><code>metadata.json</code> (Audiobookshelf format)</li>
+            <li><code>metadata.opf</code> (Standard metadata format)</li>
+            <li><code>cover.jpg</code> (Highest quality available)</li>
+            <li><code>desc.txt</code> (Book synopsis/description)</li>
+        </ul>
+    </div>
+</div>
+{% endblock content %}

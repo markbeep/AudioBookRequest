@@ -62,7 +62,83 @@ async def start_download(
     requester: User,
     book_asin: str,
     prowlarr_source: ProwlarrSource | None = None,
-) -> ClientResponse:
+) -> ClientResponse | bool:
+    from app.internal.download_clients.config import download_client_config
+    from app.internal.download_clients.qbittorrent import QbittorrentClient
+
+    qbit_enabled = download_client_config.get_qbit_enabled(session)
+    
+    if qbit_enabled and prowlarr_source:
+        logger.info("Direct qBittorrent download enabled", guid=guid)
+        client = QbittorrentClient(session)
+        success = False
+        if prowlarr_source.magnet_url:
+            success = await client.add_torrent(prowlarr_source.magnet_url, is_magnet=True, tags=[f"asin:{book_asin}"])
+        elif prowlarr_source.download_url:
+            # We need to fetch the torrent file content
+            fetch_headers = {"User-Agent": USER_AGENT}
+            fetch_cookies = {}
+            
+            # If it's a MAM URL, we need to add the session cookie
+            if "myanonamouse.net" in prowlarr_source.download_url:
+                from app.internal.indexers.mam import MamIndexer, ValuedMamConfigurations
+                from app.internal.indexers.configuration import create_valued_configuration
+                from app.internal.indexers.abstract import SessionContainer
+                
+                config_obj = await MamIndexer.get_configurations(SessionContainer(session=session, client_session=client_session))
+                valued = create_valued_configuration(config_obj, session)
+                mam_session_id = str(getattr(valued, "mam_session_id") or "")
+                if mam_session_id:
+                    if mam_session_id.startswith("mam_id="):
+                        mam_session_id = mam_session_id[7:]
+                    fetch_cookies["mam_id"] = mam_session_id
+
+            async with client_session.get(prowlarr_source.download_url, headers=fetch_headers, cookies=fetch_cookies) as r:
+                if r.ok:
+                    content = await r.read()
+                    success = await client.add_torrent(content, is_magnet=False, tags=[f"asin:{book_asin}"])
+                else:
+                    logger.error("Failed to fetch torrent file for direct qBit download", url=prowlarr_source.download_url, status=r.status)
+        
+        if success:
+            logger.debug("Download successfully started via direct qBittorrent")
+            additional_replacements: dict[str, str] = {"bookASIN": book_asin}
+            if prowlarr_source.download_url and prowlarr_source.protocol == "torrent":
+                if info_hash := await _get_torrent_info_hash(
+                    client_session, prowlarr_source.download_url
+                ):
+                    additional_replacements["torrentInfoHash"] = info_hash
+            elif prowlarr_source.magnet_url and prowlarr_source.protocol == "torrent":
+                info_hash = prowlarr_source.magnet_url.replace("magnet:?", "")
+                info_hash = info_hash.replace("xt=urn:btih:", "")
+                info_hash = info_hash.split("&")[0]
+                additional_replacements["torrentInfoHash"] = info_hash
+
+            additional_replacements["sourceSizeMB"] = str(prowlarr_source.size_MB)
+            additional_replacements["sourceTitle"] = prowlarr_source.title
+            additional_replacements["indexerName"] = prowlarr_source.indexer
+            additional_replacements["sourceProtocol"] = prowlarr_source.protocol
+
+            await send_all_notifications(
+                EventEnum.on_successful_download,
+                requester,
+                book_asin,
+                additional_replacements,
+            )
+            return True
+        else:
+            logger.error("Failed to add torrent to qBittorrent directly")
+            await send_all_notifications(
+                EventEnum.on_failed_download,
+                requester,
+                book_asin,
+                {
+                    "errorStatus": "N/A",
+                    "errorReason": "Failed to add to qBittorrent directly",
+                },
+            )
+            return False
+
     prowlarr_config.raise_if_invalid(session)
     base_url = prowlarr_config.get_base_url(session)
     api_key = prowlarr_config.get_api_key(session)

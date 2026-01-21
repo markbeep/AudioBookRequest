@@ -85,6 +85,7 @@ async def query_sources(
             only_return_if_cached=only_return_if_cached,
             indexer_ids=prowlarr_config.get_indexers(session),
         )
+
         if sources is None:
             return QueryResult(
                 sources=None,
@@ -105,7 +106,15 @@ async def query_sources(
                 book_asin=asin,
                 prowlarr_source=ranked[0],
             )
-            if resp.ok:
+            
+            # Check success based on type (bool for direct qBit, ClientResponse for Prowlarr)
+            success = False
+            if isinstance(resp, bool):
+                success = resp
+            else:
+                success = resp.ok
+
+            if success:
                 same_books = session.exec(
                     select(Audiobook).where(Audiobook.asin == asin)
                 ).all()

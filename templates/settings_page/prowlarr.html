@@ -45,6 +45,12 @@
         {% endif %}
       </button>
     </form>
+    <div class="pt-2">
+        <button hx-post="{{ base_url }}/settings/prowlarr/test" 
+                hx-include="#prowlarr-api-key, #prowlarr-base-url"
+                hx-swap="none"
+                class="btn btn-outline btn-sm w-full">Test Prowlarr Connection</button>
+    </div>
     {% block category %}
       <form id="category-select"
             class="flex flex-col gap-2"

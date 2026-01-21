@@ -1,0 +1,23 @@
+{% if downloads %}
+<div class="bg-base-200 p-4 rounded-lg mb-4">
+    <h3 class="font-bold text-sm mb-2 flex items-center gap-2">
+        <span class="loading loading-spinner loading-xs text-primary"></span>
+        Active Downloads
+    </h3>
+    <div class="flex flex-col gap-2">
+        {% for dl in downloads %}
+        <div class="flex flex-col gap-1">
+            <div class="flex justify-between text-xs">
+                <span class="font-semibold truncate max-w-[70%]">{{ dl.name }}</span>
+                <span>{{ (dl.progress * 100) | round(1) }}% - {{ dl.state }}</span>
+            </div>
+            <progress class="progress progress-primary w-full" value="{{ dl.progress * 100 }}" max="100"></progress>
+            <div class="flex justify-between text-[10px] opacity-60">
+                <span>Speed: {{ (dl.dlspeed / 1024 / 1024) | round(2) }} MB/s</span>
+                <span>ETA: {{ dl.eta // 60 }}m {{ dl.eta % 60 }}s</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

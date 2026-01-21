@@ -1,0 +1,80 @@
+{% extends "settings_page/base.html" %}
+{% block head %}
+<title>Settings - Download Client</title>
+{% endblock head %}
+{% block content %}
+<div class="flex flex-col gap-2">
+    <h2 class="text-lg">Download Client (qBittorrent)</h2>
+    
+    <div class="form-control">
+        <label class="label cursor-pointer">
+            <span class="label-text text-lg font-bold">Enable qBittorrent Integration</span>
+            <input hx-put="{{ base_url }}/settings/download-client/enabled" type="checkbox"
+                name="enabled" class="toggle toggle-primary" {% if qbit_enabled %}checked{% endif %}
+                hx-trigger="change" hx-swap="none" />
+        </label>
+        <p class="text-xs opacity-60">When enabled, downloads will be sent to qBittorrent and monitored for completion.</p>
+    </div>
+
+    {% block connection_form %}
+    <form class="flex flex-col gap-2 border-t pt-4 mt-2 border-base-200" 
+          hx-put="{{ base_url }}/settings/download-client/connection"
+          hx-target="this"
+          hx-swap="outerHTML">
+        {% if success_connection %}<script>toast("{{success_connection|safe}}", "success");</script>{% endif %}
+        <div class="flex flex-col md:flex-row gap-2">
+            <div class="flex flex-col w-full">
+                <label for="qbit-host">Host</label>
+                <input id="qbit-host" name="host" type="text" value="{{ qbit_host or '' }}" placeholder="localhost or 192.168.1.10" class="input w-full" required />
+            </div>
+            <div class="flex flex-col md:w-1/3">
+                <label for="qbit-port">Port</label>
+                <input id="qbit-port" name="port" type="number" value="{{ qbit_port }}" class="input w-full" required />
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-2">
+            <div class="flex flex-col w-full">
+                <label for="qbit-user">Username</label>
+                <input id="qbit-user" name="username" type="text" value="{{ qbit_user or '' }}" class="input w-full" />
+            </div>
+            <div class="flex flex-col w-full">
+                <label for="qbit-pass">Password</label>
+                <input id="qbit-pass" name="password" type="password" {% if qbit_pass %}placeholder="●●●●●●●●●●●●●●●●●"{% endif %} class="input w-full" />
+            </div>
+        </div>
+
+        <div class="flex gap-2">
+            <button class="btn btn-primary mt-2 flex-grow">Update Connection</button>
+            <button type="button" 
+                    hx-post="{{ base_url }}/settings/download-client/test" 
+                    hx-include="closest form"
+                    hx-swap="none"
+                    class="btn btn-outline mt-2">Test</button>
+        </div>
+    </form>
+    {% endblock connection_form %}
+
+    {% block settings_form %}
+    <form class="flex flex-col gap-2 border-t pt-4 mt-2 border-base-200" 
+          hx-put="{{ base_url }}/settings/download-client/settings"
+          hx-target="this"
+          hx-swap="outerHTML">
+        {% if success_settings %}<script>toast("{{success_settings|safe}}", "success");</script>{% endif %}
+        <div class="flex flex-col w-full">
+            <label for="qbit-category">Category</label>
+            <input id="qbit-category" name="category" type="text" value="{{ qbit_category }}" class="input w-full" required />
+            <p class="text-xs opacity-60">The category to assign in qBittorrent.</p>
+        </div>
+
+        <div class="flex flex-col w-full">
+            <label for="qbit-save-path">Save Path (Optional)</label>
+            <input id="qbit-save-path" name="save_path" type="text" value="{{ qbit_save_path or '' }}" class="input w-full" placeholder="/downloads/audiobooks" />
+            <p class="text-xs opacity-60">Override the default save path in qBittorrent.</p>
+        </div>
+
+        <button class="btn btn-primary mt-2">Update Settings</button>
+    </form>
+    {% endblock settings_form %}
+</div>
+{% endblock content %}

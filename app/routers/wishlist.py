@@ -40,6 +40,33 @@ from app.util.toast import ToastException
 router = APIRouter(prefix="/wishlist")
 
 
+@router.get("/active-downloads")
+async def active_downloads(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+):
+    from app.internal.download_clients.qbittorrent import QbittorrentClient
+    from app.internal.download_clients.config import download_client_config
+    
+    if not download_client_config.get_qbit_enabled(session):
+        return ""
+    
+    client = QbittorrentClient(session)
+    category = download_client_config.get_qbit_category(session)
+    # Filter for active (not completed) torrents
+    torrents = await client.get_torrents(category=category, filter="active")
+    
+    # Filter out already processed ones if any (though 'active' filter should handle it)
+    active = [t for t in torrents if "processed" not in t.get("tags", "")]
+    
+    return template_response(
+        "wishlist_page/active_downloads.html",
+        request,
+        user,
+        {"downloads": active},
+    )
+
 @router.get("")
 async def wishlist(
     request: Request,
@@ -104,6 +131,44 @@ async def update_downloaded(
         block_name="book_wishlist",
     )
 
+
+@router.post("/reprocess/{asin}")
+async def reprocess_book(
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+):
+    from app.internal.download_clients.qbittorrent import QbittorrentClient
+    from app.internal.download_clients.config import download_client_config
+    from app.internal.processing.processor import process_completed_download
+    
+    client = QbittorrentClient(session)
+    # Search all torrents for this ASIN tag
+    torrents = await client.get_torrents()
+    
+    matching_torrent = None
+    for t in torrents:
+        if f"asin:{asin}" in t.get("tags", ""):
+            matching_torrent = t
+            break
+            
+    if not matching_torrent:
+        raise ToastException("Could not find a matching torrent in qBittorrent for this ASIN.", "error")
+        
+    download_path = matching_torrent.get("content_path")
+    if not download_path:
+        raise ToastException("Torrent found but content path is missing.", "error")
+        
+    try:
+        await process_completed_download(session, asin, download_path)
+        return template_response(
+            "scripts/toast.html",
+            None,
+            None,
+            {"message": "Reprocessing complete!", "type": "success"},
+        )
+    except Exception as e:
+        raise ToastException(f"Reprocessing failed: {str(e)}", "error")
 
 @router.get("/manual")
 async def manual(

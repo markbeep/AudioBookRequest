@@ -3,6 +3,10 @@
   <title>Wishlist</title>
 {% endblock head %}
 {% block content %}
+  <div hx-get="{{ base_url }}/wishlist/active-downloads" 
+       hx-trigger="load, every 10s" 
+       hx-swap="innerHTML">
+  </div>
   <div class="overflow-x-auto h-[75vh] border-b pb-2 border-b-base-200">
     {% block book_wishlist %}
       {% if update_tablist %}{% include "wishlist_page/tablist.html" %}{% endif %}
@@ -91,6 +95,13 @@
                     <button class="btn btn-square btn-ghost bg-success text-neutral/20"
                             disabled
                             title="Set as downloaded">{% include "icons/checkmark.html" %}</button>
+                    {% if page == 'downloaded' %}
+                    <button class="btn btn-square btn-outline btn-info"
+                            title="Reprocess Metadata"
+                            hx-post="{{ base_url }}/wishlist/reprocess/{{ book.asin }}"
+                            hx-swap="none"
+                            hx-disabled-elt="this">{% include "icons/pencil.html" %}</button>
+                    {% endif %}
                   {% else %}
                     <button class="btn btn-square"
                             title="Set as downloaded"

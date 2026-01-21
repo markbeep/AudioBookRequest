@@ -142,7 +142,7 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
 
         params = {
             "tor[text]": book.title,
-            "tor[main_cat]": [13],
+            "tor[main_cat]": [13, 14], # 13: Audiobooks, 14: Radio/Audio Drama
             "tor[searchIn]": "torrents",
             "tor[srchIn][author]": "true",
             "tor[srchIn][title]": "true",

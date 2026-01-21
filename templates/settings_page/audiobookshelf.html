@@ -34,6 +34,13 @@
         </button>
     </form>
 
+    <div class="pt-2">
+        <button hx-post="{{ base_url }}/settings/audiobookshelf/test" 
+                hx-include="#abs-api-token, #abs-base-url"
+                hx-swap="none"
+                class="btn btn-outline btn-sm w-full">Test ABS Connection</button>
+    </div>
+
     <label for="abs-library" class="pt-2">Library</label>
     <form class="join w-full" hx-put="{{ base_url }}/settings/audiobookshelf/library"
         hx-disabled-elt="#abs-library-button">

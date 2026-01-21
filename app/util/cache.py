@@ -36,7 +36,8 @@ class SimpleCache[VT, *KTs]:
 
 
 class StringConfigCache[L: str](ABC):
-    _cache: dict[L, str] = {}
+    def __init__(self):
+        self._cache: dict[L, str] = {}
 
     @overload
     def get(self, session: Session, key: L) -> str | None: ...
