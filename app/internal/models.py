@@ -280,3 +280,43 @@ class APIKey(BaseSQLModel, table=True):
         ),
     )
     enabled: bool = True
+
+class ImportSessionStatus(str, Enum):
+    scanning = "scanning"
+    review_ready = "review_ready"
+    importing = "importing"
+    completed = "completed"
+    failed = "failed"
+
+class ImportItemStatus(str, Enum):
+    pending = "pending"
+    matched = "matched"
+    missing = "missing"
+    ignored = "ignored"
+    imported = "imported"
+    error = "error"
+
+class LibraryImportSession(BaseSQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    root_path: str
+    status: ImportSessionStatus = Field(default=ImportSessionStatus.scanning)
+    created_at: datetime = Field(
+        default_factory=datetime.now,
+        sa_column=Column(DateTime, server_default=func.now(), nullable=False)
+    )
+    
+    items: list["LibraryImportItem"] = Relationship(back_populates="session")
+
+class LibraryImportItem(BaseSQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    session_id: uuid.UUID = Field(foreign_key="libraryimportsession.id", ondelete="CASCADE")
+    source_path: str
+    detected_title: str | None = None
+    detected_author: str | None = None
+    match_asin: str | None = Field(default=None, foreign_key="audiobook.asin", nullable=True)
+    match_score: float = Field(default=0.0)
+    status: ImportItemStatus = Field(default=ImportItemStatus.pending)
+    error_msg: str | None = None
+
+    session: LibraryImportSession = Relationship(back_populates="items")
+

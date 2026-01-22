@@ -1,49 +1,82 @@
-{% if downloads %}
-<div class="bg-base-200 p-4 rounded-lg mb-4">
-    <h3 class="font-bold text-sm mb-2 flex items-center gap-2">
-        <span class="loading loading-spinner loading-xs text-primary"></span>
-        Active Downloads
-    </h3>
-    <div class="flex flex-col gap-2">
-        {% for dl in downloads %}
-        <div class="flex gap-3 bg-base-100 p-2 rounded-md items-center">
-            <!-- Cover Image -->
-            <div class="h-16 w-16 shrink-0 rounded overflow-hidden relative">
-                {% if dl.cover %}
-                    <img src="{{ dl.cover }}" alt="Cover" class="h-full w-full object-cover">
-                {% else %}
-                    <div class="h-full w-full bg-neutral flex items-center justify-center opacity-50">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="flex flex-col flex-grow gap-1 min-w-0">
-                <div class="flex justify-between text-xs items-center">
-                    <span class="font-semibold truncate pr-2" title="{{ dl.title }}">{{ dl.title }}</span>
-                    <span class="badge badge-xs badge-outline opacity-80 whitespace-nowrap">{{ dl.display_state }}</span>
-                </div>
-                
-                <progress class="progress progress-primary w-full h-2" value="{{ dl.progress * 100 }}" max="100"></progress>
-                
-                <div class="flex justify-between text-[10px] opacity-60">
-                    {% if dl.speed > 0 %}
-                        <span>{{ (dl.speed / 1024 / 1024) | round(2) }} MB/s</span>
-                    {% else %}
-                        <span>-- MB/s</span>
-                    {% endif %}
-                    
-                    {% if dl.eta > 0 %}
-                        <span>ETA: {{ dl.eta // 60 }}m {{ dl.eta % 60 }}s</span>
-                    {% elif dl.progress >= 1.0 %}
-                        <span>Finalizing...</span>
-                    {% else %}
-                        <span>--:--</span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
+<div class="overflow-x-auto">
+  <table class="table table-pin-rows min-w-full">
+      <thead>
+          <tr>
+              <th class="w-16 lg:w-24"></th> <!-- Cover -->
+              <th>Title</th>
+              <th>Speed</th>
+              <th>ETA</th>
+              <th>State</th>
+              <th>Progress</th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for dl in downloads %}
+          <tr class="text-xs lg:text-sm hover:bg-base-200/50 transition-colors">
+              <!-- Cover -->
+              <td>
+                  <div class="size-16 lg:size-24 rounded overflow-hidden bg-base-300">
+                      {% if dl.cover %}
+                      <img src="{{ dl.cover }}" alt="Cover" class="object-cover w-full h-full">
+                      {% else %}
+                      <div class="flex items-center justify-center w-full h-full opacity-30 text-base-content">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      </div>
+                      {% endif %}
+                  </div>
+              </td>
+              
+              <!-- Title & Progress -->
+              <td class="align-middle">
+                  <div class="flex flex-col gap-2 min-w-[200px]">
+                      <span class="font-bold text-base-content truncate" title="{{ dl.title }}">{{ dl.title }}</span>
+                      <progress class="progress 
+                          {% if dl.state == 'error' %}progress-error
+                          {% elif dl.processing_status != 'pending' and dl.processing_status != 'download_initiated' %}progress-warning
+                          {% else %}progress-primary{% endif %}
+                          w-full h-2" value="{{ dl.progress * 100 }}" max="100"></progress>
+                  </div>
+              </td>
+  
+              <!-- Speed -->
+              <td class="font-mono opacity-80 whitespace-nowrap">
+                  {% if dl.speed > 0 %}
+                  {{ (dl.speed / 1024 / 1024) | round(1) }} MB/s
+                  {% else %}
+                  <span class="opacity-30">-</span>
+                  {% endif %}
+              </td>
+  
+              <!-- ETA -->
+              <td class="font-mono opacity-80 whitespace-nowrap">
+                  {% if dl.eta > 0 and dl.eta < 8640000 %}
+                      {% if dl.eta > 3600 %}{{ dl.eta // 3600 }}h {% endif %}
+                      {{ (dl.eta % 3600) // 60 }}m {{ dl.eta % 60 }}s
+                  {% else %}
+                      <span class="opacity-30">-</span>
+                  {% endif %}
+              </td>
+  
+              <!-- State -->
+              <td>
+                  <span class="badge badge-sm badge-outline whitespace-nowrap">{{ dl.display_state }}</span>
+              </td>
+  
+              <!-- Percentage -->
+              <td class="font-mono font-bold">{{ (dl.progress * 100)|round(0)|int }}%</td>
+          </tr>
+          {% else %}
+          <tr>
+              <td colspan="6" class="text-center py-12">
+                  <div class="flex flex-col items-center gap-3 opacity-50">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                      <span class="font-medium">No active downloads</span>
+                  </div>
+              </td>
+          </tr>
+          {% endfor %}
+      </tbody>
+  </table>
 </div>
-{% endif %}

@@ -33,9 +33,37 @@ def _zfill(val: str | int | float, num: int) -> str:
 def _to_js_string(val: str | int | float) -> str:
     return html.escape(f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'")
 
+def _basename(path: str) -> str:
+    import os
+    return os.path.basename(path)
+
+def _asin_to_cover(asin: str) -> str:
+    from app.util.db import get_session
+    from app.internal.models import Audiobook
+    with next(get_session()) as session:
+        book = session.get(Audiobook, asin)
+        return book.cover_image if book else ""
+
+def _asin_to_title(asin: str) -> str:
+    from app.util.db import get_session
+    from app.internal.models import Audiobook
+    with next(get_session()) as session:
+        book = session.get(Audiobook, asin)
+        return book.title if book else "Unknown"
+
+def _asin_to_author(asin: str) -> str:
+    from app.util.db import get_session
+    from app.internal.models import Audiobook
+    with next(get_session()) as session:
+        book = session.get(Audiobook, asin)
+        return ", ".join(book.authors) if book and book.authors else "Unknown"
 
 templates.env.filters["zfill"] = _zfill
 templates.env.filters["toJSstring"] = _to_js_string
+templates.env.filters["basename"] = _basename
+templates.env.filters["asin_to_cover"] = _asin_to_cover
+templates.env.filters["asin_to_title"] = _asin_to_title
+templates.env.filters["asin_to_author"] = _asin_to_author
 templates.env.globals["vars"] = vars
 templates.env.globals["getattr"] = getattr
 templates.env.globals["version"] = Settings().app.version

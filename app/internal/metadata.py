@@ -1,7 +1,56 @@
 from app.internal.indexers.mam_models import _Result
+from app.internal.models import Audiobook
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom.minidom import parseString
 import re
+
+def generate_opf_basic(book: Audiobook) -> str:
+    """
+    Generates a basic OPF metadata content for an Audiobook.
+    """
+    package = Element('package', version='2.0', xmlns='http://www.idpf.org/2007/opf', unique_identifier='bookid')
+    
+    metadata = SubElement(package, 'metadata', {
+        'xmlns:dc': 'http://purl.org/dc/elements/1.1/', 
+        'xmlns:opf': 'http://www.idpf.org/2007/opf'
+    })
+    
+    # Basic info
+    SubElement(metadata, 'dc:title').text = book.title
+    
+    for author in book.authors:
+        SubElement(metadata, 'dc:creator', {'opf:role': 'aut', 'opf:file-as': author}).text = author
+    
+    for narrator in book.narrators:
+        SubElement(metadata, 'dc:contributor', {'opf:role': 'nrt', 'opf:file-as': narrator}).text = narrator
+    
+    if book.subtitle:
+        SubElement(metadata, 'dc:description').text = book.subtitle
+
+    # Series
+    if book.series:
+        for s_info in book.series:
+             # Basic heuristic: if it contains a number, treat as index? 
+             # For now, just dump it as series.
+             SubElement(metadata, 'meta', {'name': 'calibre:series', 'content': s_info})
+
+    if book.release_date:
+        SubElement(metadata, 'dc:date').text = book.release_date.isoformat().split('T')[0]
+
+    SubElement(metadata, 'dc:identifier', id='bookid', system='ASIN').text = book.asin
+    
+    # Manifest and spine setup (minimal)
+    manifest = SubElement(package, 'manifest')
+    SubElement(manifest, 'item', id='ncx', href='toc.ncx', media_type='application/x-dtbncx+xml')
+    SubElement(manifest, 'item', id='text', href='dummy.html', media_type='application/xhtml+xml')
+    
+    spine = SubElement(package, 'spine', toc='ncx')
+    SubElement(spine, 'itemref', idref='text')
+
+    # Formatting
+    xml_str = tostring(package, 'utf-8')
+    dom = parseString(xml_str)
+    return dom.toprettyxml(indent="  ")
 
 def generate_opf_for_mam(result: _Result) -> str:
     """

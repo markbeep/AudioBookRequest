@@ -3,9 +3,23 @@
   <title>Wishlist</title>
 {% endblock head %}
 {% block content %}
-  <div class="overflow-x-auto h-[75vh] border-b pb-2 border-b-base-200">
+  <div id="wishlist-container" class="overflow-x-auto h-[75vh] border-b pb-2 border-b-base-200">
     {% block book_wishlist %}
       {% if update_tablist %}{% include "wishlist_page/tablist.html" %}{% endif %}
+      
+      {% if not results %}
+          <div role="alert" class="alert my-2">
+            <span class="stroke-info h-6 w-6 shrink-0">{% include "icons/info-circle.html" %}</span>
+            <span>
+              {% if page.__eq__("wishlist") %}
+                No books on your wishlist. Add some
+                books by heading to the
+                <a preload class="link" href="{{ base_url }}/search">search</a> tab {%
+                elif page.__eq__("downloaded") %} No books have been downloaded yet. {%
+                endif %}
+              </span>
+            </div>
+      {% else %}
       <table id="book-table-body" class="table table-pin-rows min-w-240">
         <thead>
           <tr>
@@ -20,19 +34,6 @@
             <th></th>
           </tr>
         </thead>
-        {% if not results %}
-          <div role="alert" class="alert my-2">
-            <span class="stroke-info h-6 w-6 shrink-0">{% include "icons/info-circle.html" %}</span>
-            <span>
-              {% if page.__eq__("wishlist") %}
-                No books on your wishlist. Add some
-                books by heading to the
-                <a preload class="link" href="{{ base_url }}/search">search</a> tab {%
-                elif page.__eq__("downloaded") %} No books have been downloaded yet. {%
-                endif %}
-              </span>
-            </div>
-          {% endif %}
           <tbody>
             {% for result in results %}
               {% set book = result.book %}
@@ -78,14 +79,14 @@
                     <button {% if book.downloaded %}title="Downloaded"class="btn btn-square btn-ghost bg-success text-neutral/20" {% else %} title="Automatic Download" class="btn btn-square" {% endif %}
                             {% if not user.can_download() or book.downloaded %}disabled{% endif %}
                             hx-post="{{ base_url }}/wishlist/auto-download/{{ book.asin }}"
-                            hx-swap="outerHTML"
-                            hx-target="#book-table-body"
+                            hx-swap="innerHTML"
+                            hx-target="#wishlist-container"
                             hx-disabled-elt="this">{% include "icons/download.html" %}</button>
                   <button title="Remove"
                           class="btn btn-square"
                           hx-delete="{{ base_url }}/search/request/{{ book.asin }}{%- if page.__eq__('downloaded') -%}?downloaded=true{%- endif -%}"
-                          hx-swap="outerHTML"
-                          hx-target="#book-table-body"
+                          hx-swap="innerHTML"
+                          hx-target="#wishlist-container"
                           hx-disabled-elt="this">{% include "icons/ban.html" %}</button>
                   {% if book.downloaded %}
                     <button class="btn btn-square btn-ghost bg-success text-neutral/20"
@@ -103,15 +104,16 @@
                             title="Set as downloaded"
                             hx-patch="{{ base_url }}/wishlist/downloaded/{{ book.asin }}"
                             {% if not user.is_admin() %}disabled{% endif %}
-                            hx-swap="outerHTML"
-                            hx-target="#book-table-body"
+                            hx-swap="innerHTML"
+                            hx-target="#wishlist-container"
                             hx-disabled-elt="this">{% include "icons/checkmark.html" %}</button>
                   {% endif %}
                 </td>
               </tr>
             {% endfor %}
           </tbody>
-        {% endblock book_wishlist %}
       </table>
-    </div>
+      {% endif %}
+    {% endblock book_wishlist %}
+  </div>
   {% endblock content %}

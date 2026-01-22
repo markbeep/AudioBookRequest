@@ -84,7 +84,17 @@ async def start_download(
     if prowlarr_source.magnet_url:
         success = await client.add_torrent(prowlarr_source.magnet_url, is_magnet=True, tags=[f"asin:{audiobook_request.asin}"])
         if success:
-            info_hash = prowlarr_source.magnet_url.replace("magnet:?", "").replace("xt=urn:btih:", "").split("&")[0]
+            import re
+            # Extract hash from magnet link
+            match = re.search(r"xt=urn:btih:([a-zA-Z0-9]+)", prowlarr_source.magnet_url, re.IGNORECASE)
+            if match:
+                info_hash = match.group(1).lower()
+            else:
+                # Fallback or error logging?
+                # If we can't extract hash, we might not be able to track it.
+                # But it was added to client. 
+                logger.warning("Could not extract hash from magnet link", magnet=prowlarr_source.magnet_url)
+                info_hash = None
     elif prowlarr_source.download_url:
         # We need to fetch the torrent file content
         fetch_headers = {"User-Agent": USER_AGENT}

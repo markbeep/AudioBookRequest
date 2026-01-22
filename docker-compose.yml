@@ -1,7 +1,7 @@
 services:
   web:
     # start with `docker compose --profile local up`
-    profiles: [local]
+    profiles: [ local ]
     build:
       context: .
       args:
@@ -11,6 +11,7 @@ services:
       - ./testing/metadata_output/:/tmp/audiobook_metadata
       - ./library:/library
       - ./data/qbittorrent/downloads:/downloads
+      - ./IMPORTER:/import
     ports:
       - "8697:8000"
     depends_on:

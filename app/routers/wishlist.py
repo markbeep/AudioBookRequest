@@ -52,7 +52,19 @@ async def active_downloads(
     from sqlmodel import select, or_, not_, col
     
     if not download_client_config.get_qbit_enabled(session):
-        return ""
+        torrents_by_hash = {}
+    else:
+        # Fetch active torrents for real-time speed/eta
+        client = QbittorrentClient(session)
+        category = download_client_config.get_qbit_category(session)
+        try:
+            # We fetch 'all' because 'active' might exclude paused/queued items that are technically still 'in progress' from our perspective
+            # but filter='active' is usually what we want for speed/eta. 
+            # Let's stick to 'active' for the enrichment data, but rely on DB for existence.
+            torrents = await client.get_torrents(category=category, filter="active")
+            torrents_by_hash = {t.get("hash"): t for t in torrents}
+        except Exception:
+            torrents_by_hash = {}
     
     # Fetch relevant requests (Downloading or Processing)
     # We want requests that are NOT fully downloaded yet
@@ -66,22 +78,7 @@ async def active_downloads(
     )
     
     results = session.exec(query).all()
-    
-    if not results:
-        return ""
 
-    # Fetch active torrents for real-time speed/eta
-    client = QbittorrentClient(session)
-    category = download_client_config.get_qbit_category(session)
-    try:
-        # We fetch 'all' because 'active' might exclude paused/queued items that are technically still 'in progress' from our perspective
-        # but filter='active' is usually what we want for speed/eta. 
-        # Let's stick to 'active' for the enrichment data, but rely on DB for existence.
-        torrents = await client.get_torrents(category=category, filter="active")
-        torrents_by_hash = {t.get("hash"): t for t in torrents}
-    except Exception:
-        torrents_by_hash = {}
-    
     downloads = []
     for req, book in results:
         # Match with torrent data
@@ -161,36 +158,12 @@ async def downloading(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
-    from app.internal.models import AudiobookRequest
-    from sqlmodel import select, or_, not_, col
-    
-    username = None if user.is_admin() else user.username
-    
-    # Fetch requests that are not downloaded and have a torrent_hash or are processing
-    # AND are not in a failed state
-    query = select(AudiobookRequest).join(Audiobook).where(
-        Audiobook.downloaded == False, # Correctly check Audiobook.downloaded
-        or_(
-            AudiobookRequest.torrent_hash != None,
-            AudiobookRequest.processing_status != "pending"
-        ),
-        not_(col(AudiobookRequest.processing_status).startswith("failed"))
-    )
-    if username:
-        query = query.where(AudiobookRequest.user_username == username)
-    
-    downloading_requests = session.exec(query).all()
-    
-    # We need to transform these into a format similar to AudiobookWishlistResult
-    # For now, let's just pass the raw AudiobookRequest objects,
-    # we can refine this later if needed for consistent display with wishlist.html
-    
     counts = get_wishlist_counts(session, user)
     return template_response(
         "wishlist_page/downloading.html",
         request,
         user,
-        {"requests": downloading_requests, "page": "downloading", "counts": counts},
+        {"page": "downloading", "counts": counts},
     )
 
 
