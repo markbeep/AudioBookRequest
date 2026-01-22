@@ -18,7 +18,6 @@ oidcConfigKey = Literal[
     "oidc_token_endpoint",
     "oidc_userinfo_endpoint",
     "oidc_authorize_endpoint",
-    "oidc_redirect_https",
     "oidc_logout_url",
 ]
 
@@ -69,11 +68,6 @@ class oidcConfig(StringConfigCache[oidcConfigKey]):
             raise InvalidOIDCConfiguration(
                 f"Failed to set OIDC endpoint: {endpoint}. Error: {str(e)}"
             ) from None
-
-    def get_redirect_https(self, session: Session) -> bool:
-        if self.get(session, "oidc_redirect_https"):
-            return True
-        return False
 
     async def validate(
         self, session: Session, client_session: ClientSession
