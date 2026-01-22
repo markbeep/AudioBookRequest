@@ -123,7 +123,7 @@ async def list_category_audible_books(
     await asyncio.gather(*coros)
     for book in recommendations.values():
         for b in book:
-            session.refresh(b)
+            session.merge(b)
 
     return recommendations
 

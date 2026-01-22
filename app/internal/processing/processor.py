@@ -8,7 +8,7 @@ from app.util.log import logger
 from app.internal.media_management.config import media_management_config
 from sqlmodel import Session, select
 
-async def process_completed_download(session: Session, asin: str, download_path: str):
+async def process_completed_download(session: Session, book_request: AudiobookRequest, download_path: str):
     """
     Process a completed download:
     1. Move to the library path using the configured pattern.
@@ -16,17 +16,29 @@ async def process_completed_download(session: Session, asin: str, download_path:
     3. Save cover image.
     4. Clean up.
     """
+    asin = book_request.asin
     book = session.get(Audiobook, asin)
     if not book:
         logger.error("Processor: Book not found in database", asin=asin)
+        book_request.processing_status = "failed: book not found"
+        session.add(book_request)
+        session.commit()
         return
 
     logger.info("Processor: Starting processing for book", title=book.title, asin=asin)
+
+    book_request.processing_status = "moving_files"
+    session.add(book_request)
+    session.commit()
+    logger.info("Processor: Setting status to moving_files", title=book.title)
 
     # 1. Determine destination path
     lib_root = media_management_config.get_library_path(session)
     if not lib_root:
         logger.warning("Processor: Library path not set, skipping move")
+        book_request.processing_status = "failed: library path not set"
+        session.add(book_request)
+        session.commit()
         return
 
     pattern = media_management_config.get_folder_pattern(session)
@@ -38,19 +50,36 @@ async def process_completed_download(session: Session, asin: str, download_path:
     
     # Sanitize for filesystem
     def sanitize(s: str) -> str:
-        return re.sub(r'[\\/*?:">|<]', "", s).strip()
+        # Remove invalid characters and strip whitespace
+        s = re.sub(r'[\\/*?:">|<]', "", s).strip()
+        return s or "Unknown"
 
-    folder_rel_path = pattern.format(
-        author=sanitize(author),
-        title=sanitize(book.title),
-        year=year,
-        asin=book.asin,
-        series=sanitize(series) if series else "No Series"
-    )
-    
-    # Handle multiple series tags or nested series folders
+    # Construct relative path
+    try:
+        folder_rel_path = pattern.format(
+            author=sanitize(author),
+            title=sanitize(book.title),
+            year=year,
+            asin=book.asin,
+            series=sanitize(series) if series else "No Series",
+            series_index=book.series[0] if book.series else "" # Added generic support if pattern uses it
+        )
+    except Exception as e:
+        logger.warning("Processor: Pattern formatting failed, using default", error=str(e))
+        folder_rel_path = f"{sanitize(author)}/{sanitize(book.title)} ({year})"
+
+    # Handle multiple series tags or nested series folders override
     if media_management_config.get_use_series_folders(session) and series and "{series}" not in pattern:
         folder_rel_path = os.path.join(sanitize(author), sanitize(series), sanitize(book.title))
+
+    # Clean up the relative path (remove leading/trailing slashes/spaces)
+    folder_rel_path = folder_rel_path.strip().lstrip(os.path.sep)
+    if folder_rel_path.startswith("/"): # Double check for unix root
+        folder_rel_path = folder_rel_path[1:]
+    
+    # Ensure we don't end up with empty segments if something was just a slash
+    if not folder_rel_path:
+        folder_rel_path = f"{sanitize(author)}/{sanitize(book.title)}"
 
     dest_path = os.path.join(lib_root, folder_rel_path)
     os.makedirs(dest_path, exist_ok=True)
@@ -58,18 +87,9 @@ async def process_completed_download(session: Session, asin: str, download_path:
     use_hardlinks = media_management_config.get_use_hardlinks(session)
     logger.info("Processor: Organizing files", dest=dest_path, hardlinks=use_hardlinks)
 
-    def smart_copy(src, dst):
-        if use_hardlinks:
-            try:
-                os.link(src, dst)
-                return
-            except OSError:
-                # Fallback to copy if hardlink fails (e.g. cross-device)
-                pass
-        shutil.copy2(src, dst)
-
     # 2. Organize files
     if os.path.isdir(download_path):
+        logger.info("Processor: Moving directory contents", source=download_path, destination=dest_path)
         for root, dirs, files in os.walk(download_path):
             # Create subdirectories in destination
             rel_dir = os.path.relpath(root, download_path)
@@ -79,13 +99,22 @@ async def process_completed_download(session: Session, asin: str, download_path:
             for file in files:
                 s = os.path.join(root, file)
                 d = os.path.join(dest_path, rel_dir, file) if rel_dir != "." else os.path.join(dest_path, file)
-                smart_copy(s, d)
+                smart_copy(s, d, use_hardlinks)
+        logger.info("Processor: Finished moving directory contents", destination=dest_path)
     else:
-        smart_copy(download_path, os.path.join(dest_path, os.path.basename(download_path)))
+        logger.info("Processor: Moving single file", source=download_path, destination=dest_path)
+        smart_copy(download_path, os.path.join(dest_path, os.path.basename(download_path)), use_hardlinks)
+        logger.info("Processor: Finished moving single file", destination=dest_path)
+
+    book_request.processing_status = "generating_metadata"
+    session.add(book_request)
+    session.commit()
+    logger.info("Processor: Setting status to generating_metadata", title=book.title)
 
     # 3. Generate Metadata Files (JSON and OPF)
-    # These are saved directly in the destination folder
+    logger.info("Processor: Generating Audiobookshelf metadata", title=book.title, path=dest_path)
     await generate_abs_metadata(book, dest_path)
+    logger.info("Processor: Generating OPF metadata", title=book.title, path=dest_path)
     await generate_opf_metadata(session, book, dest_path)
     
     # 4. Save Cover (if available)
@@ -94,11 +123,31 @@ async def process_completed_download(session: Session, asin: str, download_path:
         pass # Handle this if needed, ABS usually handles the cover if it finds metadata.json or cover.jpg
     
     logger.info("Processor: Finished processing and metadata generation", title=book.title)
+
+def smart_copy(source: str, destination: str, use_hardlinks: bool = False):
+    """
+    Copies a file from source to destination. 
+    If use_hardlinks is True, attempts to hardlink first, falling back to copy.
+    """
+    if os.path.exists(destination):
+        logger.debug("Processor: Destination exists, overwriting", path=destination)
+        os.remove(destination)
+        
+    if use_hardlinks:
+        try:
+            os.link(source, destination)
+            logger.debug("Processor: Hardlinked file", source=source, dest=destination)
+            return
+        except OSError as e:
+            logger.warning("Processor: Hardlink failed, falling back to copy", error=str(e))
     
-    # Mark as downloaded in DB if not already
-    book.downloaded = True
-    session.add(book)
-    session.commit()
+    try:
+        shutil.copy2(source, destination)
+        logger.debug("Processor: Copied file", source=source, dest=destination)
+    except Exception as e:
+        logger.error("Processor: Copy failed", source=source, dest=destination, error=str(e))
+        raise e
+
 
 async def generate_abs_metadata(book: Audiobook, folder_path: str):
     """Generates metadata.json in Audiobookshelf format"""

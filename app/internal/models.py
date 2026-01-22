@@ -119,6 +119,10 @@ class AudiobookRequest(BaseSQLModel, table=True):
 
     audiobook: Audiobook = Relationship(back_populates="requests")  # pyright: ignore[reportAny]
     mam_id: int | None = Field(default=None, index=True)
+    torrent_hash: str | None = Field(default=None, index=True)
+    download_progress: float = Field(default=0.0)
+    download_state: str = Field(default="queued")
+    processing_status: str = Field(default="pending")
 
     model_config: SQLModelConfig = cast(
         SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))

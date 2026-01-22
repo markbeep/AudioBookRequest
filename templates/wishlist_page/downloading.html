@@ -1,0 +1,57 @@
+{% extends "wishlist_page/base_wishlist.html" %}
+{% block content %}
+<div hx-get="{{ base_url }}/wishlist/active-downloads" 
+     hx-trigger="load, every 10s" 
+     hx-swap="innerHTML">
+</div>
+
+<div class="flex flex-wrap gap-4 p-4"> {# Changed to flex-wrap for row layout #}
+    {% if requests %}
+        {% for req in requests %}
+            {% with book=req.audiobook %}
+                <div class="book-card-container w-full sm:w-1/2 md:w-1/3 lg:w-1/4 xl:w-1/5 bg-base-200 rounded-box shadow-md flex flex-col">
+                    {% include "components/book_card.html" %}
+                    <div class="p-4 flex flex-col justify-between flex-grow">
+                        <h2 class="text-lg font-bold">{{ book.title }}</h2>
+                        <p class="text-sm text-gray-500">{{ book.authors|join(', ') }}</p>
+                        
+                        <div class="mt-4">
+                            <p class="text-xs font-semibold">
+                                Download: <span class="badge badge-outline">{{ req.download_state|default("N/A")|replace('_', ' ')|title }}</span>
+                            </p>
+                            <progress class="progress progress-primary w-full" value="{{ (req.download_progress * 100) }}" max="100"></progress>
+                            <p class="text-xs text-right">{{ (req.download_progress * 100)|round(1) }}%</p>
+                        </div>
+
+                        <div class="mt-2">
+                            <p class="text-xs font-semibold">
+                                Processing: <span class="badge badge-outline">{{ req.processing_status|default("N/A")|replace('_', ' ')|title }}</span>
+                            </p>
+                            {# Optional: Add a simple spinner or icon for active processing #}
+                        </div>
+                    </div>
+                </div>
+            {% endwith %}
+        {% endfor %}
+    {% else %}
+        <p class="text-center text-lg w-full">No audiobooks currently downloading or processing.</p>
+    {% endif %}
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script>
+    // This script will periodically update the downloading list via HTMX
+    document.addEventListener('DOMContentLoaded', function() {
+        const downloadingTab = document.querySelector('a[href="{{ base_url }}/wishlist/downloading"]');
+        if (downloadingTab && downloadingTab.classList.contains('tab-active')) {
+            // Only poll if this tab is active
+            setInterval(function() {
+                // Assuming the main content area for the tab is loaded into a container with id="tab-content"
+                // If not, this ID needs to be adjusted based on the actual HTML structure where tab content is swapped.
+                htmx.ajax('GET', '{{ base_url }}/wishlist/downloading', { target: '#tab-content', swap: 'innerHTML' });
+            }, 5000); // Poll every 5 seconds
+        }
+    });
+</script>
+{% endblock scripts %}

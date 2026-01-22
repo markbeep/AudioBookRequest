@@ -329,14 +329,19 @@ async def download_book(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
+    book_request = session.exec(
+        select(AudiobookRequest).join(Audiobook)
+        .where(
+            AudiobookRequest.asin == asin,
+            Audiobook.downloaded == False, # Correctly check Audiobook.downloaded
+        )
+    ).first()
+    
+    if not book_request:
+        raise HTTPException(status_code=404, detail="Active request for this audiobook not found.")
+
     try:
-        # We need the source details to pass it to start_download if direct qBit is used.
-        # However, start_download currently only takes guid and indexer_id from the body.
-        # For now, let's just make sure we handle the response type.
-        
-        # To support direct qBit from manual download button, we might need to fetch the source from cache
         from app.internal.prowlarr.util import prowlarr_source_cache
-        from app.internal.models import Audiobook
         
         book = session.get(Audiobook, asin)
         sources = prowlarr_source_cache.get(prowlarr_config.get_source_ttl(session), book.title if book else "")
@@ -344,33 +349,56 @@ async def download_book(
         if sources:
             source = next((s for s in sources if s.guid == body.guid and s.indexer_id == body.indexer_id), None)
 
-        resp = await start_download(
+        if not source:
+            raise HTTPException(status_code=404, detail="Source not found in cache for this book.")
+
+        success = await start_download( # start_download now returns bool
             session=session,
             client_session=client_session,
             guid=body.guid,
             indexer_id=body.indexer_id,
             requester=admin_user,
-            book_asin=asin,
-            prowlarr_source=source,
+            audiobook_request=book_request, # Pass the AudiobookRequest object
+            prowlarr_source=source, # prowlarr_source is now required
         )
     except ProwlarrMisconfigured as e:
+        logger.error("Prowlarr misconfigured for download", error=str(e))
+        background_task.add_task(
+            send_all_notifications,
+            event_type=EventEnum.on_failed_download,
+            requester=admin_user,
+            book_asin=asin,
+            other_replacements={
+                "errorStatus": "500",
+                "errorReason": str(e),
+            },
+        )
         raise HTTPException(status_code=500, detail=str(e))
     
-    # Check success based on type
-    success = False
-    if isinstance(resp, bool):
-        success = resp
-    else:
-        success = resp.ok
-
+    # Check success (start_download now returns bool directly)
     if not success:
+        logger.error("Failed to start download via qBittorrent", asin=asin)
+        background_task.add_task(
+            send_all_notifications,
+            event_type=EventEnum.on_failed_download,
+            requester=admin_user,
+            book_asin=asin,
+            other_replacements={
+                "errorStatus": "500",
+                "errorReason": "Failed to start download",
+            },
+        )
         raise HTTPException(status_code=500, detail="Failed to start download")
 
-    book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
-    if book:
-        book.downloaded = True
-        session.add(book)
-        session.commit()
+    # Notifications are handled here after successful start of download
+    additional_replacements: dict[str, str] = {"bookASIN": asin}
+    background_task.add_task(
+        send_all_notifications,
+        event_type=EventEnum.on_successful_download,
+        requester=admin_user,
+        book_asin=asin,
+        other_replacements=additional_replacements,
+    )
 
     if abs_config.is_valid(session):
         background_task.add_task(background_abs_trigger_scan)

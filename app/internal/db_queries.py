@@ -3,7 +3,7 @@ from typing import Literal, Sequence, cast
 from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import InstrumentedAttribute, selectinload
-from sqlmodel import Session, asc, col, not_, select
+from sqlmodel import Session, asc, col, not_, select, or_
 
 from app.internal.models import (
     Audiobook,
@@ -18,6 +18,7 @@ class WishlistCounts(BaseModel):
     requests: int
     downloaded: int
     manual: int
+    downloading: int
 
 
 def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistCounts:
@@ -42,6 +43,17 @@ def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistC
         else:
             requests = count
 
+    downloading_count = session.exec(
+        select(func.count(AudiobookRequest.asin))
+        .join(Audiobook) # Join with Audiobook table
+        .where(
+            Audiobook.downloaded == False, # Correctly check Audiobook.downloaded
+            (AudiobookRequest.torrent_hash != None) | (AudiobookRequest.processing_status != "pending"),
+            not_(col(AudiobookRequest.processing_status).startswith("failed")),
+            not username or AudiobookRequest.user_username == username,
+        )
+    ).one()
+
     manual = session.exec(
         select(func.count())
         .select_from(ManualBookRequest)
@@ -55,6 +67,7 @@ def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistC
         requests=requests,
         downloaded=downloaded,
         manual=manual,
+        downloading=downloading_count,
     )
 
 
@@ -71,7 +84,11 @@ def get_wishlist_results(
         case "downloaded":
             clause = Audiobook.downloaded
         case "not_downloaded":
-            clause = not_(Audiobook.downloaded)
+            # Exclude already downloaded books AND books currently downloading/processing
+            clause = not_(Audiobook.downloaded) & (
+                (AudiobookRequest.torrent_hash == None)
+                & (AudiobookRequest.processing_status == "pending")
+            )
         case _:
             clause = True
 

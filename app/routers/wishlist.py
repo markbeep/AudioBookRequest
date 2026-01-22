@@ -21,7 +21,7 @@ from app.internal.db_queries import (
     get_wishlist_counts,
     get_wishlist_results,
 )
-from app.internal.models import GroupEnum
+from app.internal.models import GroupEnum, AudiobookRequest, Audiobook
 from app.routers.api.requests import (
     DownloadSourceBody,
     delete_manual_request,
@@ -48,23 +48,78 @@ async def active_downloads(
 ):
     from app.internal.download_clients.qbittorrent import QbittorrentClient
     from app.internal.download_clients.config import download_client_config
+    from app.internal.models import AudiobookRequest, Audiobook
+    from sqlmodel import select, or_, not_, col
     
     if not download_client_config.get_qbit_enabled(session):
         return ""
     
+    # Fetch relevant requests (Downloading or Processing)
+    # We want requests that are NOT fully downloaded yet
+    query = select(AudiobookRequest, Audiobook).join(Audiobook).where(
+        Audiobook.downloaded == False,
+        or_(
+            AudiobookRequest.torrent_hash != None,
+            AudiobookRequest.processing_status != "pending"
+        ),
+        not_(col(AudiobookRequest.processing_status).startswith("failed"))
+    )
+    
+    results = session.exec(query).all()
+    
+    if not results:
+        return ""
+
+    # Fetch active torrents for real-time speed/eta
     client = QbittorrentClient(session)
     category = download_client_config.get_qbit_category(session)
-    # Filter for active (not completed) torrents
-    torrents = await client.get_torrents(category=category, filter="active")
+    try:
+        # We fetch 'all' because 'active' might exclude paused/queued items that are technically still 'in progress' from our perspective
+        # but filter='active' is usually what we want for speed/eta. 
+        # Let's stick to 'active' for the enrichment data, but rely on DB for existence.
+        torrents = await client.get_torrents(category=category, filter="active")
+        torrents_by_hash = {t.get("hash"): t for t in torrents}
+    except Exception:
+        torrents_by_hash = {}
     
-    # Filter out already processed ones if any (though 'active' filter should handle it)
-    active = [t for t in torrents if "processed" not in t.get("tags", "")]
+    downloads = []
+    for req, book in results:
+        # Match with torrent data
+        t_data = torrents_by_hash.get(req.torrent_hash)
+        
+        item = {
+            "title": book.title,
+            "asin": book.asin,
+            "cover": book.cover_image,
+            "progress": req.download_progress or 0.0,
+            "state": req.download_state,
+            "processing_status": req.processing_status,
+            "speed": 0,
+            "eta": 0,
+            "hash": req.torrent_hash
+        }
+        
+        if t_data:
+            item["progress"] = t_data.get("progress", 0)
+            item["state"] = t_data.get("state", "unknown")
+            item["speed"] = t_data.get("dlspeed", 0)
+            item["eta"] = t_data.get("eta", 0)
+        
+        # Display Logic Cleanup
+        display_state = item["state"]
+        
+        # If we are in a post-processing state, show that instead of torrent state
+        if req.processing_status not in ["pending", "completed", "failed", "download_initiated"]:
+             display_state = req.processing_status.replace("_", " ").title()
+        
+        item["display_state"] = display_state
+        downloads.append(item)
     
     return template_response(
         "wishlist_page/active_downloads.html",
         request,
         user,
-        {"downloads": active},
+        {"downloads": downloads},
     )
 
 @router.get("")
@@ -98,6 +153,44 @@ async def downloaded(
         request,
         user,
         {"results": results, "page": "downloaded", "counts": counts},
+    )
+
+@router.get("/downloading")
+async def downloading(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+):
+    from app.internal.models import AudiobookRequest
+    from sqlmodel import select, or_, not_, col
+    
+    username = None if user.is_admin() else user.username
+    
+    # Fetch requests that are not downloaded and have a torrent_hash or are processing
+    # AND are not in a failed state
+    query = select(AudiobookRequest).join(Audiobook).where(
+        Audiobook.downloaded == False, # Correctly check Audiobook.downloaded
+        or_(
+            AudiobookRequest.torrent_hash != None,
+            AudiobookRequest.processing_status != "pending"
+        ),
+        not_(col(AudiobookRequest.processing_status).startswith("failed"))
+    )
+    if username:
+        query = query.where(AudiobookRequest.user_username == username)
+    
+    downloading_requests = session.exec(query).all()
+    
+    # We need to transform these into a format similar to AudiobookWishlistResult
+    # For now, let's just pass the raw AudiobookRequest objects,
+    # we can refine this later if needed for consistent display with wishlist.html
+    
+    counts = get_wishlist_counts(session, user)
+    return template_response(
+        "wishlist_page/downloading.html",
+        request,
+        user,
+        {"requests": downloading_requests, "page": "downloading", "counts": counts},
     )
 
 

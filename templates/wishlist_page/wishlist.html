@@ -3,10 +3,6 @@
   <title>Wishlist</title>
 {% endblock head %}
 {% block content %}
-  <div hx-get="{{ base_url }}/wishlist/active-downloads" 
-       hx-trigger="load, every 10s" 
-       hx-swap="innerHTML">
-  </div>
   <div class="overflow-x-auto h-[75vh] border-b pb-2 border-b-base-200">
     {% block book_wishlist %}
       {% if update_tablist %}{% include "wishlist_page/tablist.html" %}{% endif %}
