@@ -26,7 +26,7 @@ class QbittorrentClient:
 
     async def _login(self, client: aiohttp.ClientSession) -> tuple[bool, int, str]:
         url = f"{self.base_url}/api/v2/auth/login"
-        logger.debug("qBittorrent: Attempting login", url=url, user=self.username)
+        # logger.debug("qBittorrent: Attempting login", url=url, user=self.username)
         data = {
             "username": self.username,
             "password": self.password

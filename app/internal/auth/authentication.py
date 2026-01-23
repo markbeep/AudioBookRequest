@@ -211,12 +211,6 @@ class ABRAuth(SecurityBase):
     ) -> DetailedUser:
         login_type = auth_config.get_login_type(session)
 
-        logger.debug(
-            "Checking user authentication",
-            url=request.url,
-            login_type=login_type,
-            lowest_allowed_group=self.lowest_allowed_group,
-        )
         if login_type == LoginTypeEnum.forms:
             standard_user = await self._get_session_auth(request, session)
         elif login_type == LoginTypeEnum.none:
@@ -251,12 +245,6 @@ class ABRAuth(SecurityBase):
                 "Failed to validate user model. Please log in again."
             )
 
-        logger.debug(
-            "User authenticated successfully",
-            username=user.username,
-            group=user.group,
-            login_type=login_type,
-        )
         return user
 
     async def _get_basic_auth(
@@ -319,11 +307,6 @@ class ABRAuth(SecurityBase):
     async def _get_none_auth(self, session: Session) -> User:
         """Treats every request as being root by returning the first admin user"""
         if self.none_user:
-            logger.debug(
-                "Using none auth, returning cached admin user",
-                username=self.none_user.username,
-                group=self.none_user.group,
-            )
             return self.none_user
 
         user = session.exec(
@@ -331,9 +314,4 @@ class ABRAuth(SecurityBase):
         ).one()
         self.none_user = User.model_validate(user)
 
-        logger.debug(
-            "Using none auth, returning newly fetched admin user",
-            username=self.none_user.username,
-            group=self.none_user.group,
-        )
         return user

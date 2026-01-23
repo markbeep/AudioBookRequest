@@ -71,6 +71,10 @@ class Audiobook(BaseSQLModel, table=True):
     authors: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     narrators: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     series: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    genres: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    publisher: str | None = None
+    description: str | None = None
+    language: str | None = None
     cover_image: str | None
     release_date: datetime
     runtime_length_min: int
@@ -305,11 +309,14 @@ class LibraryImportSession(BaseSQLModel, table=True):
         sa_column=Column(DateTime, server_default=func.now(), nullable=False)
     )
     
-    items: list["LibraryImportItem"] = Relationship(back_populates="session")
+    items: list["LibraryImportItem"] = Relationship(
+        back_populates="session", 
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 class LibraryImportItem(BaseSQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    session_id: uuid.UUID = Field(foreign_key="libraryimportsession.id", ondelete="CASCADE")
+    session_id: uuid.UUID = Field(foreign_key="libraryimportsession.id", ondelete="CASCADE", index=True)
     source_path: str
     detected_title: str | None = None
     detected_author: str | None = None

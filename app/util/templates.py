@@ -35,6 +35,12 @@ def _to_js_string(val: str | int | float) -> str:
 
 def _basename(path: str) -> str:
     import os
+    if "|" in path:
+        parts = path.split("|")
+        base = os.path.basename(parts[0])
+        if len(parts) > 1:
+            return f"{base} (+{len(parts)-1} others)"
+        return base
     return os.path.basename(path)
 
 def _asin_to_cover(asin: str) -> str:

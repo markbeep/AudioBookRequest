@@ -73,10 +73,14 @@ class _AudnexusResponse(BaseModel):
 
     asin: str
     title: str
-    subtitle: str | None
+    subtitle: str | None = None
     authors: list[_Author]
     narrators: list[_Author]
     series: list[_Author] | None = None
+    genres: list[str] | None = None
+    publisher: str | None = None
+    description: str | None = None
+    language: str | None = None
     image: str | None
     releaseDate: str
     runtimeLengthMin: int
@@ -115,6 +119,10 @@ async def _get_audnexus_book(
         authors=[author["name"] for author in audnexus_response.authors],
         narrators=[narrator["name"] for narrator in audnexus_response.narrators],
         series=[s["name"] for s in audnexus_response.series] if audnexus_response.series else [],
+        genres=audnexus_response.genres or [],
+        publisher=audnexus_response.publisher,
+        description=audnexus_response.description,
+        language=audnexus_response.language,
         cover_image=audnexus_response.image,
         release_date=datetime.fromisoformat(audnexus_response.releaseDate),
         runtime_length_min=audnexus_response.runtimeLengthMin,
@@ -124,13 +132,20 @@ async def _get_audnexus_book(
 class _AudimetaResponse(BaseModel):
     class _Author(TypedDict):
         name: str
+    
+    class _Series(TypedDict):
+        name: str
 
     asin: str
     title: str
-    subtitle: str | None
+    subtitle: str | None = None
     authors: list[_Author]
     narrators: list[_Author]
-    series: list[str] | None = None
+    series: list[_Series] | None = None
+    genres: list[str] | None = None
+    publisher: str | None = None
+    description: str | None = None
+    language: str | None = None
     imageUrl: str | None
     releaseDate: str
     lengthMinutes: int | None
@@ -168,7 +183,11 @@ async def _get_audimeta_book(
         subtitle=audimeta_response.subtitle,
         authors=[author["name"] for author in audimeta_response.authors],
         narrators=[narrator["name"] for narrator in audimeta_response.narrators],
-        series=audimeta_response.series or [],
+        series=[s["name"] for s in audimeta_response.series] if audimeta_response.series else [],
+        genres=audimeta_response.genres or [],
+        publisher=audimeta_response.publisher,
+        description=audimeta_response.description,
+        language=audimeta_response.language,
         cover_image=audimeta_response.imageUrl,
         release_date=datetime.fromisoformat(audimeta_response.releaseDate),
         runtime_length_min=audimeta_response.lengthMinutes or 0,
@@ -457,6 +476,10 @@ def store_new_books(session: Session, books: list[Audiobook]):
         b.authors = new_book.authors
         b.narrators = new_book.narrators
         b.series = new_book.series
+        b.genres = new_book.genres
+        b.publisher = new_book.publisher
+        b.description = new_book.description
+        b.language = new_book.language
         b.cover_image = new_book.cover_image
         b.release_date = new_book.release_date
         b.runtime_length_min = new_book.runtime_length_min
