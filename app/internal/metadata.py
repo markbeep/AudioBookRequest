@@ -77,7 +77,12 @@ def generate_opf_basic(book: Audiobook) -> str:
     # Series
     if book.series:
         for s_info in book.series:
-             SubElement(metadata, 'meta', {'name': 'calibre:series', 'content': s_info})
+            if " #" in s_info:
+                name, idx = s_info.split(" #", 1)
+                SubElement(metadata, 'meta', {'name': 'calibre:series', 'content': name})
+                SubElement(metadata, 'meta', {'name': 'calibre:series_index', 'content': idx})
+            else:
+                SubElement(metadata, 'meta', {'name': 'calibre:series', 'content': s_info})
 
     if book.release_date:
         SubElement(metadata, 'dc:date').text = book.release_date.isoformat().split('T')[0]

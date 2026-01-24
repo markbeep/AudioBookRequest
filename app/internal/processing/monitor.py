@@ -3,6 +3,7 @@ from sqlmodel import Session, select
 from app.util.log import logger
 from app.internal.download_clients.qbittorrent import QbittorrentClient
 from app.internal.download_clients.config import download_client_config
+from app.internal.audiobookshelf.config import abs_config
 from app.internal.processing.processor import process_completed_download
 from app.util.db import get_session
 from app.internal.audiobookshelf.client import background_abs_trigger_scan
@@ -17,12 +18,32 @@ async def download_monitor_loop():
     while True:
         try:
             with next(get_session()) as session:
+                # 1. Check qBittorrent for active/completed downloads
                 if download_client_config.get_qbit_enabled(session):
                     await check_qbittorrent(session)
+                
+                # 2. Periodically check ABS for books that might have been added manually
+                #    or finished processing without the monitor catching it.
+                if abs_config.is_valid(session) and abs_config.get_check_downloaded(session):
+                    await check_abs_for_completed_requests(session)
         except Exception as e:
             logger.error("Monitor: Error in monitor loop", error=str(e))
         
         await asyncio.sleep(10) # Check more frequently for better responsiveness (e.g., every 10 seconds)
+
+async def check_abs_for_completed_requests(session: Session):
+    from app.internal.audiobookshelf.client import abs_mark_downloaded_flags
+    from aiohttp import ClientSession
+    
+    # Get books that are on the wishlist but not marked as downloaded
+    requests = session.exec(
+        select(Audiobook).where(Audiobook.downloaded == False)
+    ).all()
+    
+    if requests:
+        logger.debug("Monitor: Checking ABS for completed requests", count=len(requests))
+        async with ClientSession() as client_session:
+            await abs_mark_downloaded_flags(session, client_session, requests)
 
 async def check_qbittorrent(session: Session):
     client = QbittorrentClient(session)

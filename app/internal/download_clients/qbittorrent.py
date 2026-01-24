@@ -31,13 +31,11 @@ class QbittorrentClient:
             "username": self.username,
             "password": self.password
         }
-        headers = {
-            "User-Agent": "AudioBookRequest",
-            "Referer": self.base_url,
-            "Origin": self.base_url
+        self.headers = {
+            "User-Agent": "Narrarr",
         }
         try:
-            async with client.post(url, data=data, headers=headers) as resp:
+            async with client.post(url, data=data, headers=self.headers) as resp:
                 text = await resp.text()
                 if resp.status == 200:
                     self.cookies = resp.cookies

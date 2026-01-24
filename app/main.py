@@ -36,16 +36,9 @@ with next(get_session()) as session:
 
 
 app = FastAPI(
-    title="AudioBookRequest",
-    debug=Settings().app.debug,
-    openapi_url="/openapi.json" if Settings().app.openapi_enabled else None,
-    description="API for AudiobookRequest",
-    middleware=[
-        Middleware(DynamicSessionMiddleware, auth_secret, middleware_linker),
-        Middleware(GZipMiddleware),
-    ],
-    root_path=Settings().app.base_url.rstrip("/"),
-    redirect_slashes=False,
+    title="Narrarr",
+    version=Settings().app.version,
+    description="API for Narrarr",
 )
 
 @app.on_event("startup")

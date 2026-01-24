@@ -9,5 +9,5 @@ async def get_connection():
 
 
 USER_AGENT = (
-    f"ABR/{Settings().app.version} (+https://github.com/markbeep/AudioBookRequest)"
+    f"Narrarr/{Settings().app.version} (+https://github.com/markbeep/AudioBookRequest)"
 )

@@ -28,40 +28,41 @@ def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistC
     """
     username = None if user is None or user.is_admin() else user.username
 
-    rows = session.exec(
-        select(Audiobook.downloaded, func.count("*"))
-        .where(not username or AudiobookRequest.user_username == username)
-        .select_from(Audiobook)
-        .join(AudiobookRequest)
-        .group_by(col(Audiobook.downloaded))
-    ).all()
-    requests = 0
-    downloaded = 0
-    for downloaded_status, count in rows:
-        if downloaded_status:
-            downloaded = count
-        else:
-            requests = count
+    # 1. Count strictly "Requested" (Not downloaded, not downloading)
+    requests_query = select(func.count(Audiobook.asin.distinct())).join(AudiobookRequest).where(
+        Audiobook.downloaded == False,
+        AudiobookRequest.torrent_hash == None,
+        AudiobookRequest.processing_status == "pending"
+    )
+    if username:
+        requests_query = requests_query.where(AudiobookRequest.user_username == username)
+    requests = session.exec(requests_query).one()
 
-    downloading_count = session.exec(
-        select(func.count(AudiobookRequest.asin))
-        .join(Audiobook) # Join with Audiobook table
-        .where(
-            Audiobook.downloaded == False, # Correctly check Audiobook.downloaded
-            (AudiobookRequest.torrent_hash != None) | (AudiobookRequest.processing_status != "pending"),
-            not_(col(AudiobookRequest.processing_status).startswith("failed")),
-            not username or AudiobookRequest.user_username == username,
-        )
-    ).one()
+    # 2. Count "Downloading" (Actively in qB or being processed)
+    # Using processing_status is faster than hitting qB every time
+    downloading_query = select(func.count(AudiobookRequest.asin.distinct())).join(Audiobook).where(
+        Audiobook.downloaded == False,
+        col(AudiobookRequest.processing_status).in_(["download_initiated", "generating_metadata", "organizing", "importing"])
+    )
+    if username:
+        downloading_query = downloading_query.where(AudiobookRequest.user_username == username)
+    downloading_count = session.exec(downloading_query).one()
 
-    manual = session.exec(
-        select(func.count())
-        .select_from(ManualBookRequest)
-        .where(
-            not username or ManualBookRequest.user_username == username,
-            col(ManualBookRequest.user_username).is_not(None),
-        )
-    ).one()
+    # 3. Count "Downloaded" (Is downloaded and has a request)
+    downloaded_query = select(func.count(Audiobook.asin.distinct())).join(AudiobookRequest).where(
+        Audiobook.downloaded == True
+    )
+    if username:
+        downloaded_query = downloaded_query.where(AudiobookRequest.user_username == username)
+    downloaded = session.exec(downloaded_query).one()
+
+    # 4. Count "Manual"
+    manual_query = select(func.count()).select_from(ManualBookRequest).where(
+        col(ManualBookRequest.user_username).is_not(None)
+    )
+    if username:
+        manual_query = manual_query.where(ManualBookRequest.user_username == username)
+    manual = session.exec(manual_query).one()
 
     return WishlistCounts(
         requests=requests,
@@ -80,28 +81,31 @@ def get_wishlist_results(
     Gets the books that have been requested. If a username is given only the books requested by that
     user are returned. If no username is given, all book requests are returned.
     """
-    match response_type:
-        case "downloaded":
-            clause = Audiobook.downloaded
-        case "not_downloaded":
-            # Exclude already downloaded books AND books currently downloading/processing
-            clause = not_(Audiobook.downloaded) & (
-                (AudiobookRequest.torrent_hash == None)
-                & (AudiobookRequest.processing_status == "pending")
-            )
-        case _:
-            clause = True
+    statement = select(Audiobook).distinct()
+
+    if response_type == "not_downloaded":
+        # Join to filter by request status
+        statement = statement.join(AudiobookRequest)
+        statement = statement.where(
+            not_(Audiobook.downloaded),
+            AudiobookRequest.torrent_hash == None,
+            AudiobookRequest.processing_status == "pending"
+        )
+        if username:
+            statement = statement.where(AudiobookRequest.user_username == username)
+    else:
+        if response_type == "downloaded":
+            statement = statement.where(Audiobook.downloaded == True)
+        
+        # Filter for books that have a request (by this user if specified)
+        subquery = select(AudiobookRequest.asin)
+        if username:
+            subquery = subquery.where(AudiobookRequest.user_username == username)
+        
+        statement = statement.where(col(Audiobook.asin).in_(subquery))
 
     results = session.exec(
-        select(Audiobook)
-        .where(
-            clause,
-            col(Audiobook.asin).in_(
-                select(AudiobookRequest.asin).where(
-                    not username or AudiobookRequest.user_username == username
-                )
-            ),
-        )
+        statement
         .options(
             selectinload(
                 cast(

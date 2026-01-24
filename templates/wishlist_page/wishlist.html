@@ -1,9 +1,29 @@
 {% extends "wishlist_page/base_wishlist.html" %}
 {% block head %}
   <title>Wishlist</title>
+  <style>
+    .radio-checkbox {
+        appearance: none;
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: block;
+        z-index: 30;
+    }
+    .radio-checkbox:checked {
+        background-color: #3b82f6 !important; /* Force primary blue */
+        border-color: #3b82f6 !important;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='8' cy='8' r='3'/%3E%3C/svg%3E");
+        background-size: 100% 100%;
+    }
+    .radio-checkbox:hover {
+        transform: scale(1.1);
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+  </style>
 {% endblock head %}
 {% block content %}
-  <div id="wishlist-container" class="overflow-x-auto h-[75vh] border-b pb-2 border-b-base-200">
+  <div id="wishlist-container" class="w-full">
     {% block book_wishlist %}
       {% if update_tablist %}{% include "wishlist_page/tablist.html" %}{% endif %}
       
@@ -14,105 +34,127 @@
               {% if page.__eq__("wishlist") %}
                 No books on your wishlist. Add some
                 books by heading to the
-                <a preload class="link" href="{{ base_url }}/search">search</a> tab {%
+                <a preload class="link link-primary" href="{{ base_url }}/search">search</a> tab {%
                 elif page.__eq__("downloaded") %} No books have been downloaded yet. {%
                 endif %}
               </span>
             </div>
       {% else %}
-      <table id="book-table-body" class="table table-pin-rows min-w-240">
-        <thead>
-          <tr>
-            <th></th>
-            <th></th>
-            <th>Title</th>
-            <th>Author</th>
-            <th>Narrator</th>
-            <th>Release</th>
-            <th>Length (hrs)</th>
-            <th># Requested</th>
-            <th></th>
-          </tr>
-        </thead>
-          <tbody>
-            {% for result in results %}
-              {% set book = result.book %}
-              <tr class="text-xs lg:text-sm" id="{{ book.asin }}">
-                <th>{{ loop.index }}</th>
-                <td>
-                  <div class="size-16 lg:size-24">
-                    {% if book.cover_image %}
-                      <img class="object-cover w-full h-full"
-                           height="64"
-                           width="64"
-                           src="{{ book.cover_image }}"
-                           alt="{{ book.title }}" />
-                    {% else %}
-                      <div class="flex items-center justify-center w-full h-full bg-neutral opacity-30">
-                        {% include "icons/photo-off.html" %}
-                      </div>
-                    {% endif %}
-                  </div>
-                </td>
-                <td>
-                  <div class="flex flex-col">
-                    <a href="{{ base_url }}/book/{{ book.asin }}" 
-                       class="font-bold text-primary line-clamp-4 hover:underline"
-                       title="{{ book.title }}">{{ book.title }}</a>
-                    {% if book.subtitle %}
-                      <span class="font-semibold line-clamp-4 text-xs opacity-70" title="{{ book.subtitle }}">{{ book.subtitle }}</span>
-                    {% endif %}
-                  </div>
-                </td>
-                <td>{{ book.authors|join(", ") }}</td>
-                <td>{{ book.narrators|join(", ") }}</td>
-                <td class="hidden lg:table-cell">{{ book.release_date.strftime("%B %Y") }}</td>
-                <td class="lg:hidden">{{ book.release_date.strftime("%Y") }}</td>
-                <td>{{ book.runtime_length_hrs }}</td>
-                <td title="{{ result.requested_by }}">{{ result.amount_requested }}</td>
-                <td class="grid grid-cols-2 min-w-32 gap-1">
-                  <a preload
-                     title="Torrent Sources"
-                     href="{{ base_url }}/wishlist/sources/{{ book.asin }}"
-                     {% if not user.is_admin() %}disabled{% endif %}
-                     class="btn btn-square">{% include "icons/list.html" %}</a>
-                    <button {% if book.downloaded %}title="Downloaded"class="btn btn-square btn-ghost bg-success text-neutral/20" {% else %} title="Automatic Download" class="btn btn-square" {% endif %}
-                            {% if not user.can_download() or book.downloaded %}disabled{% endif %}
+      <div id="book-grid" class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {% for result in results %}
+          {% set book = result.book %}
+          <div id="{{ book.asin }}" class="group bg-base-100 rounded-lg border border-base-300 overflow-hidden hover:shadow-lg transition-shadow relative">
+            
+            <!-- Selection Checkbox (Top Left) -->
+            <div class="absolute top-2 left-2 z-[40]">
+                <input type="checkbox" name="asins" value="{{ book.asin }}" 
+                       class="radio-checkbox size-5 border-2 border-white/80 bg-black/40 backdrop-blur-md shadow-xl" 
+                       onclick="if(window.updateActionBar) updateActionBar(); event.stopPropagation();">
+            </div>
+
+            <!-- Image Section -->
+            <div class="relative w-full aspect-square bg-base-300 overflow-hidden">
+              <img {% if book.cover_image %}src="{{ book.cover_image }}"{% else %}src=""{% endif %}
+                   alt="{{ book.title }}"
+                   class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+              
+              <!-- Overlay on Hover -->
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3 pointer-events-none">
+                <div class="text-white text-[10px] font-semibold line-clamp-2">{{ book.title }}</div>
+              </div>
+
+              <!-- Status Badge -->
+              <div class="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                  {% if book.downloaded %}
+                  <div class="badge badge-success badge-xs font-black uppercase text-[8px] tracking-tighter py-2">Library</div>
+                  {% else %}
+                  <div class="badge badge-info badge-xs font-black uppercase text-[8px] tracking-tighter py-2">Requested</div>
+                  {% endif %}
+              <!-- Request Count Badge -->
+              {% if result.amount_requested > 1 %}
+              <div class="absolute bottom-2 right-2 badge badge-outline bg-base-100/80 backdrop-blur-md badge-xs font-black text-[8px] py-2">{{ result.amount_requested }}x</div>
+              {% endif %}
+
+              </div>
+            </div>
+
+            <!-- Content Section -->
+            <div class="p-2 flex flex-col gap-1">
+              <!-- Title & Subtitle -->
+              <div class="space-y-0.5">
+                <a href="{{ base_url }}/book/{{ book.asin }}" 
+                   class="font-bold text-[11px] text-primary hover:underline line-clamp-1"
+                   title="{{ book.title }}">
+                  {{ book.title }}
+                </a>
+                <p class="text-[9px] opacity-60 line-clamp-1 font-medium">{{ book.authors|join(", ") if book.authors else "Unknown" }}</p>
+              </div>
+
+              <!-- Action Buttons (Compact Square) -->
+              <div class="flex justify-between items-center pt-1 mt-1 border-t border-base-300">
+                <div class="flex gap-0.5">
+                    <a preload
+                       title="View Details"
+                       href="{{ base_url }}/book/{{ book.asin }}"
+                       class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center">
+                      <span class="size-3.5 opacity-70">{% include "icons/info-circle.html" %}</span>
+                    </a>
+                    <a preload
+                       title="Torrent Sources"
+                       href="{{ base_url }}/wishlist/sources/{{ book.asin }}"
+                       {% if not user.is_admin() %}disabled{% endif %}
+                       class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center">
+                      <span class="size-3.5 opacity-70">{% include "icons/list.html" %}</span>
+                    </a>
+                    {% if not book.downloaded %}
+                    <button title="Auto Download"
+                            class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center"
+                            {% if not user.can_download() %}disabled{% endif %}
                             hx-post="{{ base_url }}/wishlist/auto-download/{{ book.asin }}"
                             hx-swap="innerHTML"
                             hx-target="#wishlist-container"
-                            hx-disabled-elt="this">{% include "icons/download.html" %}</button>
-                  <button title="Remove"
-                          class="btn btn-square"
-                          hx-delete="{{ base_url }}/search/request/{{ book.asin }}{%- if page.__eq__('downloaded') -%}?downloaded=true{%- endif -%}"
-                          hx-swap="innerHTML"
-                          hx-target="#wishlist-container"
-                          hx-disabled-elt="this">{% include "icons/ban.html" %}</button>
-                  {% if book.downloaded %}
-                    <button class="btn btn-square btn-ghost bg-success text-neutral/20"
-                            disabled
-                            title="Set as downloaded">{% include "icons/checkmark.html" %}</button>
+                            hx-disabled-elt="this">
+                      <span class="size-3.5 opacity-70">{% include "icons/download.html" %}</span>
+                    </button>
+                    {% else %}
                     {% if page == 'downloaded' %}
-                    <button class="btn btn-square btn-outline btn-info"
+                    <button class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center"
                             title="Reprocess Metadata"
                             hx-post="{{ base_url }}/wishlist/reprocess/{{ book.asin }}"
                             hx-swap="none"
-                            hx-disabled-elt="this">{% include "icons/pencil.html" %}</button>
+                            hx-disabled-elt="this">
+                      <span class="size-3.5 opacity-70">{% include "icons/pencil.html" %}</span>
+                    </button>
                     {% endif %}
-                  {% else %}
-                    <button class="btn btn-square"
-                            title="Set as downloaded"
-                            hx-patch="{{ base_url }}/wishlist/downloaded/{{ book.asin }}"
-                            {% if not user.is_admin() %}disabled{% endif %}
+                    {% endif %}
+                    
+                    <button title="Remove"
+                            class="btn btn-xs btn-ghost btn-square text-error h-7 w-7 flex items-center justify-center"
+                            hx-delete="{{ base_url }}/search/request/{{ book.asin }}{%- if page.__eq__('downloaded') -%}?downloaded=true{%- endif -%}"
                             hx-swap="innerHTML"
                             hx-target="#wishlist-container"
-                            hx-disabled-elt="this">{% include "icons/checkmark.html" %}</button>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-      </table>
+                            hx-confirm="Are you sure you want to remove this request?"
+                            hx-disabled-elt="this">
+                      <span class="size-3.5">{% include "icons/trash.html" %}</span>
+                    </button>
+                </div>
+                
+                {% if not book.downloaded %}
+                <button class="btn btn-xs btn-ghost btn-square text-success h-7 w-7 flex items-center justify-center"
+                        title="Mark as Downloaded"
+                        hx-patch="{{ base_url }}/wishlist/downloaded/{{ book.asin }}"
+                        {% if not user.is_admin() %}disabled{% endif %}
+                        hx-swap="innerHTML"
+                        hx-target="#wishlist-container"
+                        hx-disabled-elt="this">
+                  <span class="size-3.5">{% include "icons/checkmark.html" %}</span>
+                </button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
       {% endif %}
     {% endblock book_wishlist %}
   </div>

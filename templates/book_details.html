@@ -3,10 +3,10 @@
 <title>{{ book.title }} - Details</title>
 {% endblock head %}
 {% block body %}
-<div class="w-screen flex flex-col items-center p-6 sm:p-8 overflow-x-hidden gap-6">
-    <div class="max-w-5xl w-full">
+<div class="w-screen flex flex-col items-center p-6 sm:p-8 overflow-x-hidden">
+    <div class="w-full max-w-7xl space-y-8">
         <!-- Breadcrumbs -->
-        <div class="text-sm breadcrumbs mb-8">
+        <div class="text-sm breadcrumbs">
             <ul>
                 <li><a href="{{ base_url }}/" class="link hover:text-primary transition-colors">Home</a></li>
                 <li><a href="{{ base_url }}/search" class="link hover:text-primary transition-colors">Search</a></li>
@@ -14,11 +14,11 @@
             </ul>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             <!-- Left Column: Poster & Quick Info -->
-            <div class="md:col-span-4 lg:col-span-3 space-y-6 flex flex-col items-center md:items-stretch">
-                <div class="w-48 sm:w-56 md:w-full max-w-[220px]">
-                    <div class="aspect-square rounded-2xl overflow-hidden shadow-lg bg-base-300 ring-1 ring-base-content/10">
+            <div class="lg:col-span-3 space-y-6 flex flex-col items-center lg:items-start">
+                <div class="w-full">
+                    <div class="aspect-square rounded-xl overflow-hidden shadow-lg border border-base-300 bg-base-300">
                         {% if book.cover_image %}
                         <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="w-full h-full object-cover">
                         {% else %}
@@ -30,7 +30,7 @@
                 </div>
 
                 <!-- Quick Stats -->
-                <div class="bg-base-200 rounded-2xl p-4 space-y-3 shadow-inner w-full max-w-[220px] md:max-w-none mx-auto">
+                <div class="bg-base-200 rounded-lg p-4 space-y-3 w-full">
                     <div class="flex justify-between items-center text-xs">
                         <span class="opacity-60 font-bold uppercase tracking-wider">Year</span>
                         <span class="font-bold">{{ book.release_date.strftime('%Y') }}</span>
@@ -49,14 +49,14 @@
                     {% endif %}
                 </div>
 
-                <div class="space-y-2 w-full max-w-[220px] md:max-w-none mx-auto">
-                    <a href="https://audible.com/pd/{{ book.asin }}?ipRedirectOverride=true" target="_blank" class="btn btn-outline btn-block btn-sm">
+                <div class="space-y-2 w-full">
+                    <a href="https://audible.com/pd/{{ book.asin }}?ipRedirectOverride=true" target="_blank" class="btn btn-outline btn-sm w-full">
                         View on Audible
                     </a>
                     {% if mam_data %}
                     <a href="{{ base_url }}/book/{{ book.asin }}/download-opf" 
                        download="{{ book.title }}.opf"
-                       class="btn btn-outline btn-success btn-block btn-sm">
+                       class="btn btn-outline btn-success btn-sm w-full">
                         Download OPF
                     </a>
                     {% endif %}
@@ -64,7 +64,7 @@
             </div>
 
             <!-- Right Column: Full Details -->
-            <div class="md:col-span-8 lg:col-span-9 space-y-8">
+            <div class="lg:col-span-9 space-y-8">
                 <!-- Title Block -->
                 <div class="space-y-3">
                     {% set display_series = book.series or (mam_data.series if mam_data else []) %}
@@ -147,13 +147,14 @@
 
                 <!-- Final Action -->
                 {% if not book.downloaded and not book.already_requested %}
-                <div class="pt-4">
-                    <button class="btn btn-primary btn-lg shadow-lg gap-2"
-                            hx-post="{{ base_url }}/search/request/{{ book.asin }}"
-                            hx-swap="none">
-                        {% include "icons/plus.html" %}
+                <div class=\"flex gap-3\">
+                    <button class=\"btn btn-primary btn-sm shadow-lg gap-2\"
+                            hx-post=\"{{ base_url }}/search/request/{{ book.asin }}\"
+                            hx-swap=\"none\">
+                        {% include \"icons/plus.html\" %}
                         Request Audiobook
                     </button>
+                    <a href=\"{{ base_url }}/search\" class=\"btn btn-outline btn-sm\">Back to Search</a>
                 </div>
                 {% endif %}
             </div>

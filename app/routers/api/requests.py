@@ -71,6 +71,9 @@ async def create_request(
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
+    if book.downloaded:
+        raise HTTPException(status_code=400, detail="Book already in library")
+
     if not session.exec(
         select(AudiobookRequest).where(
             AudiobookRequest.asin == asin,
@@ -124,6 +127,21 @@ async def delete_request(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(APIKeyAuth())],
 ):
+    from app.internal.download_clients.qbittorrent import QbittorrentClient
+    from app.internal.download_clients.config import download_client_config
+
+    # Try to delete from qBittorrent if enabled
+    if download_client_config.get_qbit_enabled(session):
+        try:
+            client = QbittorrentClient(session)
+            torrents = await client.get_torrents()
+            for t in torrents:
+                if f"asin:{asin}" in t.get("tags", ""):
+                    await client.delete_torrents([t["hash"]], delete_files=True)
+                    logger.info("Deleted torrent from qBittorrent for deleted request", asin=asin, hash=t["hash"])
+        except Exception as e:
+            logger.warning("Failed to delete torrent from qBittorrent during request deletion", asin=asin, error=str(e))
+
     if user.is_admin():
         session.execute(
             delete(AudiobookRequest).where(col(AudiobookRequest.asin) == asin)

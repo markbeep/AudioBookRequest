@@ -8,7 +8,7 @@
 {% endblock head %}
 {% block body %}
 <div class="h-screen w-full flex flex-col items-center justify-center">
-  <h1 class="text-4xl font-bold mb-8 sm:mb-16">AudioBookRequest</h1>
+  <h1 class="text-4xl font-bold mb-8 sm:mb-16">Narrarr</h1>
   <form class="flex flex-col gap-2 max-w-[30rem] px-4" hx-post="{{ base_url }}/auth/token" id="form" hx-target="this">
     <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}" />
     {% if backup %}

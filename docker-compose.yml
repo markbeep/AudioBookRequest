@@ -30,7 +30,7 @@ services:
     environment:
       POSTGRES_USER: abr
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: audiobookrequest
+      POSTGRES_DB: narrarr
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
     ports:

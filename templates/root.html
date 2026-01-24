@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block head %}
-<title>AudioBook Request</title>
+<title>Narrarr</title>
 {% endblock head %}
 {% block body %}
 <div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6">
@@ -11,7 +11,7 @@
                 <h1 class="text-4xl font-bold text-left">Welcome, {{ user.username }}!</h1>
                 <p class="text-lg opacity-70 mt-1">Discover your next great audiobook</p>
             </div>
-            <a href="{{ base_url }}/search" class="btn btn-primary flex items-center gap-2" title="Search for books">
+            <a href="{{ base_url }}/search" class="btn btn-primary flex items-center gap-2 rounded-lg" title="Search for books">
                 <span>Search Books</span>
                 {% include "icons/search.html" %}
             </a>

@@ -12,7 +12,7 @@ class DBSettings(BaseModel):
     use_postgres: bool = False
     postgres_host: str = "localhost"
     postgres_port: int = 5432
-    postgres_db: str = "audiobookrequest"
+    postgres_db: str = "narrarr"
     postgres_user: str = "abr"
     postgres_password: str = "password"
     postgres_ssl_mode: str = "prefer"

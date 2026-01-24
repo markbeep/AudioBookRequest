@@ -2,7 +2,7 @@ import re
 import asyncio
 import time
 from datetime import datetime
-from typing import Literal, TypedDict, cast
+from typing import Any, Literal, TypedDict, Union, cast
 from urllib.parse import urlencode
 
 from aiohttp import ClientSession
@@ -77,7 +77,7 @@ class _AudnexusResponse(BaseModel):
     authors: list[_Author]
     narrators: list[_Author]
     series: list[_Author] | None = None
-    genres: list[str] | None = None
+    genres: list[Union[str, dict[str, Any]]] | None = None
     publisher: str | None = None
     description: str | None = None
     language: str | None = None
@@ -112,6 +112,19 @@ async def _get_audnexus_book(
     except Exception as e:
         logger.error("Exception while fetching book from Audnexus", asin=asin, error=e)
         return None
+
+    # Safely parse genres which can be strings or dictionaries
+    parsed_genres = []
+    if audnexus_response.genres:
+        for g in audnexus_response.genres:
+            if isinstance(g, str):
+                parsed_genres.append(g)
+            elif isinstance(g, dict):
+                # Try common keys for genre names/labels
+                name = g.get("name") or g.get("label") or g.get("title")
+                if name:
+                    parsed_genres.append(name)
+
     return Audiobook(
         asin=audnexus_response.asin,
         title=audnexus_response.title,
@@ -119,7 +132,7 @@ async def _get_audnexus_book(
         authors=[author["name"] for author in audnexus_response.authors],
         narrators=[narrator["name"] for narrator in audnexus_response.narrators],
         series=[s["name"] for s in audnexus_response.series] if audnexus_response.series else [],
-        genres=audnexus_response.genres or [],
+        genres=parsed_genres,
         publisher=audnexus_response.publisher,
         description=audnexus_response.description,
         language=audnexus_response.language,
@@ -142,7 +155,7 @@ class _AudimetaResponse(BaseModel):
     authors: list[_Author]
     narrators: list[_Author]
     series: list[_Series] | None = None
-    genres: list[str] | None = None
+    genres: list[Union[str, dict[str, Any]]] | None = None
     publisher: str | None = None
     description: str | None = None
     language: str | None = None
@@ -177,6 +190,19 @@ async def _get_audimeta_book(
     except Exception as e:
         logger.error("Exception while fetching book from Audimeta", asin=asin, error=e)
         return None
+    
+    # Safely parse genres which can be strings or dictionaries
+    parsed_genres = []
+    if audimeta_response.genres:
+        for g in audimeta_response.genres:
+            if isinstance(g, str):
+                parsed_genres.append(g)
+            elif isinstance(g, dict):
+                # Try common keys for genre names/labels
+                name = g.get("name") or g.get("label") or g.get("title")
+                if name:
+                    parsed_genres.append(name)
+
     return Audiobook(
         asin=audimeta_response.asin,
         title=audimeta_response.title,
@@ -184,7 +210,7 @@ async def _get_audimeta_book(
         authors=[author["name"] for author in audimeta_response.authors],
         narrators=[narrator["name"] for narrator in audimeta_response.narrators],
         series=[s["name"] for s in audimeta_response.series] if audimeta_response.series else [],
-        genres=audimeta_response.genres or [],
+        genres=parsed_genres,
         publisher=audimeta_response.publisher,
         description=audimeta_response.description,
         language=audimeta_response.language,
@@ -412,10 +438,11 @@ async def list_audible_books(
     coros = [
         get_book_by_asin(client_session, asin, audible_region) for asin in missing_asins
     ]
-    new_books = await asyncio.gather(*coros)
-    new_books = [b for b in new_books if b]
+    new_books_fetched = await asyncio.gather(*coros)
+    new_books_fetched = [b for b in new_books_fetched if b]
 
-    store_new_books(session, new_books)
+    # store_new_books now returns the merged, session-attached instances
+    new_books = store_new_books(session, new_books_fetched)
 
     for b in new_books:
         books[b.asin] = b
@@ -452,48 +479,39 @@ def get_existing_books(session: Session, asins: set[str]) -> dict[str, Audiobook
     books = session.exec(select(Audiobook).where(col(Audiobook.asin).in_(asins))).all()
     ok_books: list[Audiobook] = []
     for b in books:
-        if b.updated_at.timestamp() + REFETCH_TTL < time.time():
-            continue
-        ok_books.append(b)
+        # If series is missing, we consider the metadata "incomplete" and force a re-fetch
+        # even if it's within the TTL. This ensures books are grouped correctly.
+        has_series = b.series and len(b.series) > 0
+        is_fresh = b.updated_at.timestamp() + REFETCH_TTL > time.time()
+        
+        if is_fresh and has_series:
+            ok_books.append(b)
+        else:
+            logger.debug("Book metadata considered stale or incomplete", asin=b.asin, has_series=bool(has_series))
 
     return {b.asin: b for b in ok_books}
 
 
-def store_new_books(session: Session, books: list[Audiobook]):
-    asins = {b.asin: b for b in books}
+def store_new_books(session: Session, books: list[Audiobook]) -> list[Audiobook]:
+    """
+    Stores new search results in the database, merging them if they already exist.
+    Returns the merged (session-attached) instances.
+    """
+    if not books:
+        return []
 
-    existing = list(
-        session.exec(
-            select(Audiobook).where(col(Audiobook.asin).in_(asins.keys()))
-        ).all()
-    )
-
-    to_update: list[Audiobook] = []
-    for b in existing:
-        new_book = asins[b.asin]
-        b.title = new_book.title
-        b.subtitle = new_book.subtitle
-        b.authors = new_book.authors
-        b.narrators = new_book.narrators
-        b.series = new_book.series
-        b.genres = new_book.genres
-        b.publisher = new_book.publisher
-        b.description = new_book.description
-        b.language = new_book.language
-        b.cover_image = new_book.cover_image
-        b.release_date = new_book.release_date
-        b.runtime_length_min = new_book.runtime_length_min
-        to_update.append(b)
-
-    existing_asins = {b.asin for b in existing}
-    to_add = [b for b in books if b.asin not in existing_asins]
-
-    logger.info(
-        "Storing new search results in BookRequest cache/db",
-        to_add_count=len(to_add),
-        to_update_count=len(to_update),
-        existing_count=len(existing),
-    )
-
-    session.add_all(to_add + existing)
+    merged_books = []
+    for book in books:
+        # Check if book exists first to preserve downloaded status
+        existing = session.get(Audiobook, book.asin)
+        if existing:
+            # Update metadata but keep the downloaded flag from the DB
+            book.downloaded = existing.downloaded
+        
+        # merge() returns the instance that is actually attached to the session
+        merged = session.merge(book)
+        merged_books.append(merged)
+    
     session.commit()
+    logger.info("Stored/Updated search results in BookRequest cache/db", count=len(merged_books))
+    return merged_books
