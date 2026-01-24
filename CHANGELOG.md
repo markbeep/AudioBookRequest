@@ -1,5 +1,59 @@
 # Changelog
 
+## [1.9.0](https://github.com/markbeep/AudioBookRequest/compare/v1.8.0...v1.9.0) (2026-01-24)
+
+
+### Features
+
+* add book recommendations on home page. Closes [#109](https://github.com/markbeep/AudioBookRequest/issues/109) ([e971dd3](https://github.com/markbeep/AudioBookRequest/commit/e971dd321af13c844e4e01d46617780608ca05ba))
+* add loose Audiobookshelf integration. Closes [#103](https://github.com/markbeep/AudioBookRequest/issues/103) ([c4f6b8c](https://github.com/markbeep/AudioBookRequest/commit/c4f6b8c02eea9dc903b173ec200afc038bc5822d))
+* all website operations can now be handled using the REST API (Closes [#135](https://github.com/markbeep/AudioBookRequest/issues/135)) ([#176](https://github.com/markbeep/AudioBookRequest/issues/176)) ([0dff1f3](https://github.com/markbeep/AudioBookRequest/commit/0dff1f38c8adc8b9f0942ec1ce85d9a05b7d7888))
+* allow non-admins to delete their requests. Closes [#171](https://github.com/markbeep/AudioBookRequest/issues/171) ([096d04e](https://github.com/markbeep/AudioBookRequest/commit/096d04e33d055a5bc0c28b4f4b41c5a783b53b40))
+
+
+### Bug Fixes
+
+* fix missing fetch for js files in dockerfile ([5b985d2](https://github.com/markbeep/AudioBookRequest/commit/5b985d2eaf1db075d3c2f55016907bfc6d91ca08))
+* fix search breaking completely when a cached result has been deleted. Closes [#141](https://github.com/markbeep/AudioBookRequest/issues/141) ([096d04e](https://github.com/markbeep/AudioBookRequest/commit/096d04e33d055a5bc0c28b4f4b41c5a783b53b40))
+* make inputs on download settings page editable ([0dff1f3](https://github.com/markbeep/AudioBookRequest/commit/0dff1f38c8adc8b9f0942ec1ce85d9a05b7d7888))
+* show prowlarr responses in the log when the response is invalid JSON ([096d04e](https://github.com/markbeep/AudioBookRequest/commit/096d04e33d055a5bc0c28b4f4b41c5a783b53b40))
+
+
+### Performance Improvements
+
+* minimize HTML while templating ([63c9d14](https://github.com/markbeep/AudioBookRequest/commit/63c9d147b56867b1444ab2f8f2f33fbfe5e4fe62))
+
+
+### Dependencies
+
+* update all dependencies ([6727dc6](https://github.com/markbeep/AudioBookRequest/commit/6727dc67ba643e84de5cbc6e6b5259872e3cf9ed))
+
+
+### Miscellaneous Chores
+
+* add daisyui install to justfile for local development ([6727dc6](https://github.com/markbeep/AudioBookRequest/commit/6727dc67ba643e84de5cbc6e6b5259872e3cf9ed))
+* add tools section to readme ([9140ba8](https://github.com/markbeep/AudioBookRequest/commit/9140ba8e0c8b8a3b034354f328e0d1ec9690304d))
+* fix uv python version ([6bfba44](https://github.com/markbeep/AudioBookRequest/commit/6bfba44536de66a80000f5ce334440101f522194))
+* send along User-Agent in headers on API calls ([d3a9f34](https://github.com/markbeep/AudioBookRequest/commit/d3a9f3411aaa923e570a6bbd629fa05e2d4df923))
+* switch to GPLv3 license ([2300d25](https://github.com/markbeep/AudioBookRequest/commit/2300d25347f5b82218c1f26600122f4aa0009d6c))
+
+
+### Code Refactoring
+
+* replace "older" `Optional` tyings with `|None` ([6727dc6](https://github.com/markbeep/AudioBookRequest/commit/6727dc67ba643e84de5cbc6e6b5259872e3cf9ed))
+* rework how audiobooks are cached and how requests are handled ([#175](https://github.com/markbeep/AudioBookRequest/issues/175)) ([096d04e](https://github.com/markbeep/AudioBookRequest/commit/096d04e33d055a5bc0c28b4f4b41c5a783b53b40))
+
+
+### Tests
+
+* change type checker to strict basedpyright and fix up typing issues ([096d04e](https://github.com/markbeep/AudioBookRequest/commit/096d04e33d055a5bc0c28b4f4b41c5a783b53b40))
+* switch from pyright to pyrefly for typing ([63c9d14](https://github.com/markbeep/AudioBookRequest/commit/63c9d147b56867b1444ab2f8f2f33fbfe5e4fe62))
+
+
+### Build System
+
+* split up and minimize Dockerfile and image size ([#172](https://github.com/markbeep/AudioBookRequest/issues/172)) ([23aaf16](https://github.com/markbeep/AudioBookRequest/commit/23aaf169d703f9b6469c2e6e3b55abead1b6b9f1))
+
 ## [1.8.0](https://github.com/markbeep/AudioBookRequest/compare/v1.7.0...v1.8.0) (2025-10-04)
 
 
