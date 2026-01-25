@@ -19,6 +19,7 @@ If you've heard of Overseer, Ombi, or Jellyseer; this is in the similar vein, <i
   - [Basic Usage](#basic-usage)
   - [Documentation](#documentation)
     - [Auto download](#auto-download)
+    - [Audiobookshelf Integration](#audiobookshelf-integration)
     - [OpenID Connect](#openid-connect)
       - [Getting locked out](#getting-locked-out)
     - [Environment Variables](#environment-variables)
@@ -101,10 +102,11 @@ Setup steps:
 
 1. In ABS, create an API token for an account with access to your audiobook library (Admin recommended).
 2. In ABR, go to Settings > Audiobookshelf and enter:
-  - Base URL of your ABS server (e.g. https://abs.example.com or http://localhost:13378)
-  - API Token from step 1
-  - Select the target Library
-  - Enable “Use ABS to mark existing books as downloaded” if you want ABR to flag existing titles during search.
+
+- Base URL of your ABS server (e.g. https://abs.example.com or http://localhost:13378)
+- API Token from step 1
+- Select the target Library
+- Enable “Use ABS to mark existing books as downloaded” if you want ABR to flag existing titles during search.
 
 Notes:
 
@@ -157,7 +159,7 @@ In the case of an OIDC misconfiguration, i.e. changing a setting like your clien
 
 # Contributing
 
-Suggestions are always welcome. Do note though that a big goal is to keep this project on a smaller scale. The main focus of this project is to make it easy for friends to request and potentially automatically download Audiobooks without having to give direct access to Readarr/Prowlarr. It might make sense to first create an issue before undertaking a big project and opening a pull request. Your idea could already be worked on in the background.
+Please read the [contribution guidelines](?tab=contributing-ov-file) before contributing.
 
 ## Conventional Commits
 
