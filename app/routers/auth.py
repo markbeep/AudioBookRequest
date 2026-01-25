@@ -1,6 +1,8 @@
 import base64
+import os
 import secrets
 import time
+import uuid
 from typing import Annotated, cast
 from urllib.parse import urlencode, urljoin
 
@@ -41,6 +43,59 @@ from app.util.toast import ToastException
 router = APIRouter(prefix="/auth")
 
 
+def _validate_proxy_headers(request: Request) -> None:
+    """
+    Validate that proxy headers come from trusted IPs.
+
+    Raises HTTPException(403) if proxy headers are present but were not trusted
+    by Uvicorn (indicating a misconfigured FORWARDED_ALLOW_IPS).
+
+    This prevents silent security degradation while keeping server config private.
+    Basic rejection is logged at INFO level; detailed debugging info at DEBUG level.
+    """
+    x_forwarded_proto = request.headers.get("X-Forwarded-Proto")
+
+    # No proxy headers present - direct access is fine
+    if not x_forwarded_proto:
+        return
+
+    # Proxy headers present - check if Uvicorn trusted them by verifying
+    # that request.url.scheme was updated to match X-Forwarded-Proto.
+    # If Uvicorn didn't trust the source IP, it would ignore the header
+    # and request.url.scheme would still be "http" (the actual protocol).
+    if request.url.scheme != x_forwarded_proto.lower():
+        # Headers were sent but not trusted - fail closed
+        client_ip = request.client.host if request.client else "unknown"
+        forwarded_allow_ips = os.getenv("FORWARDED_ALLOW_IPS", "0.0.0.0/0")
+        error_id = str(uuid.uuid4())
+
+        # Log basic rejection at INFO level (always visible, helps spot misconfiguration)
+        logger.info(
+            "Request rejected: untrusted proxy headers",
+            error_id=error_id,
+            client_ip=client_ip,
+            x_forwarded_proto=x_forwarded_proto,
+        )
+
+        # Log detailed debugging info at DEBUG level (for deeper troubleshooting)
+        logger.debug(
+            "Proxy header validation failed - debug details",
+            error_id=error_id,
+            client_ip=client_ip,
+            x_forwarded_proto=x_forwarded_proto,
+            request_scheme=request.url.scheme,
+            forwarded_allow_ips=forwarded_allow_ips,
+            fix_option_1=f"Set FORWARDED_ALLOW_IPS={client_ip}",
+            fix_option_2="Set FORWARDED_ALLOW_IPS=0.0.0.0/0 to trust all",
+        )
+
+        # Return generic error with error ID so user can share with admin
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied. Please contact your administrator. (Error ID: {error_id})",
+        )
+
+
 @router.get("/login")
 async def login(
     request: Request,
@@ -48,6 +103,54 @@ async def login(
     redirect_uri: str = "/",
     backup: bool = False,
 ):
+    # ===== SECURITY: Validate Proxy Headers =====
+    _validate_proxy_headers(request)
+    # ===== END SECURITY VALIDATION =====
+
+    # ===== DEBUG: Request Connection & Headers =====
+    logger.debug(
+        "LOGIN ENDPOINT DEBUG",
+        # Connection info
+        client_ip=request.client.host if request.client else "unknown",
+        client_port=request.client.port if request.client else "unknown",
+        # Request URL components
+        request_url_full=str(request.url),
+        request_scheme=request.url.scheme,
+        request_host=request.url.netloc,
+        request_path=request.url.path,
+        request_query=request.url.query,
+        # Query parameters passed in
+        redirect_uri_param=redirect_uri,
+        backup_param=backup,
+        # All proxy headers
+        x_forwarded_proto=request.headers.get("X-Forwarded-Proto"),
+        x_forwarded_host=request.headers.get("X-Forwarded-Host"),
+        x_forwarded_for=request.headers.get("X-Forwarded-For"),
+        x_forwarded_port=request.headers.get("X-Forwarded-Port"),
+        # Request headers
+        host_header=request.headers.get("Host"),
+        user_agent=request.headers.get("User-Agent"),
+        # Scope details (raw ASGI scope)
+        asgi_scheme=request.scope.get("scheme"),
+        asgi_server_host=request.scope.get("server", ["?", "?"])[0],
+        asgi_server_port=request.scope.get("server", ["?", "?"])[1],
+    )
+    # ===== END DEBUG =====
+
+    # ===== SECURITY WARNING: Proxy Headers with Permissive Config =====
+    # Warn if proxy headers are detected but FORWARDED_ALLOW_IPS allows all IPs
+    if request.headers.get("X-Forwarded-Proto"):
+        forwarded_allow_ips = os.getenv("FORWARDED_ALLOW_IPS", "0.0.0.0/0")
+        if forwarded_allow_ips in ("0.0.0.0/0", "*"):
+            logger.warning(
+                "SECURITY WARNING: Proxy headers detected (X-Forwarded-Proto) but "
+                "FORWARDED_ALLOW_IPS is set to allow all IPs (0.0.0.0/0). "
+                "For production use, set FORWARDED_ALLOW_IPS to your reverse proxy IP(s) only. "
+                "This prevents header spoofing attacks. "
+                "See documentation: https://github.com/markbeep/AudioBookRequest/docs/oidc"
+            )
+    # ===== END SECURITY WARNING =====
+
     login_type = auth_config.get(session, "login_type")
     if login_type in [LoginTypeEnum.basic, LoginTypeEnum.none]:
         return BaseUrlRedirectResponse(redirect_uri)
@@ -80,9 +183,24 @@ async def login(
     if not client_id:
         raise InvalidOIDCConfiguration("Missing OIDC client ID")
 
+    # DEBUG: Show what we're building the redirect URI from
+    logger.debug(
+        "OIDC_CONFIG_DEBUG",
+        oidc_authorize_endpoint=authorize_endpoint,
+        oidc_client_id=client_id,
+        oidc_scope=scope,
+    )
+
     auth_redirect_uri = urljoin(str(request.url), "/auth/oidc")
-    if oidc_config.get_redirect_https(session):
-        auth_redirect_uri = auth_redirect_uri.replace("http:", "https:")
+
+    # DEBUG: Show the built redirect URI
+    logger.debug(
+        "REDIRECT_URI_BUILD_DEBUG",
+        request_url_before_join=str(request.url),
+        path_being_joined="/auth/oidc",
+        final_auth_redirect_uri=auth_redirect_uri,
+        scheme_of_redirect_uri=auth_redirect_uri.split("://")[0] if "://" in auth_redirect_uri else "UNKNOWN",
+    )
 
     logger.info(
         "Redirecting to OIDC login",
@@ -162,6 +280,31 @@ async def login_oidc(
     code: str,
     state: str | None = None,
 ):
+    # ===== SECURITY: Validate Proxy Headers =====
+    _validate_proxy_headers(request)
+    # ===== END SECURITY VALIDATION =====
+
+    # ===== DEBUG: OIDC Callback Request =====
+    logger.debug(
+        "OIDC_CALLBACK_DEBUG",
+        # Connection info
+        client_ip=request.client.host if request.client else "unknown",
+        # Request URL components
+        request_url_full=str(request.url),
+        request_scheme=request.url.scheme,
+        request_host=request.url.netloc,
+        request_path=request.url.path,
+        # Query parameters
+        code_param=code[:20] + "..." if len(code) > 20 else code,
+        state_param=state[:20] + "..." if state and len(state) > 20 else state,
+        # Proxy headers
+        x_forwarded_proto=request.headers.get("X-Forwarded-Proto"),
+        x_forwarded_host=request.headers.get("X-Forwarded-Host"),
+        x_forwarded_for=request.headers.get("X-Forwarded-For"),
+        asgi_scheme=request.scope.get("scheme"),
+    )
+    # ===== END DEBUG =====
+
     token_endpoint = oidc_config.get(session, "oidc_token_endpoint")
     userinfo_endpoint = oidc_config.get(session, "oidc_userinfo_endpoint")
     client_id = oidc_config.get(session, "oidc_client_id")
@@ -181,8 +324,14 @@ async def login_oidc(
         raise InvalidOIDCConfiguration("Missing OIDC username claim")
 
     auth_redirect_uri = urljoin(str(request.url), "/auth/oidc")
-    if oidc_config.get_redirect_https(session):
-        auth_redirect_uri = auth_redirect_uri.replace("http:", "https:")
+
+    # DEBUG: Show the redirect URI being sent to token endpoint
+    logger.debug(
+        "OIDC_CALLBACK_REDIRECT_URI_DEBUG",
+        request_url_for_join=str(request.url),
+        final_auth_redirect_uri=auth_redirect_uri,
+        scheme=auth_redirect_uri.split("://")[0] if "://" in auth_redirect_uri else "UNKNOWN",
+    )
 
     data = {
         "grant_type": "authorization_code",

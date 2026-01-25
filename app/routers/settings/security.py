@@ -51,7 +51,6 @@ def read_security(
             "oidc_scope": oidc_config.get(session, "oidc_scope", ""),
             "oidc_username_claim": oidc_config.get(session, "oidc_username_claim", ""),
             "oidc_group_claim": oidc_config.get(session, "oidc_group_claim", ""),
-            "oidc_redirect_https": oidc_config.get_redirect_https(session),
             "oidc_logout_url": oidc_config.get(session, "oidc_logout_url", ""),
             "force_login_type": force_login_type,
         },
@@ -82,7 +81,6 @@ async def update_security(
     oidc_scope: Annotated[str | None, Form()] = None,
     oidc_username_claim: Annotated[str | None, Form()] = None,
     oidc_group_claim: Annotated[str | None, Form()] = None,
-    oidc_redirect_https: Annotated[bool | None, Form()] = None,
     oidc_logout_url: Annotated[str | None, Form()] = None,
 ):
     try:
@@ -97,7 +95,6 @@ async def update_security(
                 oidc_scope=oidc_scope,
                 oidc_username_claim=oidc_username_claim,
                 oidc_group_claim=oidc_group_claim,
-                oidc_redirect_https=oidc_redirect_https,
                 oidc_logout_url=oidc_logout_url,
             ),
             session,
@@ -129,7 +126,6 @@ async def update_security(
             "oidc_group_claim": oidc_config.get(session, "oidc_group_claim", ""),
             "oidc_client_secret": oidc_config.get(session, "oidc_client_secret", ""),
             "oidc_endpoint": oidc_config.get(session, "oidc_endpoint", ""),
-            "oidc_redirect_https": oidc_config.get_redirect_https(session),
             "oidc_logout_url": oidc_config.get(session, "oidc_logout_url", ""),
             "force_login_type": force_login_type,
             "success": "Settings updated",

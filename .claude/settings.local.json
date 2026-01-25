@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(fastapi --help:*)",
+      "Bash(uv run fastapi run --help:*)"
+    ]
+  }
+}
