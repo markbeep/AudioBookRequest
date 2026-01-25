@@ -4,8 +4,9 @@
 <title>Initialize admin user</title>
 {% endblock head %}
 {% block body %}
-<div class="h-screen w-full flex items-center justify-center">
-  <form class="flex flex-col gap-2 max-w-[30rem]" hx-post="{{ base_url }}/init" id="form" hx-target="#message">
+<div class="app-shell app-shell-center">
+  <div class="app-content max-w-md">
+    <form class="flex flex-col gap-2 app-card app-panel" hx-post="{{ base_url }}/init" id="form" hx-target="#message">
     <p class="opacity-60">
       No user was found in the database. Please create a root admin user to get set
       up. OpenID Connect can be configured later.
@@ -35,6 +36,7 @@
     <span id="message" class="text-red-400">{{ error }}</span>
     {% endblock init_messages %}
     <button id="submit" class="btn btn-primary" type="submit">Create account</button>
-  </form>
+    </form>
+  </div>
 </div>
 {% endblock body %}

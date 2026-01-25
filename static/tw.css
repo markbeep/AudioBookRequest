@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
 @import "tailwindcss";
 
 @source not "./daisyui{,*}.mjs";
@@ -10,6 +12,271 @@
 
 /* Enables dark mode specific styling with "dark:" */
 @custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --app-font-body: "Space Grotesk", "Avenir Next", "Trebuchet MS", sans-serif;
+    --app-font-heading: "Fraunces", "Iowan Old Style", "Palatino Linotype", serif;
+    --app-radius: 20px;
+    --app-shadow: 0 24px 60px -40px rgba(15, 23, 42, 0.45);
+    --app-shadow-soft: 0 14px 36px -28px rgba(15, 23, 42, 0.45);
+  }
+
+  :root[data-theme="nord"] {
+    --app-bg:
+      radial-gradient(900px circle at 12% -10%, rgba(245, 231, 203, 0.9) 0%, rgba(245, 231, 203, 0) 60%),
+      radial-gradient(700px circle at 88% 0%, rgba(203, 234, 223, 0.8) 0%, rgba(203, 234, 223, 0) 55%),
+      linear-gradient(180deg, #f8f3ea 0%, #f1ede3 100%);
+    --app-nav-bg: rgba(250, 245, 236, 0.86);
+    --app-surface: rgba(255, 255, 255, 0.78);
+    --app-surface-strong: rgba(255, 255, 255, 0.92);
+    --app-border: rgba(71, 64, 52, 0.16);
+    --app-accent: hsl(var(--p));
+    --app-accent-strong: hsl(var(--p));
+    --app-glow: rgba(13, 148, 136, 0.2);
+  }
+
+  :root[data-theme="night"] {
+    --app-bg:
+      radial-gradient(900px circle at 10% -20%, rgba(45, 212, 191, 0.18) 0%, rgba(45, 212, 191, 0) 55%),
+      radial-gradient(700px circle at 90% 0%, rgba(251, 146, 60, 0.12) 0%, rgba(251, 146, 60, 0) 60%),
+      linear-gradient(180deg, #0b1120 0%, #0b1222 100%);
+    --app-nav-bg: rgba(12, 18, 32, 0.82);
+    --app-surface: rgba(15, 23, 42, 0.78);
+    --app-surface-strong: rgba(15, 23, 42, 0.92);
+    --app-border: rgba(148, 163, 184, 0.2);
+    --app-accent: hsl(var(--p));
+    --app-accent-strong: hsl(var(--p));
+    --app-glow: rgba(94, 234, 212, 0.25);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--app-font-body);
+    background: var(--app-bg);
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--app-font-heading);
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    line-height: 1.6;
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 0.08em;
+  }
+
+  ::selection {
+    background: var(--app-accent);
+    color: #ffffff;
+  }
+
+  code,
+  pre,
+  .font-mono {
+    font-family: "IBM Plex Mono", "JetBrains Mono", "Fira Code", monospace;
+  }
+}
+
+@layer components {
+  .app-body {
+    @apply w-full min-h-screen overflow-x-hidden text-base-content;
+  }
+
+  .app-shell {
+    @apply w-full min-h-screen flex flex-col items-center gap-8 px-5 sm:px-8 py-8;
+    animation: app-fade 0.6s ease-out both;
+  }
+
+  .app-shell-center {
+    @apply justify-center;
+  }
+
+  .app-content {
+    @apply w-full max-w-7xl;
+  }
+
+  .app-stack {
+    @apply flex flex-col gap-6;
+  }
+
+  .app-card {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow-soft);
+    backdrop-filter: blur(14px);
+  }
+
+  .app-panel {
+    @apply p-5 sm:p-6;
+  }
+
+  .app-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--app-nav-bg);
+    border-bottom: 1px solid var(--app-border);
+    backdrop-filter: blur(16px);
+    box-shadow: var(--app-shadow-soft);
+  }
+
+  .app-nav-inner {
+    @apply w-full max-w-7xl mx-auto px-3 sm:px-6;
+  }
+
+  .app-stagger > * {
+    animation: app-rise 0.5s ease-out both;
+  }
+
+  .app-stagger > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .app-stagger > *:nth-child(2) {
+    animation-delay: 60ms;
+  }
+  .app-stagger > *:nth-child(3) {
+    animation-delay: 120ms;
+  }
+  .app-stagger > *:nth-child(4) {
+    animation-delay: 180ms;
+  }
+  .app-stagger > *:nth-child(5) {
+    animation-delay: 240ms;
+  }
+  .app-stagger > *:nth-child(6) {
+    animation-delay: 300ms;
+  }
+  .app-stagger > *:nth-child(7) {
+    animation-delay: 360ms;
+  }
+  .app-stagger > *:nth-child(8) {
+    animation-delay: 420ms;
+  }
+
+  .app-tabs {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    box-shadow: var(--app-shadow-soft);
+  }
+
+  .input,
+  .select,
+  .textarea {
+    @apply border-base-300/80 bg-base-100/80 text-base-content shadow-sm;
+  }
+
+  .input:not(.join-item),
+  .select:not(.join-item),
+  .textarea:not(.join-item) {
+    @apply rounded-xl;
+  }
+
+  .input:focus,
+  .select:focus,
+  .textarea:focus {
+    @apply ring-2 ring-primary/40;
+  }
+
+  .btn {
+    @apply font-semibold;
+  }
+
+  .btn:not(.join-item) {
+    @apply rounded-xl;
+  }
+
+  .btn-primary {
+    box-shadow: 0 16px 30px -20px var(--app-accent);
+  }
+
+  .badge {
+    @apply rounded-full;
+  }
+
+  .radio-checkbox {
+    appearance: none;
+    border-radius: 9999px;
+    cursor: pointer;
+    background-color: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .radio-checkbox:checked {
+    background-color: var(--app-accent);
+    border-color: var(--app-accent);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6.173 12.252 2.72 8.798a.75.75 0 1 1 1.06-1.06l2.392 2.39 6.237-6.236a.75.75 0 1 1 1.06 1.06l-7.296 7.3a.75.75 0 0 1-1.06 0Z'/%3E%3C/svg%3E");
+    background-size: 70% 70%;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: 0 0 0 4px hsl(var(--p) / 0.2);
+  }
+
+  .radio-checkbox:hover {
+    transform: scale(1.08);
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+
+  .is-selected {
+    outline: 4px solid var(--app-accent);
+    outline-offset: -4px;
+  }
+
+  .is-selected .selection-indicator {
+    display: block !important;
+  }
+
+  .stat-card {
+    animation: app-rise 0.4s ease-out both;
+  }
+  .stat-card:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  .stat-card:nth-child(3) {
+    animation-delay: 0.16s;
+  }
+  .stat-card:nth-child(4) {
+    animation-delay: 0.24s;
+  }
+}
+
+@keyframes app-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes app-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 
 .error-alert {

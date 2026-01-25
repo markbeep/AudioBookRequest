@@ -4,7 +4,7 @@
   {% include "scripts/alpinejs.html" %}
 {% endblock head %}
 {% block content %}
-  <div class="flex flex-col gap-2">
+  <div class="app-card app-panel flex flex-col gap-4 app-stagger">
     <h2 class="text-lg">Prowlarr</h2>
     {% if prowlarr_misconfigured %}<p class="text-red-400">Prowlarr is misconfigured. Please configure it.</p>{% endif %}
     <label for="prowlarr-api-key">API Key</label>

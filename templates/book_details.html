@@ -3,8 +3,8 @@
 <title>{{ book.title }} - Details</title>
 {% endblock head %}
 {% block body %}
-<div class="w-screen flex flex-col items-center p-6 sm:p-8 overflow-x-hidden">
-    <div class="w-full max-w-7xl space-y-8">
+<div class="app-shell">
+    <div class="app-content space-y-8 app-stagger">
         <!-- Breadcrumbs -->
         <div class="text-sm breadcrumbs">
             <ul>
@@ -30,7 +30,7 @@
                 </div>
 
                 <!-- Quick Stats -->
-                <div class="bg-base-200 rounded-lg p-4 space-y-3 w-full">
+                <div class="app-card app-panel space-y-3 w-full">
                     <div class="flex justify-between items-center text-xs">
                         <span class="opacity-60 font-bold uppercase tracking-wider">Year</span>
                         <span class="font-bold">{{ book.release_date.strftime('%Y') }}</span>
@@ -108,7 +108,7 @@
 
                 <!-- MAM Specific Details -->
                 {% if mam_data %}
-                <div class="bg-base-200 rounded-3xl p-8 space-y-6">
+                <div class="app-card app-panel space-y-6">
                     <div class="flex items-center gap-2 border-b border-base-300 pb-4">
                         <div class="size-8 opacity-40">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>

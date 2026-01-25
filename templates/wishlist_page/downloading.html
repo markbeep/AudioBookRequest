@@ -1,6 +1,6 @@
 {% extends "wishlist_page/base_wishlist.html" %}
 {% block content %}
-<div class="max-w-5xl mx-auto py-6">
+<div class="max-w-5xl mx-auto py-6 app-card app-panel">
     <div hx-get="{{ base_url }}/wishlist/active-downloads" 
          hx-trigger="load, every 1s" 
          hx-swap="innerHTML">

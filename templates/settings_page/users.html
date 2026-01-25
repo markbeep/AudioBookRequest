@@ -3,13 +3,14 @@
 <title>Settings - Users</title>
 {% endblock head %}
 {% block content %}
+<div class="flex flex-col gap-6 app-stagger">
 {% if is_oidc %}
 <p class="text-error font-semibold">
   OpenID Connect is enabled. Users will be automatically created when they log in.
   If a user has a group assigned on the authentication server, it will override their group here.
 </p>
 {% endif %}
-<form id="create-user-form" class="flex flex-col gap-2" hx-post="{{ base_url }}/settings/users" hx-target="#user-list"
+<form id="create-user-form" class="flex flex-col gap-2 app-card app-panel" hx-post="{{ base_url }}/settings/users" hx-target="#user-list"
   hx-on::after-request="if (event.detail.successful && event.detail.target?.id === 'user-list') this.reset()"
   hx-swap="outerHTML" hx-disabled-elt="#submit">
   <h2 class="text-lg">Create user</h2>
@@ -26,7 +27,7 @@
   <button id="submit" class="btn btn-primary" type="submit">Create user</button>
 </form>
 {% block user_block %}
-<div id="user-list" class="pt-4 border-t border-base-200">
+<div id="user-list" class="app-card app-panel">
   <h2 class="text-lg">Users</h2>
   {% if success %}
   <script>toast("{{success|safe}}", "success");</script>{% endif %}
@@ -100,6 +101,7 @@
       </tbody>
     </table>
   </div>
+</div>
 </div>
 {% endblock user_block %}
 {% endblock content %}

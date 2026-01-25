@@ -4,9 +4,9 @@
   {% include "scripts/alpinejs.html" %}
 {% endblock head %}
 {% block content %}
-  <div class="flex flex-col">
+  <div class="flex flex-col app-stagger">
     {% block form %}
-      <form class="flex flex-col gap-2"
+      <form class="flex flex-col gap-2 app-card app-panel"
             hx-post="{{ base_url }}/settings/security"
             hx-disabled-elt="#save-button"
             hx-target="this"

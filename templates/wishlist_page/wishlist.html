@@ -1,26 +1,6 @@
 {% extends "wishlist_page/base_wishlist.html" %}
 {% block head %}
   <title>Wishlist</title>
-  <style>
-    .radio-checkbox {
-        appearance: none;
-        border-radius: 9999px;
-        cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        display: block;
-        z-index: 30;
-    }
-    .radio-checkbox:checked {
-        background-color: #3b82f6 !important; /* Force primary blue */
-        border-color: #3b82f6 !important;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='8' cy='8' r='3'/%3E%3C/svg%3E");
-        background-size: 100% 100%;
-    }
-    .radio-checkbox:hover {
-        transform: scale(1.1);
-        background-color: rgba(255, 255, 255, 0.3);
-    }
-  </style>
 {% endblock head %}
 {% block content %}
   <div id="wishlist-container" class="w-full">
@@ -40,15 +20,15 @@
               </span>
             </div>
       {% else %}
-      <div id="book-grid" class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div id="book-grid" class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 app-stagger">
         {% for result in results %}
           {% set book = result.book %}
-          <div id="{{ book.asin }}" class="group bg-base-100 rounded-lg border border-base-300 overflow-hidden hover:shadow-lg transition-shadow relative">
+          <div id="{{ book.asin }}" class="group app-card overflow-hidden hover:shadow-lg transition-shadow relative">
             
             <!-- Selection Checkbox (Top Left) -->
             <div class="absolute top-2 left-2 z-[40]">
                 <input type="checkbox" name="asins" value="{{ book.asin }}" 
-                       class="radio-checkbox size-5 border-2 border-white/80 bg-black/40 backdrop-blur-md shadow-xl" 
+                       class="radio-checkbox size-5 backdrop-blur-md shadow-xl" 
                        onclick="if(window.updateActionBar) updateActionBar(); event.stopPropagation();">
             </div>
 

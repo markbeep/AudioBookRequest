@@ -19,9 +19,9 @@
 </script>
 {% endblock head %}
 {% block content %}
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-6 app-stagger">
   {% block account_settings %}
-  <form id="account-settings-form" class="flex flex-col gap-2" hx-post="{{ base_url }}/settings/account/settings"
+  <form id="account-settings-form" class="flex flex-col gap-2 app-card app-panel" hx-post="{{ base_url }}/settings/account/settings"
     hx-target="this">
     {% if success %}
     <script>toast("{{success|safe}}", "success");</script>{% endif %}
@@ -41,10 +41,10 @@
   </form>
   {% endblock account_settings %}
 
-  <hr class="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded-sm md:my-10 dark:bg-gray-700">
+  <hr class="h-px w-full bg-base-300/70 border-0 my-2">
 
   {% block change_password %}
-  <form id="change-password-form" class="flex flex-col gap-2" hx-post="{{ base_url }}/settings/account/password"
+  <form id="change-password-form" class="flex flex-col gap-2 app-card app-panel" hx-post="{{ base_url }}/settings/account/password"
     hx-target="this">
     {% if success %}
     <script>toast("{{success|safe}}", "success");</script>{% endif %}
@@ -59,10 +59,10 @@
   </form>
   {% endblock change_password %}
 
-  <hr class="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded-sm md:my-10 dark:bg-gray-700">
+  <hr class="h-px w-full bg-base-300/70 border-0 my-2">
 
   {% block api_keys %}
-  <div id="api_keys">
+  <div id="api_keys" class="app-card app-panel">
     <h2 class="text-lg mb-2">API Keys</h2>
     <p class="text-sm text-gray-600 mb-4">
       API keys allow external applications to access your account.

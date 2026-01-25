@@ -4,7 +4,7 @@
 {% include "scripts/alpinejs.html" %}
 {% endblock head %}
 {% block content %}
-<div class="flex flex-col gap-2">
+<div class="app-card app-panel flex flex-col gap-3 app-stagger">
     <h2 class="text-lg">Audiobookshelf</h2>
     <label for="abs-api-token">API Token</label>
     <form class="join w-full" hx-put="{{ base_url }}/settings/audiobookshelf/api-token"

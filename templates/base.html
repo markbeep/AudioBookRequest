@@ -87,7 +87,7 @@
     />
     {% include "scripts/toast.html" %}
   </head>
-  <body class="w-screen min-h-screen overflow-x-hidden" hx-ext="preload">
+  <body class="app-body" hx-ext="preload">
     {% block toast_block %}
     <div class="hidden" id="toast-block">
       {% if toast_error %}
@@ -110,8 +110,8 @@
       setTheme();
     </script>
     {% if not hide_navbar %}
-    <header class="shadow-lg">
-      <nav class="navbar">
+    <header class="app-nav">
+      <nav class="navbar app-nav-inner">
         <div class="flex-1">
           <a
             preload
@@ -176,7 +176,7 @@
           {% if user.can_logout() %}
           <button
             hx-post="{{ base_url }}/auth/logout"
-            class="button btn-ghost btn-square"
+            class="btn btn-ghost btn-square"
             title="Logout"
           >
             {% include "icons/door-exit.html" %}

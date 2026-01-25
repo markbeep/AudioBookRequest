@@ -7,9 +7,10 @@
 {% endif %}
 {% endblock head %}
 {% block body %}
-<div class="h-screen w-full flex flex-col items-center justify-center">
-  <h1 class="text-4xl font-bold mb-8 sm:mb-16">Narrarr</h1>
-  <form class="flex flex-col gap-2 max-w-[30rem] px-4" hx-post="{{ base_url }}/auth/token" id="form" hx-target="this">
+<div class="app-shell app-shell-center">
+  <div class="app-content max-w-md text-center space-y-6">
+    <h1 class="text-4xl font-bold">Narrarr</h1>
+    <form class="flex flex-col gap-2 app-card app-panel text-left" hx-post="{{ base_url }}/auth/token" id="form" hx-target="this">
     <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}" />
     {% if backup %}
     <h1 class="text-xl">Backup Login</h1>
@@ -25,6 +26,7 @@
     <label for="password">Password</label>
     <input id="password" name="password" type="password" class="input w-full" required />
     <button id="submit" class="btn btn-primary" type="submit">Login</button>
-  </form>
+    </form>
+  </div>
 </div>
 {% endblock body %}

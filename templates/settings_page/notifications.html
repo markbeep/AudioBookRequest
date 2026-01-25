@@ -4,7 +4,7 @@
 {% include "scripts/alpinejs.html" %}
 {% endblock head %}
 {% block content %}
-<div class="flex flex-col">
+<div class="app-card app-panel flex flex-col gap-4 app-stagger">
   <h2 class="text-lg">Notifications</h2>
   <form id="add-notification-form" class="flex flex-col gap-2" hx-post="{{ base_url }}/settings/notifications"
     hx-target="#notification-list" hx-swap="outerHTML"
@@ -70,7 +70,7 @@
 </div>
 
 {% block notfications_block %}
-<div id="notification-list" class="pt-4 border-t border-base-200" x-data="{ edit: null }"
+<div id="notification-list" class="app-card app-panel mt-4" x-data="{ edit: null }"
   x-init="$watch('edit', value => { if (edit) htmx.process(document.querySelector('#edit-notification-form')) })">
   <h2 class="text-lg">Apprise Notifications</h2>
   <div class="max-h-[30rem] overflow-x-auto">
