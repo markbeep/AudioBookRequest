@@ -13,8 +13,10 @@ from fastapi import (
     Response,
     Security,
 )
+from htpy.starlette import HtpyResponse
 from sqlmodel import Session
 
+from app.components.book_card import book_card
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.book_search import (
     audible_region_type,
@@ -22,6 +24,7 @@ from app.internal.book_search import (
     get_region_from_settings,
 )
 from app.internal.models import (
+    Audiobook,
     GroupEnum,
     ManualBookRequest,
 )
@@ -108,6 +111,46 @@ async def search_suggestions(
         user,
         {"suggestions": suggestions},
         block_name="search_suggestions",
+    )
+
+
+@router.post("/hx/request/{asin}")
+async def add_request_hx(
+    request: Request,
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    client_session: Annotated[ClientSession, Depends(get_connection)],
+    background_task: BackgroundTasks,
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+    query: Annotated[str | None, Form()] = None,
+    page: Annotated[int, Form()] = 0,
+    region: Annotated[audible_region_type | None, Form()] = None,
+    num_results: Annotated[int, Form()] = 20,
+):
+    await add_request(
+        request,
+        asin=asin,
+        session=session,
+        client_session=client_session,
+        background_task=background_task,
+        user=user,
+        query=query,
+        page=page,
+        region=region,
+        num_results=num_results,
+    )
+
+    book = session.get(Audiobook, asin)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    return HtpyResponse(
+        book_card(
+            book=book,
+            already_requested=True,
+            auto_download_enabled=quality_config.get_auto_download(session),
+            user=user,
+        )
     )
 
 

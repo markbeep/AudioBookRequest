@@ -14,7 +14,8 @@
 				"bradlc.vscode-tailwindcss",
 				"samuelcolvin.jinjahtml",
 				"yzhang.markdown-all-in-one",
-				"detachhead.basedpyright"
+				"detachhead.basedpyright",
+				"esbenp.prettier-vscode"
 			]
 		}
 	}
