@@ -18,7 +18,8 @@ from app.internal.auth.session_middleware import (
 from app.internal.book_search import clear_old_book_caches
 from app.internal.env_settings import Settings
 from app.internal.models import User
-from app.routers import api, auth, recommendations, root, search, settings, wishlist
+from app.routers import api, auth, recommendations, search, settings, wishlist
+from app.pages import index, static
 from app.util.db import get_session
 from app.util.fetch_js import fetch_scripts
 from app.util.redirect import BaseUrlRedirectResponse
@@ -48,10 +49,11 @@ app = FastAPI(
 )
 
 app.include_router(auth.router, include_in_schema=False)
+app.include_router(index.router, include_in_schema=False)
 app.include_router(recommendations.router, include_in_schema=False)
-app.include_router(root.router, include_in_schema=False)
 app.include_router(search.router, include_in_schema=False)
 app.include_router(settings.router, include_in_schema=False)
+app.include_router(static.router, include_in_schema=False)
 app.include_router(wishlist.router, include_in_schema=False)
 # api router under /api
 app.include_router(api.router)

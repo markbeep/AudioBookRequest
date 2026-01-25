@@ -11,6 +11,7 @@ dependencies = [
     "argon2-cffi-bindings>=25.1.0",
     "cryptography>=46.0.4",
     "fastapi[standard]>=0.128.0",
+    "htpy>=25.12.0",
     "itsdangerous>=2.2.0",
     "jinja2>=3.1.6",
     "jinja2-fragments>=1.11.0",
