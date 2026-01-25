@@ -49,9 +49,8 @@ async def active_downloads(
 ):
     from app.internal.download_clients.qbittorrent import QbittorrentClient
     from app.internal.download_clients.config import download_client_config
-    from app.internal.models import AudiobookRequest, Audiobook
-    from sqlmodel import select, or_, not_, col
-    
+    from sqlmodel import select, not_, col
+
     if not download_client_config.get_qbit_enabled(session):
         return template_response(
             "wishlist_page/active_downloads.html",
@@ -74,7 +73,7 @@ async def active_downloads(
     # Map torrents to their ASINs using tags (e.g., "asin:B00..." tag)
     # This ensures we only show what is actually in the client
     downloads = []
-    
+
     # Pre-fetch books for all these torrents to avoid N+1 queries
     all_asins = []
     for t in torrents:
@@ -82,20 +81,36 @@ async def active_downloads(
         match = re.search(r"asin:([A-Z0-9]{10})", tags)
         if match:
             all_asins.append(match.group(1))
-    
+
     # 1. Fetch books and requests already identified from qB
-    books = {b.asin: b for b in session.exec(select(Audiobook).where(col(Audiobook.asin).in_(all_asins))).all()}
-    requests = {r.asin: r for r in session.exec(select(AudiobookRequest).where(col(AudiobookRequest.asin).in_(all_asins))).all()}
+    books = {
+        b.asin: b
+        for b in session.exec(
+            select(Audiobook).where(col(Audiobook.asin).in_(all_asins))
+        ).all()
+    }
+    requests = {
+        r.asin: r
+        for r in session.exec(
+            select(AudiobookRequest).where(col(AudiobookRequest.asin).in_(all_asins))
+        ).all()
+    }
 
     # 2. ALSO fetch items from DB that are actively being processed by Narrarr but NOT in qB
-    # We only show items that are beyond 'pending' and 'download_initiated' 
+    # We only show items that are beyond 'pending' and 'download_initiated'
     # (e.g. 'generating_metadata', 'organizing', etc.)
     db_downloading = session.exec(
-        select(AudiobookRequest).join(Audiobook).where(
-            Audiobook.downloaded == False,
-            not_(col(AudiobookRequest.processing_status).in_(["pending", "download_initiated", "completed"])),
+        select(AudiobookRequest)
+        .join(Audiobook)
+        .where(
+            not_(Audiobook.downloaded),
+            not_(
+                col(AudiobookRequest.processing_status).in_(
+                    ["pending", "download_initiated", "completed"]
+                )
+            ),
             not_(col(AudiobookRequest.processing_status).startswith("failed")),
-            not_(col(AudiobookRequest.asin).in_(all_asins)), # Not already found in qB
+            not_(col(AudiobookRequest.asin).in_(all_asins)),  # Not already found in qB
             not username or AudiobookRequest.user_username == username,
         )
     ).all()
@@ -105,57 +120,72 @@ async def active_downloads(
         tags = t.get("tags", "")
         match = re.search(r"asin:([A-Z0-9]{10})", tags)
         asin = match.group(1) if match else None
-        
+
         book = books.get(asin) if asin else None
         req = requests.get(asin) if asin else None
-        
+
+        # Guard: If request is marked completed in DB, skip showing it in downloading tab
+        if req and req.processing_status == "completed":
+            continue
+
         title = book.title if book else t.get("name")
         cover = book.cover_image if book else None
-        
+
         processing_status = req.processing_status if req else "pending"
-        is_processing = processing_status not in ["pending", "completed", "failed", "download_initiated"]
-        
+        is_processing = processing_status not in [
+            "pending",
+            "completed",
+            "failed",
+            "download_initiated",
+        ]
+
         display_state = t.get("state", "unknown")
         if is_processing:
-             display_state = processing_status.replace("_", " ").title()
+            display_state = processing_status.replace("_", " ").title()
 
-        downloads.append({
-            "title": title,
-            "asin": asin,
-            "cover": cover,
-            "progress": t.get("progress", 0),
-            "state": t.get("state", "unknown"),
-            "processing_status": processing_status,
-            "speed": t.get("dlspeed", 0),
-            "eta": t.get("eta", 0),
-            "hash": t.get("hash"),
-            "display_state": display_state
-        })
+        downloads.append(
+            {
+                "title": title,
+                "asin": asin,
+                "cover": cover,
+                "progress": req.download_progress if req else t.get("progress", 0),
+                "state": t.get("state", "unknown"),
+                "processing_status": processing_status,
+                "speed": t.get("dlspeed", 0),
+                "eta": t.get("eta", 0),
+                "hash": t.get("hash"),
+                "display_state": display_state,
+            }
+        )
 
     # Add DB-only processing items to the list
     for req in db_downloading:
         book = session.get(Audiobook, req.asin)
-        if not book: continue
-        
-        downloads.append({
-            "title": book.title,
-            "asin": book.asin,
-            "cover": book.cover_image,
-            "progress": 1.0, # Usually finishing up if not in qB
-            "state": "processing",
-            "processing_status": req.processing_status,
-            "speed": 0,
-            "eta": 0,
-            "hash": req.torrent_hash,
-            "display_state": req.processing_status.replace("_", " ").title()
-        })
-    
+        if not book:
+            continue
+
+        downloads.append(
+            {
+                "title": book.title,
+                "asin": book.asin,
+                "cover": book.cover_image,
+                "progress": req.download_progress,  # Use the progress from the database
+                "state": "processing",
+                "processing_status": req.processing_status,
+                "speed": 0,
+                "eta": 0,
+                "hash": req.torrent_hash,
+                "display_state": req.processing_status.replace("_", " ").title(),
+            }
+        )
+
     return template_response(
         "wishlist_page/active_downloads.html",
         request,
         user,
         {"downloads": downloads},
     )
+
 
 @router.get("")
 async def wishlist(
@@ -189,6 +219,7 @@ async def downloaded(
         user,
         {"results": results, "page": "downloaded", "counts": counts},
     )
+
 
 @router.get("/downloading")
 async def downloading(
@@ -243,26 +274,27 @@ async def reprocess_book(
     user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     from app.internal.download_clients.qbittorrent import QbittorrentClient
-    from app.internal.download_clients.config import download_client_config
     from app.internal.processing.processor import process_completed_download
-    
+
     client = QbittorrentClient(session)
     # Search all torrents for this ASIN tag
     torrents = await client.get_torrents()
-    
+
     matching_torrent = None
     for t in torrents:
         if f"asin:{asin}" in t.get("tags", ""):
             matching_torrent = t
             break
-            
+
     if not matching_torrent:
-        raise ToastException("Could not find a matching torrent in qBittorrent for this ASIN.", "error")
-        
+        raise ToastException(
+            "Could not find a matching torrent in qBittorrent for this ASIN.", "error"
+        )
+
     download_path = matching_torrent.get("content_path")
     if not download_path:
         raise ToastException("Torrent found but content path is missing.", "error")
-        
+
     try:
         await process_completed_download(session, asin, download_path)
         return template_response(
@@ -273,6 +305,7 @@ async def reprocess_book(
         )
     except Exception as e:
         raise ToastException(f"Reprocessing failed: {str(e)}", "error")
+
 
 @router.get("/manual")
 async def manual(

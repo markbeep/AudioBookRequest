@@ -11,14 +11,16 @@ from sqlmodel import Session, select
 
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.indexers.abstract import SessionContainer
-from app.internal.indexers.mam import fetch_mam_book_details, MamIndexer, ValuedMamConfigurations
-from app.internal.indexers.configuration import indexer_configuration_cache, create_valued_configuration
+from app.internal.indexers.mam import MamIndexer, ValuedMamConfigurations
+from app.internal.indexers.configuration import (
+    indexer_configuration_cache,
+    create_valued_configuration,
+)
 from app.internal.indexers.indexer_util import (
     get_indexer_contexts,
     update_single_indexer,
 )
 from app.internal.models import Config, GroupEnum
-from app.internal.env_settings import Settings
 from app.util.cache import StringConfigCache
 from app.util.connection import get_connection
 from app.util.db import get_session
@@ -125,7 +127,9 @@ async def read_indexers(
         return_disabled=True,
     )
 
-    mam_config_db = session.exec(select(Config).where(Config.key == "mam_metadata_enabled")).first()
+    mam_config_db = session.exec(
+        select(Config).where(Config.key == "mam_metadata_enabled")
+    ).first()
     mam_metadata_enabled = mam_config_db.value == "True" if mam_config_db else False
 
     return template_response(
@@ -173,10 +177,12 @@ async def update_indexers(
 ):
     _ = admin_user
     values = dict(await request.form())
-    
+
     # Save MAM metadata toggle
     mam_metadata_enabled = values.get("mam_metadata_enabled", "off") == "on"
-    current_settings = session.exec(select(Config).where(Config.key == "mam_metadata_enabled")).first()
+    current_settings = session.exec(
+        select(Config).where(Config.key == "mam_metadata_enabled")
+    ).first()
     if current_settings:
         current_settings.value = str(mam_metadata_enabled)
         session.add(current_settings)
@@ -207,14 +213,16 @@ async def test_mam_connection(
 ):
     _ = admin_user
     form_data = await request.form()
-    
+
     config_obj = await MamIndexer.get_configurations(
         SessionContainer(session=session, client_session=client_session)
     )
     valued = create_valued_configuration(config_obj, session)
-    
+
     # Check for temporary unsaved ID
-    session_id = str(form_data.get("mam_session_id") or getattr(valued, "mam_session_id") or "")
+    session_id = str(
+        form_data.get("mam_session_id") or getattr(valued, "mam_session_id") or ""
+    )
 
     mam_config = ValuedMamConfigurations(mam_session_id=session_id)
 
@@ -224,21 +232,26 @@ async def test_mam_connection(
     logger.info("Testing MAM connection...")
     try:
         from app.internal.models import Audiobook
-        test_book = Audiobook(title="Audiobook", asin="test", authors=["test"], narrators=["test"])
-        
+
+        test_book = Audiobook(
+            title="Audiobook", asin="test", authors=["test"], narrators=["test"]
+        )
+
         indexer = MamIndexer()
         await indexer.setup(
             book=test_book,
             container=SessionContainer(session=session, client_session=client_session),
             configurations=mam_config,
         )
-        
+
         if len(indexer.results) > 0:
             logger.info("MAM connection test passed")
             raise ToastException("Connection successful!", "success")
         else:
             logger.warning("MAM connection test failed: no results")
-            raise ToastException("Connection failed: no books found (check your session ID).", "error")
+            raise ToastException(
+                "Connection failed: no books found (check your session ID).", "error"
+            )
     except ToastException:
         raise
     except Exception as e:

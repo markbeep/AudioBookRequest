@@ -1,4 +1,3 @@
-import os
 from contextlib import contextmanager
 from typing import Literal
 
@@ -8,18 +7,7 @@ from aiohttp import ClientSession
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from app.internal.audiobookshelf.client import abs_trigger_scan
-from app.internal.audiobookshelf.config import abs_config
 from app.internal.env_settings import Settings
-from app.internal.indexers.mam import (
-    fetch_mam_book_details,
-    MamIndexer,
-    MamConfigurations,
-    ValuedMamConfigurations,
-    SessionContainer,
-)
-from app.internal.indexers.configuration import create_valued_configuration
-from app.internal.metadata import generate_opf_for_mam
 from app.internal.models import Audiobook, AudiobookRequest, ProwlarrSource, User
 from app.internal.prowlarr.prowlarr import query_prowlarr, start_download
 from app.internal.prowlarr.util import prowlarr_config
@@ -98,28 +86,34 @@ async def query_sources(
         # Handle auto-download
         if start_auto_download and len(ranked) > 0:
             book_request = session.exec(
-                select(AudiobookRequest)
-                .where(
+                select(AudiobookRequest).where(
                     AudiobookRequest.asin == asin,
-                    AudiobookRequest.downloaded == False,
+                    AudiobookRequest.downloaded.is_(False),
                     AudiobookRequest.user_username == requester.username,
                 )
             ).first()
-            
-            if not book_request:
-                logger.warning("No active AudiobookRequest found for auto-download", asin=asin, username=requester.username)
-                raise HTTPException(status_code=404, detail="No active AudiobookRequest found for auto-download.")
 
-            success = await start_download( # start_download now returns bool
+            if not book_request:
+                logger.warning(
+                    "No active AudiobookRequest found for auto-download",
+                    asin=asin,
+                    username=requester.username,
+                )
+                raise HTTPException(
+                    status_code=404,
+                    detail="No active AudiobookRequest found for auto-download.",
+                )
+
+            success = await start_download(  # start_download now returns bool
                 session=session,
                 client_session=client_session,
                 guid=ranked[0].guid,
                 indexer_id=ranked[0].indexer_id,
                 requester=requester,
-                audiobook_request=book_request, # Pass the AudiobookRequest object
-                prowlarr_source=ranked[0], # prowlarr_source is now required
+                audiobook_request=book_request,  # Pass the AudiobookRequest object
+                prowlarr_source=ranked[0],  # prowlarr_source is now required
             )
-            
+
             if not success:
                 raise HTTPException(status_code=500, detail="Failed to start download")
 

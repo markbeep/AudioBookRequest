@@ -20,6 +20,29 @@
 {% endblock head %}
 {% block content %}
 <div class="flex flex-col gap-6">
+  {% block account_settings %}
+  <form id="account-settings-form" class="flex flex-col gap-2" hx-post="{{ base_url }}/settings/account/settings"
+    hx-target="this">
+    {% if success %}
+    <script>toast("{{success|safe}}", "success");</script>{% endif %}
+    <h2 class="text-lg">Account Settings</h2>
+    <label for="default-region">Default Search Region</label>
+    <p class="text-xs opacity-60">The default region/language used when searching for books.</p>
+    <div class="flex gap-2">
+      <select id="default-region" name="default_region" class="select w-full">
+        {% for region, domain in regions.items() %}
+        <option value="{{ region }}" {% if region == selected_region %}selected{% endif %}>
+          {{ region }} (audible{{ domain }})
+        </option>
+        {% endfor %}
+      </select>
+      <button name="submit" class="btn btn-primary" type="submit">Save</button>
+    </div>
+  </form>
+  {% endblock account_settings %}
+
+  <hr class="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded-sm md:my-10 dark:bg-gray-700">
+
   {% block change_password %}
   <form id="change-password-form" class="flex flex-col gap-2" hx-post="{{ base_url }}/settings/account/password"
     hx-target="this">

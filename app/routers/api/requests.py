@@ -138,9 +138,17 @@ async def delete_request(
             for t in torrents:
                 if f"asin:{asin}" in t.get("tags", ""):
                     await client.delete_torrents([t["hash"]], delete_files=True)
-                    logger.info("Deleted torrent from qBittorrent for deleted request", asin=asin, hash=t["hash"])
+                    logger.info(
+                        "Deleted torrent from qBittorrent for deleted request",
+                        asin=asin,
+                        hash=t["hash"],
+                    )
         except Exception as e:
-            logger.warning("Failed to delete torrent from qBittorrent during request deletion", asin=asin, error=str(e))
+            logger.warning(
+                "Failed to delete torrent from qBittorrent during request deletion",
+                asin=asin,
+                error=str(e),
+            )
 
     if user.is_admin():
         session.execute(
@@ -348,36 +356,50 @@ async def download_book(
     admin_user: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     book_request = session.exec(
-        select(AudiobookRequest).join(Audiobook)
+        select(AudiobookRequest)
+        .join(Audiobook)
         .where(
             AudiobookRequest.asin == asin,
-            Audiobook.downloaded == False, # Correctly check Audiobook.downloaded
+            Audiobook.downloaded.is_(False),  # Correctly check Audiobook.downloaded
         )
     ).first()
-    
+
     if not book_request:
-        raise HTTPException(status_code=404, detail="Active request for this audiobook not found.")
+        raise HTTPException(
+            status_code=404, detail="Active request for this audiobook not found."
+        )
 
     try:
         from app.internal.prowlarr.util import prowlarr_source_cache
-        
+
         book = session.get(Audiobook, asin)
-        sources = prowlarr_source_cache.get(prowlarr_config.get_source_ttl(session), book.title if book else "")
+        sources = prowlarr_source_cache.get(
+            prowlarr_config.get_source_ttl(session), book.title if book else ""
+        )
         source = None
         if sources:
-            source = next((s for s in sources if s.guid == body.guid and s.indexer_id == body.indexer_id), None)
+            source = next(
+                (
+                    s
+                    for s in sources
+                    if s.guid == body.guid and s.indexer_id == body.indexer_id
+                ),
+                None,
+            )
 
         if not source:
-            raise HTTPException(status_code=404, detail="Source not found in cache for this book.")
+            raise HTTPException(
+                status_code=404, detail="Source not found in cache for this book."
+            )
 
-        success = await start_download( # start_download now returns bool
+        success = await start_download(  # start_download now returns bool
             session=session,
             client_session=client_session,
             guid=body.guid,
             indexer_id=body.indexer_id,
             requester=admin_user,
-            audiobook_request=book_request, # Pass the AudiobookRequest object
-            prowlarr_source=source, # prowlarr_source is now required
+            audiobook_request=book_request,  # Pass the AudiobookRequest object
+            prowlarr_source=source,  # prowlarr_source is now required
         )
     except ProwlarrMisconfigured as e:
         logger.error("Prowlarr misconfigured for download", error=str(e))
@@ -392,7 +414,7 @@ async def download_book(
             },
         )
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     # Check success (start_download now returns bool directly)
     if not success:
         logger.error("Failed to start download via qBittorrent", asin=asin)

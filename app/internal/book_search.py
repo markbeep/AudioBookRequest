@@ -1,6 +1,6 @@
-import re
 import asyncio
 import time
+import json
 from datetime import datetime
 from typing import Any, Literal, TypedDict, Union, cast
 from urllib.parse import urlencode
@@ -14,7 +14,7 @@ from sqlmodel import Session, col, not_, select
 from app.internal.audiobookshelf.client import abs_mark_downloaded_flags
 from app.internal.audiobookshelf.config import abs_config
 from app.internal.env_settings import Settings
-from app.internal.models import Audiobook, AudiobookRequest
+from app.internal.models import Audiobook, AudiobookRequest, User
 from app.util.connection import USER_AGENT
 from app.util.log import logger
 
@@ -60,7 +60,17 @@ def clear_old_book_caches(session: Session):
     logger.debug("Cleared old book caches", rowcount=result.rowcount)
 
 
-def get_region_from_settings() -> audible_region_type:
+def get_region_from_settings(user: User | None = None) -> audible_region_type:
+    if user and user.extra_data:
+        try:
+            data = json.loads(user.extra_data)
+            if isinstance(data, dict):
+                region = data.get("default_region")
+                if region in audible_regions:
+                    return cast(audible_region_type, region)
+        except Exception:
+            pass
+
     region = Settings().app.default_region
     if region not in audible_regions:
         return "us"
@@ -131,7 +141,9 @@ async def _get_audnexus_book(
         subtitle=audnexus_response.subtitle,
         authors=[author["name"] for author in audnexus_response.authors],
         narrators=[narrator["name"] for narrator in audnexus_response.narrators],
-        series=[s["name"] for s in audnexus_response.series] if audnexus_response.series else [],
+        series=[s["name"] for s in audnexus_response.series]
+        if audnexus_response.series
+        else [],
         genres=parsed_genres,
         publisher=audnexus_response.publisher,
         description=audnexus_response.description,
@@ -145,7 +157,7 @@ async def _get_audnexus_book(
 class _AudimetaResponse(BaseModel):
     class _Author(TypedDict):
         name: str
-    
+
     class _Series(TypedDict):
         name: str
 
@@ -190,7 +202,7 @@ async def _get_audimeta_book(
     except Exception as e:
         logger.error("Exception while fetching book from Audimeta", asin=asin, error=e)
         return None
-    
+
     # Safely parse genres which can be strings or dictionaries
     parsed_genres = []
     if audimeta_response.genres:
@@ -209,7 +221,9 @@ async def _get_audimeta_book(
         subtitle=audimeta_response.subtitle,
         authors=[author["name"] for author in audimeta_response.authors],
         narrators=[narrator["name"] for narrator in audimeta_response.narrators],
-        series=[s["name"] for s in audimeta_response.series] if audimeta_response.series else [],
+        series=[s["name"] for s in audimeta_response.series]
+        if audimeta_response.series
+        else [],
         genres=parsed_genres,
         publisher=audimeta_response.publisher,
         description=audimeta_response.description,
@@ -483,11 +497,15 @@ def get_existing_books(session: Session, asins: set[str]) -> dict[str, Audiobook
         # even if it's within the TTL. This ensures books are grouped correctly.
         has_series = b.series and len(b.series) > 0
         is_fresh = b.updated_at.timestamp() + REFETCH_TTL > time.time()
-        
+
         if is_fresh and has_series:
             ok_books.append(b)
         else:
-            logger.debug("Book metadata considered stale or incomplete", asin=b.asin, has_series=bool(has_series))
+            logger.debug(
+                "Book metadata considered stale or incomplete",
+                asin=b.asin,
+                has_series=bool(has_series),
+            )
 
     return {b.asin: b for b in ok_books}
 
@@ -507,11 +525,13 @@ def store_new_books(session: Session, books: list[Audiobook]) -> list[Audiobook]
         if existing:
             # Update metadata but keep the downloaded flag from the DB
             book.downloaded = existing.downloaded
-        
+
         # merge() returns the instance that is actually attached to the session
         merged = session.merge(book)
         merged_books.append(merged)
-    
+
     session.commit()
-    logger.info("Stored/Updated search results in BookRequest cache/db", count=len(merged_books))
+    logger.info(
+        "Stored/Updated search results in BookRequest cache/db", count=len(merged_books)
+    )
     return merged_books

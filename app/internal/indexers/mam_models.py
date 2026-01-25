@@ -1,6 +1,4 @@
 import json
-from dataclasses import dataclass
-from typing import override
 
 from pydantic import BaseModel
 
@@ -77,6 +75,6 @@ class _Result(BaseModel):
             return list(x for x in content.values() if isinstance(x, str))  # pyright: ignore[reportUnknownVariableType]
         return []
 
+
 class _MamResponse(BaseModel):
     data: list[_Result]
-

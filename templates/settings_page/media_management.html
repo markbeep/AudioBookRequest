@@ -28,35 +28,45 @@
             <p class="text-xs opacity-60">Example: {author}/{series}/{title} ({year})</p>
         </div>
 
-        <div class="form-control">
-            <label class="label cursor-pointer justify-start gap-4">
-                <span class="label-text font-bold">Use Series Folders</span>
-                <input type="checkbox" name="use_series_folders" class="checkbox checkbox-primary" {% if use_series_folders %}checked{% endif %} />
-            </label>
-            <p class="text-xs opacity-60">If enabled, books that are part of a series will be placed in a series subfolder regardless of the pattern.</p>
+        <div class="flex flex-col w-full">
+            <label for="file-pattern" class="font-bold">File Naming Pattern</label>
+            <input id="file-pattern" name="file_pattern" type="text" value="{{ file_pattern }}" class="input w-full" required />
+            <div class="text-[10px] opacity-60 mt-1">
+                Available tags: <span class="badge badge-xs">{author}</span> <span class="badge badge-xs">{title}</span> <span class="badge badge-xs">{series}</span> <span class="badge badge-xs">{series_index}</span> <span class="badge badge-xs">{year}</span> <span class="badge badge-xs">{asin}</span> <span class="badge badge-xs">{part}</span>
+            </div>
+            <p class="text-xs opacity-60">Example: {title} - {part}</p>
         </div>
 
-        <div class="form-control">
-            <label class="label cursor-pointer justify-start gap-4">
-                <span class="label-text font-bold">Use Hardlinks</span>
-                <input type="checkbox" name="use_hardlinks" class="checkbox checkbox-primary" {% if use_hardlinks %}checked{% endif %} />
-            </label>
-            <p class="text-xs opacity-60">If enabled, the system will try to hardlink files instead of copying them. This saves space while allowing you to continue seeding in qBittorrent. <i>Note: Only works on the same filesystem.</i></p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-4">
+                    <input type="checkbox" name="use_series_folders" class="checkbox checkbox-primary" {% if use_series_folders %}checked{% endif %} />
+                    <span class="label-text font-bold">Use Series Folders</span>
+                </label>
+                <p class="text-[10px] opacity-60">Organize books into series subfolders automatically.</p>
+            </div>
+
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-4">
+                    <input type="checkbox" name="use_hardlinks" class="checkbox checkbox-primary" {% if use_hardlinks %}checked{% endif %} />
+                    <span class="label-text font-bold">Use Hardlinks</span>
+                </label>
+                <p class="text-[10px] opacity-60">Save space by hardlinking files (same filesystem only).</p>
+            </div>
         </div>
 
-        <button class="btn btn-primary mt-4">Save Media Management Settings</button>
+        <button class="btn btn-primary mt-2">Save Media Management Settings</button>
     </form>
     {% endblock media_form %}
 
-    <div class="mt-8 p-4 bg-base-200 rounded-lg">
-        <h3 class="font-bold mb-2">Metadata Generation</h3>
-        <p class="text-sm opacity-80">The system will automatically generate the following files in the book folder during processing:</p>
-        <ul class="list-disc list-inside text-xs opacity-70 mt-2">
-            <li><code>metadata.json</code> (Audiobookshelf format)</li>
-            <li><code>metadata.opf</code> (Standard metadata format)</li>
-            <li><code>cover.jpg</code> (Highest quality available)</li>
-            <li><code>desc.txt</code> (Book synopsis/description)</li>
-        </ul>
+    <div class="mt-6 p-4 bg-base-200/50 rounded-xl border border-base-300">
+        <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-3">Automatic Metadata</h3>
+        <div class="flex flex-wrap gap-2">
+            <span class="badge badge-sm font-bold bg-base-300 border-0">metadata.json</span>
+            <span class="badge badge-sm font-bold bg-base-300 border-0">metadata.opf</span>
+            <span class="badge badge-sm font-bold bg-base-300 border-0">cover.jpg</span>
+            <span class="badge badge-sm font-bold bg-base-300 border-0">desc.txt</span>
+        </div>
     </div>
 </div>
 {% endblock content %}

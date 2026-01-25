@@ -1,124 +1,80 @@
 import uuid
-from typing import Annotated, Optional
+from datetime import datetime
+from typing import Annotated
 from fastapi import APIRouter, Depends, Request, Form, BackgroundTasks, Security
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session, select
 from app.util.db import get_session
 from app.util.templates import template_response
 from app.internal.auth.authentication import ABRAuth, DetailedUser, GroupEnum
-from app.internal.models import LibraryImportSession, LibraryImportItem, ImportSessionStatus, ImportItemStatus, Audiobook
+from app.internal.models import (
+    LibraryImportSession,
+    LibraryImportItem,
+    ImportSessionStatus,
+    ImportItemStatus,
+    Audiobook,
+)
 from app.internal.library.scanner import LibraryScanner
+from app.internal.library.service import refresh_book_metadata
 from app.util.connection import get_connection
 from aiohttp import ClientSession
 from app.util.log import logger
 
 router = APIRouter(prefix="/library", tags=["Library"])
 
+
 @router.post("/bulk/delete")
 async def bulk_delete(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     asins: list[str] = Form(...),
-    delete_files: bool = Form(False)
+    delete_files: bool = Form(False),
 ):
     """
     Bulk delete books from the library.
     """
     from app.internal.media_management.config import media_management_config
-    import os
-    import shutil
 
     lib_root = media_management_config.get_library_path(session)
-    
+
     for asin in asins:
         book = session.get(Audiobook, asin)
-        if not book: continue
-        
+        if not book:
+            continue
+
         if delete_files and lib_root:
             # This is a bit risky but the user asked for Arr-style management
             # We need to find the folder. We'll use a simplified version of the processor logic.
-            author = book.authors[0] if book.authors else "Unknown"
-            year = book.release_date.year if book.release_date else "Unknown"
-            folder_name = f"{author}/{book.title} ({year})" # Fallback logic
-            # Better: try to find it by scanning if we had a path saved. 
+            # author = book.authors[0] if book.authors else "Unknown"
+            # year = book.release_date.year if book.release_date else "Unknown"
+            # folder_name = f"{author}/{book.title} ({year})"  # Fallback logic
+            # Better: try to find it by scanning if we had a path saved.
             # For now, we'll rely on the DB delete mostly, but Arr apps do file deletion.
             # We will mark it as NOT downloaded instead of full disk wipe unless we are sure.
             book.downloaded = False
         else:
             book.downloaded = False
-            
+
         session.add(book)
-    
+
     session.commit()
     return HTMLResponse("<script>window.location.reload();</script>")
 
-async def refresh_book_metadata(session: Session, asin: str, client_session: ClientSession):
-    """
-    Refreshes metadata for a single book from the internet and updates DB/files.
-    """
-    from app.internal.book_search import get_book_by_asin, store_new_books
-    from app.internal.metadata import generate_abs_metadata, generate_opf_metadata
-    from app.internal.media_management.config import media_management_config
-    import os
-    import re
-
-    # 1. Fetch from internet
-    new_book_data = await get_book_by_asin(client_session, asin)
-    if not new_book_data:
-        logger.warning("Metadata refresh failed: Book not found on Audible", asin=asin)
-        return
-
-    # 2. Update DB
-    store_new_books(session, [new_book_data])
-    
-    # 3. Update files on disk if it's already downloaded
-    book = session.get(Audiobook, asin)
-    if book and book.downloaded:
-        lib_root = media_management_config.get_library_path(session)
-        if lib_root:
-            pattern = media_management_config.get_folder_pattern(session)
-            author = book.authors[0] if book.authors else "Unknown"
-            series = book.series[0] if book.series else None
-            year = book.release_date.year if book.release_date else "Unknown"
-
-            def sanitize(s: str) -> str:
-                s = re.sub(r'[\\/*?:">|<]', "", s).strip()
-                return s or "Unknown"
-
-            try:
-                folder_rel_path = pattern.format(
-                    author=sanitize(author),
-                    title=sanitize(book.title),
-                    year=year,
-                    asin=book.asin,
-                    series=sanitize(series) if series else "No Series",
-                    series_index=book.series[0] if book.series else ""
-                )
-            except:
-                folder_rel_path = f"{sanitize(author)}/{sanitize(book.title)} ({year})"
-
-            if media_management_config.get_use_series_folders(session) and series and "{series}" not in pattern:
-                folder_rel_path = os.path.join(sanitize(author), sanitize(series), sanitize(book.title))
-
-            dest_path = os.path.join(lib_root, folder_rel_path.strip().lstrip(os.path.sep))
-            
-            if os.path.exists(dest_path):
-                logger.info("Refreshing metadata files on disk", path=dest_path)
-                await generate_abs_metadata(book, dest_path)
-                await generate_opf_metadata(session, book, dest_path)
 
 @router.post("/bulk/reprocess")
 async def bulk_reprocess(
     background_tasks: BackgroundTasks,
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
-    asins: list[str] = Form(...)
+    asins: list[str] = Form(...),
 ):
     """
     Bulk refresh metadata for multiple books.
     """
+
     async def task():
         import aiohttp
+
         async with aiohttp.ClientSession() as client_session:
             with next(get_session()) as bg_session:
                 for asin in asins:
@@ -129,7 +85,10 @@ async def bulk_reprocess(
                 bg_session.commit()
 
     background_tasks.add_task(task)
-    return HTMLResponse("<script>toast('Refreshing metadata for selected books...', 'info');</script>")
+    return HTMLResponse(
+        "<script>toast('Refreshing metadata for selected books...', 'info');</script>"
+    )
+
 
 @router.post("/bulk/reprocess-all")
 async def reprocess_all(
@@ -140,11 +99,12 @@ async def reprocess_all(
     """
     Refresh metadata for ALL downloaded books.
     """
-    books = session.exec(select(Audiobook).where(Audiobook.downloaded == True)).all()
+    books = session.exec(select(Audiobook).where(Audiobook.downloaded.is_(True))).all()
     asins = [b.asin for b in books]
-    
+
     async def task():
         import aiohttp
+
         async with aiohttp.ClientSession() as client_session:
             with next(get_session()) as bg_session:
                 for asin in asins:
@@ -155,7 +115,58 @@ async def reprocess_all(
                 bg_session.commit()
 
     background_tasks.add_task(task)
-    return HTMLResponse("<script>toast('Started full library metadata refresh...', 'info');</script>")
+    return HTMLResponse(
+        "<script>toast('Started full library metadata refresh...', 'info');</script>"
+    )
+
+
+@router.post("/bulk/reorganize-all")
+async def reorganize_all(
+    background_tasks: BackgroundTasks,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+):
+    """
+    Bulk reorganize and rename ALL books in the library.
+    """
+
+    async def task():
+        from app.internal.processing.processor import reorganize_existing_book
+        from app.internal.library.scanner import LibraryScanner
+        from app.internal.media_management.config import media_management_config
+
+        with next(get_session()) as bg_session:
+            lib_root = media_management_config.get_library_path(bg_session)
+            if not lib_root:
+                return
+
+            logger.info("Library: Starting mass renaming of entire library")
+            # One single scan for the entire library
+            asin_map = LibraryScanner.map_library_asins(lib_root)
+
+            books = bg_session.exec(
+                select(Audiobook).where(Audiobook.downloaded.is_(True))
+            ).all()
+
+            logger.info(f"Library: Found {len(books)} books to check")
+
+            for book in books:
+                try:
+                    await reorganize_existing_book(
+                        bg_session, book, current_path=asin_map.get(book.asin)
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Global reorganization failed for {book.asin}", error=str(e)
+                    )
+            bg_session.commit()
+            logger.info("Library: Mass renaming complete")
+
+    background_tasks.add_task(task)
+    return HTMLResponse(
+        "<script>toast('Started mass library renaming and reorganization...', 'info');</script>"
+    )
+
 
 @router.get("")
 async def library_management(
@@ -168,35 +179,39 @@ async def library_management(
     Uses the new Arr-style UI design.
     """
     books = session.exec(
-        select(Audiobook).where(Audiobook.downloaded == True).order_by(Audiobook.title)
+        select(Audiobook)
+        .where(Audiobook.downloaded.is_(True))
+        .order_by(Audiobook.title)
     ).all()
-    
+
     # Check for latest reconciliation session
     recon_session = session.exec(
-        select(LibraryImportSession).where(LibraryImportSession.root_path == "__INTERNAL_LIBRARY__").order_by(LibraryImportSession.created_at.desc())
+        select(LibraryImportSession)
+        .where(LibraryImportSession.root_path == "__INTERNAL_LIBRARY__")
+        .order_by(LibraryImportSession.created_at.desc())
     ).first()
-    
+
     # Calculate stats for the Arr-style UI
     unique_authors = set()
     series_map = {}
     authors_dict = {}
     total_hours = 0
-    
+
     # Status groups
     matched_books = []
-    missing_books = [] # Placeholder
-    unmatched_books = [] # Placeholder
+    missing_books = []  # Placeholder
+    unmatched_books = []  # Placeholder
 
     for book in books:
         total_hours += book.runtime_length_hrs
         matched_books.append(book)
-        
+
         for author in book.authors:
             unique_authors.add(author)
             if author not in authors_dict:
                 authors_dict[author] = []
             authors_dict[author].append(book)
-            
+
         for s in book.series:
             if s not in series_map:
                 series_map[s] = {"books": [], "authors": set(), "duration": 0}
@@ -208,13 +223,15 @@ async def library_management(
     # Convert map to a sorted list for the template
     series_list = []
     for s_name, data in series_map.items():
-        series_list.append({
-            "name": s_name,
-            "books": data["books"],
-            "authors": sorted(list(data["authors"])),
-            "duration": round(data["duration"], 1),
-            "book_count": len(data["books"])
-        })
+        series_list.append(
+            {
+                "name": s_name,
+                "books": data["books"],
+                "authors": sorted(list(data["authors"])),
+                "duration": round(data["duration"], 1),
+                "book_count": len(data["books"]),
+            }
+        )
     series_list.sort(key=lambda x: x["name"])
 
     # Sort authors alphabetically
@@ -224,24 +241,101 @@ async def library_management(
         "total_books": len(books),
         "total_authors": len(unique_authors),
         "total_series": len(series_list),
-        "total_hours": round(total_hours, 1)
+        "total_hours": round(total_hours, 1),
     }
 
     return template_response(
-        "library/arr_management.html",
+        "library/management.html",
         request,
         user,
         {
-            "books": books, 
+            "books": books,
             "recon_session": recon_session,
             "stats": stats,
             "series_list": series_list,
             "authors": sorted_authors,
             "matched_books": matched_books,
             "missing_books": missing_books,
-            "unmatched_books": unmatched_books
-        }
+            "unmatched_books": unmatched_books,
+        },
     )
+
+
+@router.post("/bulk/reorganize")
+async def bulk_reorganize(
+    background_tasks: BackgroundTasks,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    asins: list[str] = Form(...),
+):
+    """
+    Bulk reorganize and rename files for multiple books according to current patterns.
+    """
+
+    async def task():
+        from app.internal.processing.processor import reorganize_existing_book
+        from app.internal.library.scanner import LibraryScanner
+        from app.internal.media_management.config import media_management_config
+
+        with next(get_session()) as bg_session:
+            lib_root = media_management_config.get_library_path(bg_session)
+            if not lib_root:
+                return
+
+            logger.info(
+                "Library: Starting bulk reorganization for selected books",
+                count=len(asins),
+            )
+            # Map once for the whole batch
+            asin_map = LibraryScanner.map_library_asins(lib_root)
+
+            for asin in asins:
+                book = bg_session.get(Audiobook, asin)
+                if book:
+                    try:
+                        await reorganize_existing_book(
+                            bg_session, book, current_path=asin_map.get(asin)
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Bulk reorganization failed for {asin}", error=str(e)
+                        )
+            bg_session.commit()
+            logger.info("Library: Bulk reorganization complete")
+
+    background_tasks.add_task(task)
+    return HTMLResponse(
+        "<script>toast('Reorganizing and renaming files for selected books...', 'info');</script>"
+    )
+
+
+@router.post("/reorganize/{asin}")
+async def reorganize_book(
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+):
+    """
+    Reorganize and rename files for a single book.
+    """
+    from app.internal.processing.processor import reorganize_existing_book
+
+    book = session.get(Audiobook, asin)
+    if not book:
+        return HTMLResponse("<script>toast('Book not found', 'error');</script>")
+
+    try:
+        await reorganize_existing_book(session, book)
+        session.commit()
+        return HTMLResponse(
+            "<script>toast('Book files reorganized and renamed', 'success');</script>"
+        )
+    except Exception as e:
+        logger.error(f"Reorganization failed for {asin}", error=str(e))
+        return HTMLResponse(
+            f"<script>toast('Reorganization failed: {str(e)}', 'error');</script>"
+        )
+
 
 @router.post("/reconcile/start")
 async def start_reconciliation(
@@ -254,7 +348,9 @@ async def start_reconciliation(
     """
     try:
         old_sessions = session.exec(
-            select(LibraryImportSession).where(LibraryImportSession.root_path == "__INTERNAL_LIBRARY__")
+            select(LibraryImportSession).where(
+                LibraryImportSession.root_path == "__INTERNAL_LIBRARY__"
+            )
         ).all()
         for s in old_sessions:
             session.delete(s)
@@ -263,19 +359,22 @@ async def start_reconciliation(
         session.rollback()
         logger.warning("Failed to clean up old reconciliation sessions", error=str(e))
 
-    new_session = LibraryImportSession(root_path="__INTERNAL_LIBRARY__", status=ImportSessionStatus.scanning)
+    new_session = LibraryImportSession(
+        root_path="__INTERNAL_LIBRARY__", status=ImportSessionStatus.scanning
+    )
     session.add(new_session)
     session.commit()
     session.refresh(new_session)
-    
+
     background_tasks.add_task(run_reconciler_task, new_session.id)
-    
+
     return HTMLResponse("""<div hx-get="/library/reconcile/status" hx-trigger="load, every 2s" hx-swap="outerHTML">
                 <div class="alert alert-info py-2 rounded-2xl shadow-sm border-0 animate-pulse">
                     <span class="loading loading-spinner loading-xs"></span>
                     <span class="font-black uppercase text-[10px] tracking-wider">Scanning Library...</span>
                 </div>
               </div>""")
+
 
 @router.get("/reconcile/status")
 async def get_reconcile_status(
@@ -287,12 +386,14 @@ async def get_reconcile_status(
     Returns the current status of library reconciliation.
     """
     recon_session = session.exec(
-        select(LibraryImportSession).where(LibraryImportSession.root_path == "__INTERNAL_LIBRARY__").order_by(LibraryImportSession.created_at.desc())
+        select(LibraryImportSession)
+        .where(LibraryImportSession.root_path == "__INTERNAL_LIBRARY__")
+        .order_by(LibraryImportSession.created_at.desc())
     ).first()
-    
+
     if not recon_session:
         return HTMLResponse("")
-        
+
     if recon_session.status == ImportSessionStatus.scanning:
         return HTMLResponse("""<div hx-get="/library/reconcile/status" hx-trigger="load, every 2s" hx-swap="outerHTML">
                     <div class="alert alert-info py-2 rounded-2xl shadow-sm border-0 animate-pulse">
@@ -300,13 +401,19 @@ async def get_reconcile_status(
                         <span class="font-black uppercase text-[10px] tracking-wider">Scanning Library...</span>
                     </div>
                   </div>""")
-    
+
     items = session.exec(
-        select(LibraryImportItem).where(LibraryImportItem.session_id == recon_session.id)
+        select(LibraryImportItem).where(
+            LibraryImportItem.session_id == recon_session.id
+        )
     ).all()
-    
-    untracked_items = [i for i in items if i.status not in [ImportItemStatus.imported, ImportItemStatus.ignored]]
-    
+
+    untracked_items = [
+        i
+        for i in items
+        if i.status not in [ImportItemStatus.imported, ImportItemStatus.ignored]
+    ]
+
     if untracked_items:
         return HTMLResponse(f"""
         <div class="alert alert-warning py-2 rounded-2xl shadow-lg border-0 flex justify-between items-center animate-in slide-in-from-top-4 duration-500">
@@ -319,7 +426,7 @@ async def get_reconcile_status(
             <a href="/library/import/session/{recon_session.id}" class="btn btn-xs btn-ghost bg-base-100/50 hover:bg-base-100 rounded-lg font-black uppercase text-[9px]">Review & Add</a>
         </div>
         """)
-    
+
     if recon_session.status == ImportSessionStatus.review_ready:
         return HTMLResponse("""
         <div class="alert alert-success py-2 rounded-2xl shadow-sm border-0 flex justify-between items-center animate-in fade-in duration-500">
@@ -332,8 +439,9 @@ async def get_reconcile_status(
             <button class="btn btn-xs btn-ghost rounded-lg font-black uppercase text-[9px]" onclick="this.parentElement.remove()">Dismiss</button>
         </div>
         """)
-        
+
     return HTMLResponse("")
+
 
 async def run_reconciler_task(session_id: uuid.UUID):
     """
@@ -341,7 +449,7 @@ async def run_reconciler_task(session_id: uuid.UUID):
     """
     import aiohttp
     from app.internal.library.reconciler import LibraryReconciler
-    
+
     try:
         async with aiohttp.ClientSession() as client_session:
             reconciler = LibraryReconciler(session_id)
@@ -349,12 +457,14 @@ async def run_reconciler_task(session_id: uuid.UUID):
     except Exception as e:
         logger.error("Reconciler task failed", error=str(e))
         from app.util.db import get_session
+
         with next(get_session()) as session:
             import_session = session.get(LibraryImportSession, session_id)
             if import_session:
                 import_session.status = ImportSessionStatus.failed
                 session.add(import_session)
                 session.commit()
+
 
 @router.get("/dashboard")
 async def library_dashboard(
@@ -365,48 +475,50 @@ async def library_dashboard(
     """
     Arr-style dashboard overview with library health and quick actions.
     """
-    books = session.exec(
-        select(Audiobook).where(Audiobook.downloaded == True)
-    ).all()
-    
+    books = session.exec(select(Audiobook).where(Audiobook.downloaded.is_(True))).all()
+
     # Calculate stats
-    total_authors = len(set(
-        author for book in books for author in book.authors
-    )) if books else 0
-    
-    total_series = len(set(
-        series for book in books for series in book.series
-    )) if books else 0
-    
+    total_authors = (
+        len(set(author for book in books for author in book.authors)) if books else 0
+    )
+
+    total_series = (
+        len(set(series for book in books for series in book.series)) if books else 0
+    )
+
     total_duration = sum(
         book.runtime_length_hrs for book in books if book.runtime_length_hrs
     )
-    
+
     # Status breakdown
     # For now, we'll consider all downloaded books as "matched"
     # You can expand this based on your matching logic
     matched_count = len(books)
     missing_count = 0  # Would need a "file_exists" check
     unmatched_count = 0  # Would need metadata matching logic
-    
+
     # Get recent activity (last 5 actions - for now we'll show recent books)
     recent_books = sorted(books, key=lambda b: b.updated_at, reverse=True)[:5]
-    
+
     # Check for untracked items
     recon_session = session.exec(
-        select(LibraryImportSession).where(LibraryImportSession.root_path == "__INTERNAL_LIBRARY__").order_by(LibraryImportSession.created_at.desc())
+        select(LibraryImportSession)
+        .where(LibraryImportSession.root_path == "__INTERNAL_LIBRARY__")
+        .order_by(LibraryImportSession.created_at.desc())
     ).first()
-    
+
     untracked_count = 0
     if recon_session:
         untracked_items = session.exec(
             select(LibraryImportItem).where(
                 LibraryImportItem.session_id == recon_session.id,
-                LibraryImportItem.status.not_in([ImportItemStatus.imported, ImportItemStatus.ignored])
+                LibraryImportItem.status.not_in(
+                    [ImportItemStatus.imported, ImportItemStatus.ignored]
+                ),
             )
         ).all()
         untracked_count = len(untracked_items)
-    
+
     return template_response(
         "library/dashboard.html",
         request,
@@ -422,8 +534,9 @@ async def library_dashboard(
             "recent_books": recent_books,
             "recon_session": recon_session,
             "untracked_count": untracked_count,
-        }
+        },
     )
+
 
 @router.get("/browse/authors")
 async def browse_by_authors(
@@ -435,9 +548,11 @@ async def browse_by_authors(
     Browse library organized by authors and series.
     """
     books = session.exec(
-        select(Audiobook).where(Audiobook.downloaded == True).order_by(Audiobook.title)
+        select(Audiobook)
+        .where(Audiobook.downloaded.is_(True))
+        .order_by(Audiobook.title)
     ).all()
-    
+
     # Group books by author
     authors_dict = {}
     for book in books:
@@ -445,16 +560,17 @@ async def browse_by_authors(
             if author not in authors_dict:
                 authors_dict[author] = []
             authors_dict[author].append(book)
-    
+
     # Sort authors alphabetically
     sorted_authors = sorted(authors_dict.items())
-    
+
     return template_response(
         "library/browse_authors.html",
         request,
         user,
-        {"authors": sorted_authors, "books": books}
+        {"authors": sorted_authors, "books": books},
     )
+
 
 @router.get("/browse/series")
 async def browse_by_series(
@@ -466,31 +582,28 @@ async def browse_by_series(
     Browse library organized by series.
     """
     books = session.exec(
-        select(Audiobook).where(Audiobook.downloaded == True).order_by(Audiobook.title)
+        select(Audiobook)
+        .where(Audiobook.downloaded.is_(True))
+        .order_by(Audiobook.title)
     ).all()
-    
+
     # Group books by series
     series_dict = {}
     for book in books:
         for series in book.series:
             if series not in series_dict:
-                series_dict[series] = {
-                    "books": [],
-                    "authors": set()
-                }
+                series_dict[series] = {"books": [], "authors": set()}
             series_dict[series]["books"].append(book)
             for author in book.authors:
                 series_dict[series]["authors"].add(author)
-    
+
     # Sort series alphabetically
     sorted_series = sorted(series_dict.items())
-    
+
     return template_response(
-        "library/browse_series.html",
-        request,
-        user,
-        {"series_groups": sorted_series}
+        "library/browse_series.html", request, user, {"series_groups": sorted_series}
     )
+
 
 @router.get("/browse/status")
 async def browse_by_status(
@@ -501,16 +614,14 @@ async def browse_by_status(
     """
     Browse library organized by status (matched, missing, unmatched).
     """
-    books = session.exec(
-        select(Audiobook).where(Audiobook.downloaded == True)
-    ).all()
-    
+    books = session.exec(select(Audiobook).where(Audiobook.downloaded.is_(True))).all()
+
     # For now, all downloaded books are considered "matched"
     # You can expand this with actual matching logic
     matched_books = books
     missing_books = []
     unmatched_books = []
-    
+
     return template_response(
         "library/browse_status.html",
         request,
@@ -519,8 +630,9 @@ async def browse_by_status(
             "matched_books": matched_books,
             "missing_books": missing_books,
             "unmatched_books": unmatched_books,
-        }
+        },
     )
+
 
 @router.get("/series/{name}")
 async def series_details(
@@ -538,19 +650,17 @@ async def series_details(
     all_books = session.exec(
         select(Audiobook).where(Audiobook.series.like(f'%"{name}"%'))
     ).all()
-    
+
     # Sort by release date
     all_books.sort(key=lambda b: b.release_date or datetime.min)
-    
+
     return template_response(
         "library/series_detail_panel.html",
         request,
         user,
-        {
-            "series_name": name,
-            "books": all_books
-        }
+        {"series_name": name, "books": all_books},
     )
+
 
 @router.get("/book/{asin}")
 async def book_details(
@@ -565,13 +675,11 @@ async def book_details(
     book = session.get(Audiobook, asin)
     if not book:
         return HTMLResponse("<p>Book not found</p>", status_code=404)
-    
+
     return template_response(
-        "library/book_detail_panel.html",
-        request,
-        user,
-        {"book": book}
+        "library/book_detail_panel.html", request, user, {"book": book}
     )
+
 
 @router.get("/api/stats")
 async def get_library_stats(
@@ -581,38 +689,39 @@ async def get_library_stats(
     """
     Get comprehensive library statistics for dashboard display.
     """
-    from pydantic import BaseModel
-    
-    books = session.exec(
-        select(Audiobook).where(Audiobook.downloaded == True)
-    ).all()
-    
+
+    books = session.exec(select(Audiobook).where(Audiobook.downloaded.is_(True))).all()
+
     # Calculate stats
     unique_authors = set()
     unique_series = set()
     total_duration = 0
-    
+
     for book in books:
         unique_authors.update(book.authors)
         unique_series.update(book.series)
         if book.runtime_length_hrs:
             total_duration += book.runtime_length_hrs
-    
+
     # Get status breakdown
     recon_session = session.exec(
-        select(LibraryImportSession).where(LibraryImportSession.root_path == "__INTERNAL_LIBRARY__").order_by(LibraryImportSession.created_at.desc())
+        select(LibraryImportSession)
+        .where(LibraryImportSession.root_path == "__INTERNAL_LIBRARY__")
+        .order_by(LibraryImportSession.created_at.desc())
     ).first()
-    
+
     untracked_count = 0
     if recon_session:
         untracked_items = session.exec(
             select(LibraryImportItem).where(
                 LibraryImportItem.session_id == recon_session.id,
-                LibraryImportItem.status.not_in([ImportItemStatus.imported, ImportItemStatus.ignored])
+                LibraryImportItem.status.not_in(
+                    [ImportItemStatus.imported, ImportItemStatus.ignored]
+                ),
             )
         ).all()
         untracked_count = len(untracked_items)
-    
+
     return {
         "total_books": len(books),
         "total_authors": len(unique_authors),
@@ -624,6 +733,7 @@ async def get_library_stats(
         "untracked_count": untracked_count,
     }
 
+
 @router.get("/import")
 async def import_page(
     request: Request,
@@ -634,15 +744,15 @@ async def import_page(
     Main import page. Shows current active sessions or a form to start a new one.
     """
     active_sessions = session.exec(
-        select(LibraryImportSession).where(LibraryImportSession.root_path != "__INTERNAL_LIBRARY__").order_by(LibraryImportSession.created_at.desc())
+        select(LibraryImportSession)
+        .where(LibraryImportSession.root_path != "__INTERNAL_LIBRARY__")
+        .order_by(LibraryImportSession.created_at.desc())
     ).all()
-    
+
     return template_response(
-        "library/import.html",
-        request,
-        user,
-        {"sessions": active_sessions}
+        "library/import.html", request, user, {"sessions": active_sessions}
     )
+
 
 @router.post("/import/scan")
 async def start_scan(
@@ -655,20 +765,23 @@ async def start_scan(
     """
     Starts a new scan session.
     """
-    new_session = LibraryImportSession(root_path=path, status=ImportSessionStatus.scanning)
+    new_session = LibraryImportSession(
+        root_path=path, status=ImportSessionStatus.scanning
+    )
     session.add(new_session)
     session.commit()
     session.refresh(new_session)
-    
+
     background_tasks.add_task(run_scanner_task, new_session.id)
-    
+
     return template_response(
         "library/import.html",
         request,
         user,
         {"session": new_session},
-        block_name="session_status"
+        block_name="session_status",
     )
+
 
 @router.get("/import/session/{session_id}")
 async def get_session_status(
@@ -692,7 +805,9 @@ async def get_session_status(
     asins = {i.match_asin for i in items if i.match_asin}
     books_map = {}
     if asins:
-        books = session.exec(select(Audiobook).where(Audiobook.asin.in_(list(asins)))).all()
+        books = session.exec(
+            select(Audiobook).where(Audiobook.asin.in_(list(asins)))
+        ).all()
         books_map = {b.asin: b for b in books}
 
     is_htmx = request.headers.get("HX-Request") == "true"
@@ -701,8 +816,9 @@ async def get_session_status(
         request,
         user,
         {"session": import_session, "items": items, "books_map": books_map},
-        block_name="session_status" if is_htmx else None
+        block_name="session_status" if is_htmx else None,
     )
+
 
 @router.get("/import/item/status/{item_id}")
 async def get_item_status(
@@ -715,20 +831,23 @@ async def get_item_status(
     Returns the status of a single item (row polling).
     """
     item = session.get(LibraryImportItem, item_id)
-    if not item: return ""
+    if not item:
+        return ""
 
     books_map = {}
     if item.match_asin:
         book = session.get(Audiobook, item.match_asin)
-        if book: books_map = {book.asin: book}
+        if book:
+            books_map = {book.asin: book}
 
     return template_response(
         "library/import_row.html",
         request,
         user,
         {"item": item, "books_map": books_map},
-        block_name="item_row"
+        block_name="item_row",
     )
+
 
 @router.get("/import/fix-match/{item_id}")
 async def fix_match_modal(
@@ -746,8 +865,9 @@ async def fix_match_modal(
         request,
         user,
         {"item": item},
-        block_name="fix_match_modal"
+        block_name="fix_match_modal",
     )
+
 
 @router.get("/import/search")
 async def search_for_match(
@@ -762,7 +882,8 @@ async def search_for_match(
     Searches for a book to match manually.
     """
     from app.internal.book_search import list_audible_books
-    books = await list_audible_books(session, client_session, q, num_results=5) 
+
+    books = await list_audible_books(session, client_session, q, num_results=5)
     # Wrap in dict for template compatibility: result.book
     results = [{"book": b} for b in books]
     return template_response(
@@ -770,8 +891,9 @@ async def search_for_match(
         request,
         user,
         {"results": results, "item_id": item_id},
-        block_name="search_results"
+        block_name="search_results",
     )
+
 
 @router.post("/import/match/{item_id}/{asin}")
 async def update_match(
@@ -788,22 +910,24 @@ async def update_match(
     books_map = {}
     if item:
         item.match_asin = asin
-        item.match_score = 1.0 # 100% score for manual match
+        item.match_score = 1.0  # 100% score for manual match
         item.status = ImportItemStatus.matched
         session.add(item)
         session.commit()
         session.refresh(item)
 
         book = session.get(Audiobook, asin)
-        if book: books_map = {book.asin: book}
+        if book:
+            books_map = {book.asin: book}
 
     return template_response(
         "library/import_row.html",
         request,
         user,
         {"item": item, "books_map": books_map},
-        block_name="item_row"
+        block_name="item_row",
     )
+
 
 @router.post("/import/item/execute/{item_id}")
 async def execute_item_import(
@@ -821,26 +945,25 @@ async def execute_item_import(
     if not item or item.status != ImportItemStatus.matched:
         return "Item not found or not matched"
 
-    item.status = ImportItemStatus.pending # Use pending as 'queued'
+    item.status = ImportItemStatus.pending  # Use pending as 'queued'
     session.add(item)
     session.commit()
 
-    background_tasks.add_task(run_single_importer_task, item_id, import_mode == "move", user.username)
+    background_tasks.add_task(
+        run_single_importer_task, item_id, import_mode == "move", user.username
+    )
 
     return template_response(
-        "library/import_row.html",
-        request,
-        user,
-        {"item": item},
-        block_name="item_row"
+        "library/import_row.html", request, user, {"item": item}, block_name="item_row"
     )
+
 
 async def run_single_importer_task(item_id: uuid.UUID, move_files: bool, username: str):
     """
     Background task to execute a single item import.
     """
     from app.util.db import get_session
-    from app.internal.processing.processor import process_completed_download    
+    from app.internal.processing.processor import process_completed_download
     from app.internal.models import AudiobookRequest, Audiobook, LibraryImportSession
 
     db_gen = get_session()
@@ -851,14 +974,17 @@ async def run_single_importer_task(item_id: uuid.UUID, move_files: bool, usernam
         if not item or not item.match_asin:
             return
 
-        import_session = db_session.get(LibraryImportSession, item.session_id)  
-        is_reconciliation = import_session and import_session.root_path == "__INTERNAL_LIBRARY__"
+        import_session = db_session.get(LibraryImportSession, item.session_id)
+        is_reconciliation = (
+            import_session and import_session.root_path == "__INTERNAL_LIBRARY__"
+        )
 
         # Ensure book exists in DB
         book = db_session.get(Audiobook, item.match_asin)
         if not book:
             from app.internal.book_search import get_book_by_asin
             import aiohttp
+
             async with aiohttp.ClientSession() as client_session:
                 await get_book_by_asin(client_session, item.match_asin)
             book = db_session.get(Audiobook, item.match_asin)
@@ -874,7 +1000,7 @@ async def run_single_importer_task(item_id: uuid.UUID, move_files: bool, usernam
         req = db_session.exec(
             select(AudiobookRequest).where(
                 AudiobookRequest.asin == item.match_asin,
-                AudiobookRequest.user_username == username
+                AudiobookRequest.user_username == username,
             )
         ).first()
 
@@ -882,7 +1008,7 @@ async def run_single_importer_task(item_id: uuid.UUID, move_files: bool, usernam
             req = AudiobookRequest(
                 asin=item.match_asin,
                 user_username=username,
-                processing_status="importing"
+                processing_status="importing",
             )
             db_session.add(req)
             db_session.commit()
@@ -890,14 +1016,19 @@ async def run_single_importer_task(item_id: uuid.UUID, move_files: bool, usernam
 
         # 2. Call processor
         # If reconciliation, we force organization (rename/move) to standardized paths
-        await process_completed_download(db_session, req, item.source_path, delete_source=True if is_reconciliation else move_files)
+        await process_completed_download(
+            db_session,
+            req,
+            item.source_path,
+            delete_source=True if is_reconciliation else move_files,
+        )
 
         item.status = ImportItemStatus.imported
         db_session.add(item)
         db_session.commit()
     except Exception as e:
         db_session.rollback()
-        logger.error("Single import failed", item_id=item_id, error=str(e))     
+        logger.error("Single import failed", item_id=item_id, error=str(e))
         item = db_session.get(LibraryImportItem, item_id)
         if item:
             item.status = ImportItemStatus.error
@@ -906,6 +1037,7 @@ async def run_single_importer_task(item_id: uuid.UUID, move_files: bool, usernam
             db_session.commit()
     finally:
         db_session.close()
+
 
 @router.post("/import/execute/{session_id}")
 async def execute_import(
@@ -927,39 +1059,56 @@ async def execute_import(
     session.add(import_session)
     session.commit()
 
-    background_tasks.add_task(run_importer_task, session_id, import_mode == "move", user.username)
+    background_tasks.add_task(
+        run_importer_task, session_id, import_mode == "move", user.username
+    )
 
     # Pre-fetch for the response
-    items = session.exec(select(LibraryImportItem).where(LibraryImportItem.session_id == session_id)).all()
+    items = session.exec(
+        select(LibraryImportItem).where(LibraryImportItem.session_id == session_id)
+    ).all()
     asins = {i.match_asin for i in items if i.match_asin}
-    books_map = {b.asin: b for b in session.exec(select(Audiobook).where(Audiobook.asin.in_(list(asins)))).all()} if asins else {}
+    books_map = (
+        {
+            b.asin: b
+            for b in session.exec(
+                select(Audiobook).where(Audiobook.asin.in_(list(asins)))
+            ).all()
+        }
+        if asins
+        else {}
+    )
 
     return template_response(
         "library/import.html",
         request,
         user,
-        {"session": import_session, "items": items, "books_map": books_map},    
-        block_name="session_status"
+        {"session": import_session, "items": items, "books_map": books_map},
+        block_name="session_status",
     )
+
 
 async def run_importer_task(session_id: uuid.UUID, move_files: bool, username: str):
     """
     Background task to execute the import in parallel (5 at a time).
     """
     from app.util.db import get_session
-    from app.internal.processing.processor import process_completed_download    
+    from app.internal.processing.processor import process_completed_download
     from app.internal.models import AudiobookRequest, Audiobook, LibraryImportSession
     import asyncio
 
     # Get the list of items to import
     with next(get_session()) as db_session:
-        import_session_obj = db_session.get(LibraryImportSession, session_id)   
-        is_reconciliation = import_session_obj and import_session_obj.root_path == "__INTERNAL_LIBRARY__"
+        import_session_obj = db_session.get(LibraryImportSession, session_id)
+        is_reconciliation = (
+            import_session_obj
+            and import_session_obj.root_path == "__INTERNAL_LIBRARY__"
+        )
 
         items = db_session.exec(
             select(LibraryImportItem).where(
                 LibraryImportItem.session_id == session_id,
-                LibraryImportItem.status == ImportItemStatus.matched
+                LibraryImportItem.status == ImportItemStatus.matched,
             )
         ).all()
         item_ids = [item.id for item in items]
@@ -980,11 +1129,12 @@ async def run_importer_task(session_id: uuid.UUID, move_files: bool, username: s
 
                     book = db_session.get(Audiobook, item.match_asin)
                     if not book:
-                        from app.internal.book_search import get_book_by_asin   
+                        from app.internal.book_search import get_book_by_asin
                         import aiohttp
-                        async with aiohttp.ClientSession() as client_session:   
+
+                        async with aiohttp.ClientSession() as client_session:
                             await get_book_by_asin(client_session, item.match_asin)
-                        book = db_session.get(Audiobook, item.match_asin)       
+                        book = db_session.get(Audiobook, item.match_asin)
 
                     if not is_reconciliation and book and book.downloaded:
                         item.status = ImportItemStatus.imported
@@ -994,8 +1144,8 @@ async def run_importer_task(session_id: uuid.UUID, move_files: bool, username: s
 
                     req = db_session.exec(
                         select(AudiobookRequest).where(
-                            AudiobookRequest.asin == item.match_asin,       
-                            AudiobookRequest.user_username == username      
+                            AudiobookRequest.asin == item.match_asin,
+                            AudiobookRequest.user_username == username,
                         )
                     ).first()
 
@@ -1003,21 +1153,28 @@ async def run_importer_task(session_id: uuid.UUID, move_files: bool, username: s
                         req = AudiobookRequest(
                             asin=item.match_asin,
                             user_username=username,
-                            processing_status="importing"
+                            processing_status="importing",
                         )
                         db_session.add(req)
                         db_session.commit()
                         db_session.refresh(req)
 
                     # If reconciliation, force organization into standardized paths
-                    await process_completed_download(db_session, req, item.source_path, delete_source=True if is_reconciliation else move_files)
+                    await process_completed_download(
+                        db_session,
+                        req,
+                        item.source_path,
+                        delete_source=True if is_reconciliation else move_files,
+                    )
 
                     item.status = ImportItemStatus.imported
                     db_session.add(item)
                     db_session.commit()
                 except Exception as e:
                     db_session.rollback()
-                    logger.error("Parallel import failed for item", item_id=item_id, error=str(e))
+                    logger.error(
+                        "Parallel import failed for item", item_id=item_id, error=str(e)
+                    )
                     item = db_session.get(LibraryImportItem, item_id)
                     if item:
                         item.status = ImportItemStatus.error
@@ -1031,18 +1188,20 @@ async def run_importer_task(session_id: uuid.UUID, move_files: bool, username: s
         await asyncio.gather(*tasks)
 
     with next(get_session()) as db_session:
-        import_session = db_session.get(LibraryImportSession, session_id)       
+        import_session = db_session.get(LibraryImportSession, session_id)
         if import_session:
             import_session.status = ImportSessionStatus.completed
             db_session.add(import_session)
             db_session.commit()
+
+
 async def run_scanner_task(session_id: uuid.UUID):
     """
     Background task wrapper for the scanner.
     """
     import aiohttp
     from app.util.log import logger
-    
+
     try:
         async with aiohttp.ClientSession() as client_session:
             scanner = LibraryScanner(session_id)
@@ -1050,6 +1209,7 @@ async def run_scanner_task(session_id: uuid.UUID):
     except Exception as e:
         logger.error("Scanner task failed", error=str(e))
         from app.util.db import get_session
+
         with next(get_session()) as session:
             import_session = session.get(LibraryImportSession, session_id)
             if import_session:

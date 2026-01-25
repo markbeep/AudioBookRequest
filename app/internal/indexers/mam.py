@@ -1,5 +1,4 @@
 import re
-import json
 from typing import override
 from urllib.parse import urlencode, urljoin
 
@@ -26,6 +25,7 @@ MAM_HEADERS = {
     "Referer": "https://www.myanonamouse.net/tor/browse.php",
     "X-Requested-With": "XMLHttpRequest",
 }
+
 
 async def fetch_mam_book_details(
     container: SessionContainer,
@@ -57,9 +57,11 @@ async def fetch_mam_book_details(
             if response.status == 403:
                 logger.error("Mam: Auth failed (403). Check session ID.", mam_id=mam_id)
                 return None
-            
+
             if not response.ok:
-                logger.error("Mam: Request failed", status=response.status, mam_id=mam_id)
+                logger.error(
+                    "Mam: Request failed", status=response.status, mam_id=mam_id
+                )
                 return None
 
             try:
@@ -76,13 +78,17 @@ async def fetch_mam_book_details(
             search_results = _MamResponse.model_validate(json_body)
             if search_results.data:
                 result = search_results.data[0]
-                logger.info("Mam: Found book info", title=result.display_title, mam_id=mam_id)
+                logger.info(
+                    "Mam: Found book info", title=result.display_title, mam_id=mam_id
+                )
 
                 # Try to get the synopsis image from the book page
                 try:
                     book_page_url = f"https://www.myanonamouse.net/t/{mam_id}"
                     async with container.client_session.get(
-                        book_page_url, cookies={"mam_id": session_id}, headers=MAM_HEADERS
+                        book_page_url,
+                        cookies={"mam_id": session_id},
+                        headers=MAM_HEADERS,
                     ) as page_response:
                         if page_response.ok:
                             html_content = await page_response.text()
@@ -142,7 +148,7 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
 
         params = {
             "tor[text]": book.title,
-            "tor[main_cat]": [13, 14], # 13: Audiobooks, 14: Radio/Audio Drama
+            "tor[main_cat]": [13, 14],  # 13: Audiobooks, 14: Radio/Audio Drama
             "tor[searchIn]": "torrents",
             "tor[srchIn][author]": "true",
             "tor[srchIn][title]": "true",
@@ -163,9 +169,7 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
         try:
             logger.info("Mam: Searching for book", title=book.title)
             async with container.client_session.get(
-                url, 
-                cookies={"mam_id": session_id}, 
-                headers=MAM_HEADERS
+                url, cookies={"mam_id": session_id}, headers=MAM_HEADERS
             ) as response:
                 if response.status == 403:
                     logger.error("Mam: Search auth failed (403)")
@@ -173,17 +177,17 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
                 if not response.ok:
                     logger.error("Mam: Search failed", status=response.status)
                     return
-                
+
                 try:
                     json_body = await response.json()
                 except Exception as e:
                     logger.error("Mam: Search parse error", error=str(e))
                     return
-                
+
                 if "error" in json_body:
                     logger.error("Mam: Search API error", error=json_body["error"])
                     return
-                
+
                 search_results = _MamResponse.model_validate(json_body)
                 logger.info("Mam: Found results", count=len(search_results.data))
         except Exception as e:
@@ -210,10 +214,11 @@ class MamIndexer(AbstractIndexer[MamConfigurations]):
         container: SessionContainer,
     ):
         from app.internal.metadata import generate_opf_for_mam
+
         mam_id = source.guid.split("/")[-1]
         if not mam_id.isdigit():
             return
-        
+
         mam_id_int = int(mam_id)
         result = self.results.get(mam_id_int)
         if result is None:

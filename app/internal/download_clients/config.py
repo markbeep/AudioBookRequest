@@ -12,6 +12,7 @@ DownloadClientConfigKey = Literal[
     "qbit_enabled",
 ]
 
+
 class DownloadClientConfig(StringConfigCache[DownloadClientConfigKey]):
     def get_qbit_host(self, session: Session) -> Optional[str]:
         return self.get(session, "qbit_host")
@@ -54,5 +55,6 @@ class DownloadClientConfig(StringConfigCache[DownloadClientConfigKey]):
 
     def set_qbit_enabled(self, session: Session, enabled: bool):
         self.set_bool(session, "qbit_enabled", enabled)
+
 
 download_client_config = DownloadClientConfig()

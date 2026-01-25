@@ -1,20 +1,7 @@
 {% extends "base.html" %}
 {% block head %}
   <title>Search</title>
-  <script>
-  const onSearch = () => {
-    const search_term = document.querySelector("input").value;
-    document.getElementById("search").disabled = true;
-    document.getElementById("search-text").style.display = "none";
-    document.getElementById("search-spinner").style.display = "inline-block";
-    window.location.href = `/search?q=${encodeURIComponent(search_term)}`;
-  };
-  const onPageChange = page => {
-    const url = new URL(window.location);
-    url.searchParams.set("page", page);
-    window.location = url;
-  };
-  </script>
+  <script src="{{ base_url }}/static/search.js?v={{ version }}"></script>
 {% endblock head %}
 {% block body %}
   <div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6">
@@ -69,81 +56,8 @@
              class="w-full grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 pb-12">
           {% for result in search_results %}
             {% set book = result.book %}
-            <div class="flex flex-col group">
-                <div class="relative aspect-square rounded-lg overflow-hidden shadow-md border border-base-300 bg-base-300 group-hover:shadow-lg transition-shadow">
-                    {% if book.cover_image %}
-                      <img class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500 ease-in-out"
-                           src="{{ book.cover_image }}"
-                           alt="{{ book.title }}" />
-                    {% else %}
-                      {% include "icons/photo-off.html" %}
-                    {% endif %}
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    
-                    <!-- Hover Info Action -->
-                    <div class="absolute bottom-2 right-2 flex gap-1 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
-                         <a href="{{ base_url }}/book/{{ book.asin }}" class="btn btn-xs btn-primary btn-square rounded-lg shadow-lg flex items-center justify-center">
-                            <span class="size-4">{% include "icons/info-circle.html" %}</span>
-                         </a>
-                    </div>
-
-                    <!-- Request Button -->
-                    <button class="absolute top-0 left-0 rounded-none rounded-br-lg btn-sm btn btn-square items-center justify-center flex {% if book.downloaded or result.already_requested %}btn-ghost bg-success text-success/20{% else %}btn-info{% endif %}"
-                            hx-post="{{ base_url }}/search/request/{{ book.asin }}"
-                            hx-disabled-elt="this"
-                            hx-target="#book-results"
-                            hx-include="this"
-                            hx-swap="outerHTML"
-                            hx-on:click="this.disabled = true;"
-                            {% if book.downloaded or result.already_requested %}disabled{% endif %}>
-                      <input type="hidden" name="query" value="{{ search_term }}" />
-                      <input type="hidden" name="region" value="{{ selected_region }}" />
-                      <input type="hidden" name="page" value="{{ page }}" />
-                      <input type="hidden" name="search_term" value="{{ search_term }}" />
-                      
-                      {% if book.downloaded or result.already_requested %}
-                        <span>{% include "icons/checkmark.html" %}</span>
-                      {% else %}
-                        {% if auto_start_download and user.can_download() %}
-                          <span>{% include "icons/download.html" %}</span>
-                        {% else %}
-                          <span>{% include "icons/plus.html" %}</span>
-                        {% endif %}
-                      {% endif %}
-                    </button>
-                </div>
-
-                <!-- Book Info -->
-                <div class="pt-2 flex flex-col gap-1">
-                    <a href="{{ base_url }}/book/{{ book.asin }}" 
-                       class="text-xs text-primary font-bold hover:underline line-clamp-2" 
-                       title="{{ book.title }}">
-                        {{ book.title }}
-                    </a>
-
-                    {% if book.subtitle %}
-                    <div class="opacity-60 font-semibold text-xs line-clamp-1" title="{{ book.subtitle }}">
-                        {{ book.subtitle }}
-                    </div>
-                    {% endif %}
-
-                    <div class="text-xs opacity-70 line-clamp-1" title="Authors: {{ book.authors | join(', ') }}">
-                        {% for author in book.authors[:1] %}
-                        <a href="{{ base_url }}/search?q={{ author }}" title="Search for {{ author }}" class="hover:underline">
-                            {{ author }}
-                        </a>
-                        {% endfor %}
-                        {% if book.authors | length > 1 %}
-                        <span>+{{ book.authors | length - 1 }}</span>
-                        {% endif %}
-                    </div>
-
-                    <!-- Runtime -->
-                    <div class="text-xs opacity-60">
-                        {{ (book.runtime_length_min / 60)|round(1) }}h
-                    </div>
-                </div>
-            </div>
+            {% set already_requested = result.already_requested %}
+            {% include "components/book_card.html" %}
           {% endfor %}
         </div>
       {% endblock book_results %}

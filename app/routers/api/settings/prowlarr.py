@@ -21,6 +21,7 @@ class ProwlarrSettings(BaseModel):
     api_key: str
     selected_categories: list[int]
     selected_indexers: list[int]
+    default_language: str
     all_categories: dict[int, str]
     indexers: IndexerResponse
 
@@ -37,6 +38,7 @@ async def get_prowlarr_settings(
         api_key=prowlarr_config.get_api_key(session) or "",
         selected_categories=prowlarr_config.get_categories(session),
         selected_indexers=prowlarr_config.get_indexers(session),
+        default_language=prowlarr_config.get_default_language(session),
         all_categories=indexer_categories,
         indexers=indexers,
     )
@@ -83,5 +85,20 @@ def update_indexer_categories(
     _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
 ):
     prowlarr_config.set_categories(session, body.categories)
+    flush_prowlarr_cache()
+    return Response(status_code=204)
+
+
+class UpdateDefaultLanguage(BaseModel):
+    language: str
+
+
+@router.put("/default-language", status_code=204)
+def update_default_language(
+    body: UpdateDefaultLanguage,
+    session: Annotated[Session, Depends(get_session)],
+    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+):
+    prowlarr_config.set_default_language(session, body.language)
     flush_prowlarr_cache()
     return Response(status_code=204)

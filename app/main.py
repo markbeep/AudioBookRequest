@@ -2,8 +2,6 @@ from typing import Awaitable, Callable
 from urllib.parse import quote_plus, urlencode
 
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi.middleware import Middleware
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlmodel import select
@@ -11,14 +9,19 @@ from sqlmodel import select
 from app.internal.auth.authentication import RequiresLoginException
 from app.internal.auth.config import auth_config, initialize_force_login_type
 from app.internal.auth.oidc_config import InvalidOIDCConfiguration
-from app.internal.auth.session_middleware import (
-    DynamicSessionMiddleware,
-    middleware_linker,
-)
 from app.internal.book_search import clear_old_book_caches
 from app.internal.env_settings import Settings
 from app.internal.models import User
-from app.routers import api, auth, recommendations, root, search, settings, wishlist, library
+from app.routers import (
+    api,
+    auth,
+    recommendations,
+    root,
+    search,
+    settings,
+    wishlist,
+    library,
+)
 from app.util.db import get_session
 from app.util.fetch_js import fetch_scripts
 from app.util.redirect import BaseUrlRedirectResponse
@@ -41,9 +44,11 @@ app = FastAPI(
     description="API for Narrarr",
 )
 
+
 @app.on_event("startup")
 async def startup_event():
     await start_monitor()
+
 
 app.include_router(auth.router, include_in_schema=False)
 app.include_router(recommendations.router, include_in_schema=False)

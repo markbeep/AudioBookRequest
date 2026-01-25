@@ -5,9 +5,11 @@ from app.util.cache import StringConfigCache
 MediaManagementConfigKey = Literal[
     "library_path",
     "folder_pattern",
+    "file_pattern",
     "use_series_folders",
     "use_hardlinks",
 ]
+
 
 class MediaManagementConfig(StringConfigCache[MediaManagementConfigKey]):
     def get_library_path(self, session: Session) -> Optional[str]:
@@ -22,6 +24,12 @@ class MediaManagementConfig(StringConfigCache[MediaManagementConfigKey]):
     def set_folder_pattern(self, session: Session, pattern: str):
         self.set(session, "folder_pattern", pattern)
 
+    def get_file_pattern(self, session: Session) -> str:
+        return self.get(session, "file_pattern", "{title}-{year}-{part}")
+
+    def set_file_pattern(self, session: Session, pattern: str):
+        self.set(session, "file_pattern", pattern)
+
     def get_use_series_folders(self, session: Session) -> bool:
         return bool(self.get_bool(session, "use_series_folders") or False)
 
@@ -33,5 +41,6 @@ class MediaManagementConfig(StringConfigCache[MediaManagementConfigKey]):
 
     def set_use_hardlinks(self, session: Session, enabled: bool):
         self.set_bool(session, "use_hardlinks", enabled)
+
 
 media_management_config = MediaManagementConfig()

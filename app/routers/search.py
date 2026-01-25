@@ -59,7 +59,7 @@ async def read_search(
     region: audible_region_type | None = None,
 ):
     if region is None:
-        region = get_region_from_settings()
+        region = get_region_from_settings(user)
     try:
         results = await search_books(
             client_session=client_session,
@@ -124,6 +124,8 @@ async def add_request(
     region: Annotated[audible_region_type | None, Form()] = None,
     num_results: Annotated[int, Form()] = 20,
 ):
+    if region is None:
+        region = get_region_from_settings(user)
     try:
         await create_request(
             asin=asin,

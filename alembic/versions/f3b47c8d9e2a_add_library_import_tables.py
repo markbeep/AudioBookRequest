@@ -24,7 +24,12 @@ def upgrade() -> None:
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("root_path", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("status", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("current_timestamp"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(),
+            server_default=sa.text("current_timestamp"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -38,8 +43,13 @@ def upgrade() -> None:
         sa.Column("match_score", sa.Float(), nullable=False),
         sa.Column("status", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("error_msg", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.ForeignKeyConstraint(["session_id"], ["libraryimportsession.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["match_asin"], ["audiobook.asin"], ),
+        sa.ForeignKeyConstraint(
+            ["session_id"], ["libraryimportsession.id"], ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["match_asin"],
+            ["audiobook.asin"],
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
 

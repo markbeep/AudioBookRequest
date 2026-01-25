@@ -12,6 +12,7 @@ from app.util.toast import ToastException
 
 router = APIRouter(prefix="/download-client")
 
+
 @router.get("")
 async def read_download_client(
     request: Request,
@@ -34,6 +35,7 @@ async def read_download_client(
         },
     )
 
+
 @router.put("/enabled")
 async def update_qbit_enabled(
     enabled: Annotated[bool, Form()] = False,
@@ -43,6 +45,7 @@ async def update_qbit_enabled(
     _ = admin_user
     download_client_config.set_qbit_enabled(session, enabled)
     return Response(status_code=204)
+
 
 @router.put("/connection")
 async def update_qbit_connection(
@@ -60,7 +63,7 @@ async def update_qbit_connection(
         download_client_config.set_qbit_user(session, username)
     if password is not None and password != "":
         download_client_config.set_qbit_pass(session, password)
-    
+
     return template_response(
         "settings_page/download_client.html",
         request,
@@ -76,8 +79,9 @@ async def update_qbit_connection(
             "qbit_category": download_client_config.get_qbit_category(session),
             "qbit_save_path": download_client_config.get_qbit_save_path(session),
         },
-        block_name="connection_form"
+        block_name="connection_form",
     )
+
 
 @router.put("/settings")
 async def update_qbit_settings(
@@ -90,7 +94,7 @@ async def update_qbit_settings(
     download_client_config.set_qbit_category(session, category)
     if save_path is not None:
         download_client_config.set_qbit_save_path(session, save_path)
-    
+
     return template_response(
         "settings_page/download_client.html",
         request,
@@ -106,8 +110,9 @@ async def update_qbit_settings(
             "qbit_category": category,
             "qbit_save_path": save_path,
         },
-        block_name="settings_form"
+        block_name="settings_form",
     )
+
 
 @router.post("/test")
 async def test_qbit_connection(
@@ -120,17 +125,13 @@ async def test_qbit_connection(
     admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
 ):
     from app.internal.download_clients.qbittorrent import QbittorrentClient
-    
+
     # Use password from DB if it wasn't provided (e.g. it was masked)
     if password == "" or password is None:
         password = download_client_config.get_qbit_pass(session)
 
     client = QbittorrentClient(
-        session, 
-        host=host, 
-        port=port, 
-        username=username, 
-        password=password
+        session, host=host, port=port, username=username, password=password
     )
     success, status_code, error_msg = await client.test_connection()
     if success:
@@ -138,9 +139,11 @@ async def test_qbit_connection(
             "base.html",
             request,
             None,
-            {"toast_success": f"qBittorrent connection successful at {client.base_url}!"},
+            {
+                "toast_success": f"qBittorrent connection successful at {client.base_url}!"
+            },
             headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"},
-            block_name="toast_block"
+            block_name="toast_block",
         )
     else:
         hint = ""
@@ -152,5 +155,8 @@ async def test_qbit_connection(
             hint = " (Check if the host and port are correct and reachable from the container)"
             if host == "localhost" or host == "127.0.0.1":
                 hint += ". WARNING: 'localhost' inside Docker refers to the container itself, not your PC. Use 'qbittorrent' or your host IP instead."
-        
-        raise ToastException(f"Failed to connect to qBittorrent at {client.base_url}. Status {status_code}: {error_msg}{hint}", "error")
+
+        raise ToastException(
+            f"Failed to connect to qBittorrent at {client.base_url}. Status {status_code}: {error_msg}{hint}",
+            "error",
+        )

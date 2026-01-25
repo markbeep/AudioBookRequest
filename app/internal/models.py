@@ -4,7 +4,7 @@ import json
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Literal, Union, cast
+from typing import Annotated, ClassVar, Literal, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 from sqlmodel import JSON, Column, DateTime, Field, SQLModel, func
@@ -101,6 +101,13 @@ class Audiobook(BaseSQLModel, table=True):
 
 
 class AudiobookRequest(BaseSQLModel, table=True):
+    ACTIVE_DOWNLOAD_STATUSES: ClassVar[list[str]] = [
+        "download_initiated",
+        "generating_metadata",
+        "organizing",
+        "importing",
+    ]
+
     asin: str = Field(
         primary_key=True,
         foreign_key="audiobook.asin",
@@ -285,12 +292,14 @@ class APIKey(BaseSQLModel, table=True):
     )
     enabled: bool = True
 
+
 class ImportSessionStatus(str, Enum):
     scanning = "scanning"
     review_ready = "review_ready"
     importing = "importing"
     completed = "completed"
     failed = "failed"
+
 
 class ImportItemStatus(str, Enum):
     pending = "pending"
@@ -300,30 +309,35 @@ class ImportItemStatus(str, Enum):
     imported = "imported"
     error = "error"
 
+
 class LibraryImportSession(BaseSQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     root_path: str
     status: ImportSessionStatus = Field(default=ImportSessionStatus.scanning)
     created_at: datetime = Field(
         default_factory=datetime.now,
-        sa_column=Column(DateTime, server_default=func.now(), nullable=False)
+        sa_column=Column(DateTime, server_default=func.now(), nullable=False),
     )
-    
+
     items: list["LibraryImportItem"] = Relationship(
-        back_populates="session", 
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+        back_populates="session",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
+
 
 class LibraryImportItem(BaseSQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    session_id: uuid.UUID = Field(foreign_key="libraryimportsession.id", ondelete="CASCADE", index=True)
+    session_id: uuid.UUID = Field(
+        foreign_key="libraryimportsession.id", ondelete="CASCADE", index=True
+    )
     source_path: str
     detected_title: str | None = None
     detected_author: str | None = None
-    match_asin: str | None = Field(default=None, foreign_key="audiobook.asin", nullable=True)
+    match_asin: str | None = Field(
+        default=None, foreign_key="audiobook.asin", nullable=True
+    )
     match_score: float = Field(default=0.0)
     status: ImportItemStatus = Field(default=ImportItemStatus.pending)
     error_msg: str | None = None
 
     session: LibraryImportSession = Relationship(back_populates="items")
-

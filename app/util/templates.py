@@ -33,36 +33,45 @@ def _zfill(val: str | int | float, num: int) -> str:
 def _to_js_string(val: str | int | float) -> str:
     return html.escape(f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'")
 
+
 def _basename(path: str) -> str:
     import os
+
     if "|" in path:
         parts = path.split("|")
         base = os.path.basename(parts[0])
         if len(parts) > 1:
-            return f"{base} (+{len(parts)-1} others)"
+            return f"{base} (+{len(parts) - 1} others)"
         return base
     return os.path.basename(path)
+
 
 def _asin_to_cover(asin: str) -> str:
     from app.util.db import get_session
     from app.internal.models import Audiobook
+
     with next(get_session()) as session:
         book = session.get(Audiobook, asin)
         return book.cover_image if book else ""
 
+
 def _asin_to_title(asin: str) -> str:
     from app.util.db import get_session
     from app.internal.models import Audiobook
+
     with next(get_session()) as session:
         book = session.get(Audiobook, asin)
         return book.title if book else "Unknown"
 
+
 def _asin_to_author(asin: str) -> str:
     from app.util.db import get_session
     from app.internal.models import Audiobook
+
     with next(get_session()) as session:
         book = session.get(Audiobook, asin)
         return ", ".join(book.authors) if book and book.authors else "Unknown"
+
 
 templates.env.filters["zfill"] = _zfill
 templates.env.filters["toJSstring"] = _to_js_string

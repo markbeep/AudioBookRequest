@@ -94,6 +94,7 @@ def update_abs_check_downloaded(
     )
     return Response(status_code=204, headers={"HX-Refresh": "true"})
 
+
 @router.post("/test")
 async def test_abs(
     request: Request,
@@ -105,7 +106,7 @@ async def test_abs(
 ):
     from app.internal.audiobookshelf.client import abs_get_libraries
     from app.internal.audiobookshelf.config import abs_config
-    
+
     # Temporarily override config for the test if values provided
     if base_url:
         abs_config.set_base_url(session, base_url)
@@ -119,9 +120,11 @@ async def test_abs(
                 "base.html",
                 request,
                 None,
-                {"toast_success": f"ABS connection successful! Found {len(libs)} libraries."},
+                {
+                    "toast_success": f"ABS connection successful! Found {len(libs)} libraries."
+                },
                 headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"},
-                block_name="toast_block"
+                block_name="toast_block",
             )
         else:
             return template_response(
@@ -130,7 +133,7 @@ async def test_abs(
                 None,
                 {"toast_info": "ABS connection successful, but no libraries found."},
                 headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"},
-                block_name="toast_block"
+                block_name="toast_block",
             )
     except Exception as e:
         return template_response(

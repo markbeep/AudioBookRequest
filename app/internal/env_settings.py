@@ -17,6 +17,11 @@ class DBSettings(BaseModel):
     postgres_password: str = "password"
     postgres_ssl_mode: str = "prefer"
 
+    def get_sqlite_path(self, config_dir: str):
+        if self.sqlite_path.startswith("/"):
+            return self.sqlite_path
+        return str(pathlib.Path(config_dir) / self.sqlite_path)
+
 
 class ApplicationSettings(BaseModel):
     debug: bool = False
@@ -65,6 +70,4 @@ class Settings(BaseSettings):
     app: ApplicationSettings = ApplicationSettings()
 
     def get_sqlite_path(self):
-        if self.db.sqlite_path.startswith("/"):
-            return self.db.sqlite_path
-        return str(pathlib.Path(self.app.config_dir) / self.db.sqlite_path)
+        return self.db.get_sqlite_path(self.app.config_dir)

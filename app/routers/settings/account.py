@@ -5,8 +5,10 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, Security
 from sqlmodel import Session, select
 
 from app.internal.auth.authentication import ABRAuth, DetailedUser
+from app.internal.book_search import audible_region_type, audible_regions
 from app.internal.models import (
     APIKey,
+    User,
 )
 from app.routers.api.settings.account import (
     ChangePasswordRequest,
@@ -34,11 +36,72 @@ def read_account(
     api_keys = session.exec(
         select(APIKey).where(APIKey.user_username == user.username)
     ).all()
+
+    import json
+
+    selected_region = "us"
+    if user.extra_data:
+        try:
+            data = json.loads(user.extra_data)
+            selected_region = data.get("default_region", "us")
+        except Exception:
+            pass
+
     return template_response(
         "settings_page/account.html",
         request,
         user,
-        {"page": "account", "api_keys": api_keys},
+        {
+            "page": "account",
+            "api_keys": api_keys,
+            "regions": audible_regions,
+            "selected_region": selected_region,
+        },
+    )
+
+
+@router.post("/settings")
+def update_account_settings(
+    request: Request,
+    default_region: Annotated[audible_region_type, Form()],
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+):
+    import json
+
+    db_user = session.get(User, user.username)
+    if not db_user:
+        raise ToastException("User not found", "error")
+
+    extra_data = {}
+    if db_user.extra_data:
+        try:
+            extra_data = json.loads(db_user.extra_data)
+        except Exception:
+            pass
+
+    extra_data["default_region"] = default_region
+    db_user.extra_data = json.dumps(extra_data)
+
+    session.add(db_user)
+    session.commit()
+
+    api_keys = session.exec(
+        select(APIKey).where(APIKey.user_username == user.username)
+    ).all()
+
+    return template_response(
+        "settings_page/account.html",
+        request,
+        user,
+        {
+            "page": "account",
+            "api_keys": api_keys,
+            "regions": audible_regions,
+            "selected_region": default_region,
+            "success": "Default region updated",
+        },
+        block_name="account_settings",
     )
 
 

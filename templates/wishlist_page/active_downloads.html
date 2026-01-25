@@ -1,6 +1,6 @@
 <div class="w-full">
   {% if downloads %}
-  <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+  <div class="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
     {% for dl in downloads %}
     <div class="bg-base-100 rounded-lg border border-base-300 overflow-hidden p-3 space-y-3 hover:shadow-md transition-shadow">
       <!-- Cover -->
@@ -28,7 +28,13 @@
       <div class="space-y-1.5">
         <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-tighter">
           <div class="flex items-center gap-2">
-            <span class="opacity-40">Progress</span>
+            <span class="opacity-40">
+              {% if dl.processing_status != 'pending' and dl.processing_status != 'download_initiated' and dl.processing_status != 'completed' %}
+                Importing
+              {% else %}
+                Progress
+              {% endif %}
+            </span>
             <button title="Remove Download"
                     class="btn btn-xs btn-ghost text-error size-5 p-0 min-h-0 h-5"
                     hx-delete="{{ base_url }}/search/request/{{ dl.asin }}"
@@ -38,12 +44,25 @@
               {% include "icons/trash.html" %}
             </button>
           </div>
-          <span class="text-primary">{{ (dl.progress * 100)|round(0)|int }}%</span>
+          <span class="text-primary">
+            {% if dl.progress >= 1.0 and dl.processing_status != 'completed' and dl.processing_status != 'pending' and dl.processing_status != 'download_initiated' %}
+              <span class="loading loading-dots loading-xs"></span>
+            {% else %}
+              {{ (dl.progress * 100)|round(0)|int }}%
+            {% endif %}
+          </span>
         </div>
+        {% set is_importing = dl.processing_status != 'pending' and dl.processing_status != 'download_initiated' and dl.processing_status != 'completed' %}
         <progress class="progress w-full h-1.5 rounded-full
           {% if dl.state == 'error' %}progress-error
-          {% elif dl.processing_status != 'pending' and dl.processing_status != 'download_initiated' %}progress-warning
-          {% else %}progress-primary{% endif %}" value="{{ dl.progress * 100 }}" max="100"></progress>
+          {% elif is_importing %}progress-success
+          {% else %}progress-primary{% endif %}" 
+          {% if is_importing and dl.progress >= 1.0 %}
+            {# indeterminate state when importing but download is done #}
+          {% else %}
+            value="{{ dl.progress * 100 }}" 
+          {% endif %}
+          max="100"></progress>
       </div>
 
       <!-- Stats Grid -->

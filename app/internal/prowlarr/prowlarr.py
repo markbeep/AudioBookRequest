@@ -6,7 +6,7 @@ import time
 from typing import Literal
 from urllib.parse import urlencode
 
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import ClientSession
 from pydantic import BaseModel, TypeAdapter
 from sqlmodel import Session
 from torf import BdecodeError, MetainfoError, ReadError, Torrent
@@ -14,15 +14,13 @@ from torf import BdecodeError, MetainfoError, ReadError, Torrent
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.models import (
     Audiobook,
-    EventEnum,
     Indexer,
     ProwlarrSource,
     TorrentSource,
     UsenetSource,
     User,
-    AudiobookRequest, # Import AudiobookRequest
+    AudiobookRequest,  # Import AudiobookRequest
 )
-from app.internal.notifications import send_all_notifications
 from app.internal.prowlarr.source_metadata import edit_source_metadata
 from app.internal.prowlarr.util import (
     prowlarr_config,
@@ -61,14 +59,14 @@ async def start_download(
     guid: str,
     indexer_id: int,
     requester: User,
-    audiobook_request: AudiobookRequest, # Changed from book_asin: str
-    prowlarr_source: ProwlarrSource, # Now required to be present
-) -> bool: # Now returns only bool, as it only attempts direct qBittorrent
+    audiobook_request: AudiobookRequest,  # Changed from book_asin: str
+    prowlarr_source: ProwlarrSource,  # Now required to be present
+) -> bool:  # Now returns only bool, as it only attempts direct qBittorrent
     from app.internal.download_clients.config import download_client_config
     from app.internal.download_clients.qbittorrent import QbittorrentClient
 
     qbit_enabled = download_client_config.get_qbit_enabled(session)
-    
+
     if not qbit_enabled:
         logger.error("qBittorrent is not enabled, cannot start direct download")
         return False
@@ -79,34 +77,46 @@ async def start_download(
 
     client = QbittorrentClient(session)
     success = False
-    info_hash = None # Initialize info_hash
-    
+    info_hash = None  # Initialize info_hash
+
     if prowlarr_source.magnet_url:
-        success = await client.add_torrent(prowlarr_source.magnet_url, is_magnet=True, tags=[f"asin:{audiobook_request.asin}"])
+        success = await client.add_torrent(
+            prowlarr_source.magnet_url,
+            is_magnet=True,
+            tags=[f"asin:{audiobook_request.asin}"],
+        )
         if success:
             import re
+
             # Extract hash from magnet link
-            match = re.search(r"xt=urn:btih:([a-zA-Z0-9]+)", prowlarr_source.magnet_url, re.IGNORECASE)
+            match = re.search(
+                r"xt=urn:btih:([a-zA-Z0-9]+)", prowlarr_source.magnet_url, re.IGNORECASE
+            )
             if match:
                 info_hash = match.group(1).lower()
             else:
                 # Fallback or error logging?
                 # If we can't extract hash, we might not be able to track it.
-                # But it was added to client. 
-                logger.warning("Could not extract hash from magnet link", magnet=prowlarr_source.magnet_url)
+                # But it was added to client.
+                logger.warning(
+                    "Could not extract hash from magnet link",
+                    magnet=prowlarr_source.magnet_url,
+                )
                 info_hash = None
     elif prowlarr_source.download_url:
         # We need to fetch the torrent file content
         fetch_headers = {"User-Agent": USER_AGENT}
         fetch_cookies = {}
-        
+
         # If it's a MAM URL, we need to add the session cookie
         if "myanonamouse.net" in prowlarr_source.download_url:
-            from app.internal.indexers.mam import MamIndexer, ValuedMamConfigurations
+            from app.internal.indexers.mam import MamIndexer
             from app.internal.indexers.configuration import create_valued_configuration
             from app.internal.indexers.abstract import SessionContainer
-            
-            config_obj = await MamIndexer.get_configurations(SessionContainer(session=session, client_session=client_session))
+
+            config_obj = await MamIndexer.get_configurations(
+                SessionContainer(session=session, client_session=client_session)
+            )
             valued = create_valued_configuration(config_obj, session)
             mam_session_id = str(getattr(valued, "mam_session_id") or "")
             if mam_session_id:
@@ -114,18 +124,31 @@ async def start_download(
                     mam_session_id = mam_session_id[7:]
                 fetch_cookies["mam_id"] = mam_session_id
 
-        async with client_session.get(prowlarr_source.download_url, headers=fetch_headers, cookies=fetch_cookies) as r:
+        async with client_session.get(
+            prowlarr_source.download_url, headers=fetch_headers, cookies=fetch_cookies
+        ) as r:
             if r.ok:
                 content = await r.read()
-                success = await client.add_torrent(content, is_magnet=False, tags=[f"asin:{audiobook_request.asin}"])
+                success = await client.add_torrent(
+                    content, is_magnet=False, tags=[f"asin:{audiobook_request.asin}"]
+                )
                 if success:
-                    info_hash = await _get_torrent_info_hash(client_session, prowlarr_source.download_url)
+                    info_hash = await _get_torrent_info_hash(
+                        client_session, prowlarr_source.download_url
+                    )
             else:
-                logger.error("Failed to fetch torrent file for direct qBit download", url=prowlarr_source.download_url, status=r.status)
+                logger.error(
+                    "Failed to fetch torrent file for direct qBit download",
+                    url=prowlarr_source.download_url,
+                    status=r.status,
+                )
     else:
-        logger.error("Prowlarr source has no magnet or download URL for direct qBittorrent download", guid=guid)
+        logger.error(
+            "Prowlarr source has no magnet or download URL for direct qBittorrent download",
+            guid=guid,
+        )
         return False
-    
+
     if success:
         logger.debug("Download successfully started via direct qBittorrent")
         # Update AudiobookRequest with download info
@@ -135,7 +158,7 @@ async def start_download(
         audiobook_request.processing_status = "download_initiated"
         session.add(audiobook_request)
         session.commit()
-        
+
         # Notifications will be handled by the caller
         return True
     else:

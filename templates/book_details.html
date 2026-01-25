@@ -147,14 +147,14 @@
 
                 <!-- Final Action -->
                 {% if not book.downloaded and not book.already_requested %}
-                <div class=\"flex gap-3\">
-                    <button class=\"btn btn-primary btn-sm shadow-lg gap-2\"
-                            hx-post=\"{{ base_url }}/search/request/{{ book.asin }}\"
-                            hx-swap=\"none\">
-                        {% include \"icons/plus.html\" %}
+                <div class="flex gap-3">
+                    <button class="btn btn-primary btn-sm shadow-lg gap-2"
+                            hx-post="{{ base_url }}/search/request/{{ book.asin }}"
+                            hx-swap="none">
+                        {% include "icons/plus.html" %}
                         Request Audiobook
                     </button>
-                    <a href=\"{{ base_url }}/search\" class=\"btn btn-outline btn-sm\">Back to Search</a>
+                    <a href="{{ base_url }}/search" class="btn btn-outline btn-sm">Back to Search</a>
                 </div>
                 {% endif %}
             </div>

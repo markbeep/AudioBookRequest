@@ -18,6 +18,7 @@ ProwlarrConfigKey = Literal[
     "prowlarr_source_ttl",
     "prowlarr_categories",
     "prowlarr_indexers",
+    "prowlarr_default_language",
 ]
 
 
@@ -72,6 +73,12 @@ class ProwlarrConfig(StringConfigCache[ProwlarrConfigKey]):
 
     def set_indexers(self, session: Session, indexers: list[int]):
         self.set(session, "prowlarr_indexers", json.dumps(indexers))
+
+    def get_default_language(self, session: Session) -> str:
+        return self.get(session, "prowlarr_default_language", "us")
+
+    def set_default_language(self, session: Session, language: str):
+        self.set(session, "prowlarr_default_language", language)
 
 
 prowlarr_config = ProwlarrConfig()

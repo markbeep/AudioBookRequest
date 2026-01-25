@@ -18,7 +18,12 @@ from app.internal.auth.authentication import (
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.env_settings import Settings
-from app.internal.indexers.mam import fetch_mam_book_details, MamIndexer, ValuedMamConfigurations, SessionContainer
+from app.internal.indexers.mam import (
+    fetch_mam_book_details,
+    MamIndexer,
+    ValuedMamConfigurations,
+    SessionContainer,
+)
 from app.internal.indexers.configuration import create_valued_configuration
 from app.internal.models import GroupEnum, Audiobook, AudiobookRequest, Config
 from app.util.connection import get_connection
@@ -145,7 +150,9 @@ async def get_book_details_page(
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    mam_meta_config = session.exec(select(Config).where(Config.key == "mam_metadata_enabled")).first()
+    mam_meta_config = session.exec(
+        select(Config).where(Config.key == "mam_metadata_enabled")
+    ).first()
     mam_enabled = mam_meta_config.value == "True" if mam_meta_config else False
 
     mam_data = None
@@ -158,15 +165,19 @@ async def get_book_details_page(
         mam_config = ValuedMamConfigurations(
             mam_session_id=str(getattr(valued, "mam_session_id") or "")
         )
-        
+
         if not mam_config.mam_session_id:
             logger.warning("MAM metadata is enabled but no session ID is set")
         else:
-            req = session.exec(select(AudiobookRequest).where(AudiobookRequest.asin == asin)).first()
+            req = session.exec(
+                select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+            ).first()
 
             if req and req.mam_id:
                 mam_data = await fetch_mam_book_details(
-                    container=SessionContainer(session=session, client_session=client_session),
+                    container=SessionContainer(
+                        session=session, client_session=client_session
+                    ),
                     configurations=mam_config,
                     mam_id=req.mam_id,
                 )
@@ -178,18 +189,27 @@ async def get_book_details_page(
 
                 search_url = urljoin(
                     "https://www.myanonamouse.net",
-                    f"/tor/js/loadSearchJSONbasic.php?{urlencode({
-                        'tor[text]': book.title,
-                        'tor[main_cat]': '13',
-                        'tor[searchIn]': 'torrents',
-                        'tor[searchType]': 'active',
-                        'startNumber': 0,
-                        'perpage': 5,
-                    }, doseq=True)}",
+                    f"/tor/js/loadSearchJSONbasic.php?{
+                        urlencode(
+                            {
+                                'tor[text]': book.title,
+                                'tor[main_cat]': '13',
+                                'tor[searchIn]': 'torrents',
+                                'tor[searchType]': 'active',
+                                'startNumber': 0,
+                                'perpage': 5,
+                            },
+                            doseq=True,
+                        )
+                    }",
                 )
-                
+
                 try:
-                    async with client_session.get(search_url, cookies={"mam_id": mam_config.mam_session_id}, headers=MAM_HEADERS) as resp:
+                    async with client_session.get(
+                        search_url,
+                        cookies={"mam_id": mam_config.mam_session_id},
+                        headers=MAM_HEADERS,
+                    ) as resp:
                         if resp.ok:
                             json_data = await resp.json()
                             if "data" in json_data:
@@ -205,6 +225,7 @@ async def get_book_details_page(
         user,
         {"book": book, "mam_data": mam_data},
     )
+
 
 @router.get("/book-details-modal/{asin}")
 async def get_book_details_modal(
@@ -225,11 +246,15 @@ async def get_book_details_modal(
         mam_config = ValuedMamConfigurations(
             mam_session_id=str(getattr(valued, "mam_session_id") or "")
         )
-        req = session.exec(select(AudiobookRequest).where(AudiobookRequest.asin == asin)).first()
+        req = session.exec(
+            select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+        ).first()
 
         if req and req.mam_id:
             mam_data = await fetch_mam_book_details(
-                container=SessionContainer(session=session, client_session=client_session),
+                container=SessionContainer(
+                    session=session, client_session=client_session
+                ),
                 configurations=mam_config,
                 mam_id=req.mam_id,
             )
@@ -240,6 +265,7 @@ async def get_book_details_modal(
         user,
         {"book": book, "mam_data": mam_data},
     )
+
 
 @router.get("/book/{asin}/download-opf")
 async def download_opf_file(
@@ -252,7 +278,9 @@ async def download_opf_file(
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    mam_meta_config = session.exec(select(Config).where(Config.key == "mam_metadata_enabled")).first()
+    mam_meta_config = session.exec(
+        select(Config).where(Config.key == "mam_metadata_enabled")
+    ).first()
     mam_enabled = mam_meta_config.value == "True" if mam_meta_config else False
 
     if not mam_enabled:
@@ -270,7 +298,9 @@ async def download_opf_file(
         raise HTTPException(status_code=400, detail="MAM is not configured")
 
     mam_data = None
-    req = session.exec(select(AudiobookRequest).where(AudiobookRequest.asin == asin)).first()
+    req = session.exec(
+        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+    ).first()
 
     if req and req.mam_id:
         mam_data = await fetch_mam_book_details(
@@ -285,17 +315,26 @@ async def download_opf_file(
 
         search_url = urljoin(
             "https://www.myanonamouse.net",
-            f"/tor/js/loadSearchJSONbasic.php?{urlencode({
-                'tor[text]': book.title,
-                'tor[main_cat]': '13',
-                'tor[searchIn]': 'torrents',
-                'tor[searchType]': 'active',
-                'startNumber': 0,
-                'perpage': 5,
-            }, doseq=True)}",
+            f"/tor/js/loadSearchJSONbasic.php?{
+                urlencode(
+                    {
+                        'tor[text]': book.title,
+                        'tor[main_cat]': '13',
+                        'tor[searchIn]': 'torrents',
+                        'tor[searchType]': 'active',
+                        'startNumber': 0,
+                        'perpage': 5,
+                    },
+                    doseq=True,
+                )
+            }",
         )
         try:
-            async with client_session.get(search_url, cookies={"mam_id": mam_config.mam_session_id}, headers=MAM_HEADERS) as resp:
+            async with client_session.get(
+                search_url,
+                cookies={"mam_id": mam_config.mam_session_id},
+                headers=MAM_HEADERS,
+            ) as resp:
                 if resp.ok:
                     json_data = await resp.json()
                     if "data" in json_data:
@@ -306,16 +345,21 @@ async def download_opf_file(
             pass
 
     if not mam_data:
-        raise HTTPException(status_code=404, detail="Could not find metadata for this book")
+        raise HTTPException(
+            status_code=404, detail="Could not find metadata for this book"
+        )
 
     from app.internal.metadata import generate_opf_for_mam
+
     content = generate_opf_for_mam(mam_data)
-    
+
     # Store temporary file
     temp = Path("/tmp/audiobook_metadata")
     temp.mkdir(parents=True, exist_ok=True)
-    
-    clean_name = "".join([c for c in book.title if c.isalnum() or c in (' ', '.', '_')]).rstrip()
+
+    clean_name = "".join(
+        [c for c in book.title if c.isalnum() or c in (" ", ".", "_")]
+    ).rstrip()
     fname = f"{clean_name}.opf"
     fpath = temp / f"{asin}.opf"
 
@@ -327,6 +371,7 @@ async def download_opf_file(
         filename=fname,
         media_type="application/xml",
     )
+
 
 @router.get("/")
 def read_root(request: Request, user: Annotated[DetailedUser, Security(ABRAuth())]):

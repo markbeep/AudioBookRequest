@@ -138,6 +138,7 @@ async def update_selected_indexers(
         block_name="indexer",
     )
 
+
 @router.post("/test")
 async def test_prowlarr(
     request: Request,
@@ -148,7 +149,7 @@ async def test_prowlarr(
     api_key: Annotated[Optional[str], Form()] = None,
 ):
     from app.internal.prowlarr.prowlarr import get_indexers
-    
+
     # Temporarily override config for the test
     if base_url:
         prowlarr_config.set_base_url(session, base_url)
@@ -162,9 +163,11 @@ async def test_prowlarr(
                 "base.html",
                 request,
                 None,
-                {"toast_success": f"Prowlarr connection successful! Found {len(response.indexers)} indexers."},
+                {
+                    "toast_success": f"Prowlarr connection successful! Found {len(response.indexers)} indexers."
+                },
                 headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"},
-                block_name="toast_block"
+                block_name="toast_block",
             )
         else:
             return template_response(
@@ -173,7 +176,7 @@ async def test_prowlarr(
                 None,
                 {"toast_error": f"Prowlarr connection failed: {response.error}"},
                 headers={"HX-Retarget": "#toast-block", "HX-Reswap": "innerHTML"},
-                block_name="toast_block"
+                block_name="toast_block",
             )
     except Exception as e:
         return template_response(
