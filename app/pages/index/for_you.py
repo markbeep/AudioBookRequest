@@ -1,6 +1,6 @@
 from htpy import a, div, h2, p, span
 
-from app.components.book_card import book_card
+from app.components.book_card_tdom import BookCard
 from app.internal.recommendations.local import AudiobookPopularity
 from app.internal.recommendations.user_recommendations import UserSimsRecommendation
 
@@ -37,7 +37,7 @@ def for_you_hx(*, recommendations: UserSimsRecommendation):
                     div(
                         ".flex-none.w-32.sm:w-40",
                         title=f"{rec.reason}",
-                    )[book_card(book=rec.book)]
+                    )[BookCard(book=rec.book)]
                     for rec in recommendations.recommendations
                 )
             ]
@@ -60,7 +60,7 @@ def popular_hx(*, popular: list[AudiobookPopularity]):
                     div(
                         ".flex-none.w-32.sm:w-40",
                         title=f"{rec.requested_amount()}",
-                    )[book_card(book=rec.book)]
+                    )[BookCard(book=rec.book)]
                 ]
                 for rec in popular
             )
