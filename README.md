@@ -1,4 +1,4 @@
-# AudioBookRequest (Fork)
+# Narrarr
 
 Self-hosted audiobook requests + automation with a polished UI and improved import matching.
 
@@ -17,14 +17,14 @@ Original project and credit: `https://github.com/markbeep/AudioBookRequest`
 docker run -p 8000:8000 \
   -v ./config:/config \
   -v ./library:/library \
-  ghcr.io/zippy-boy/audiobookrequest:latest
+  ghcr.io/zippy-boy/narrarr:latest
 ```
 
 ## Docker Compose
 ```yaml
 services:
   audiobookrequest:
-    image: ghcr.io/zippy-boy/audiobookrequest:latest
+    image: ghcr.io/zippy-boy/narrarr:latest
     ports:
       - "8000:8000"
     environment:
