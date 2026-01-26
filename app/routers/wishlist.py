@@ -9,10 +9,11 @@ from fastapi import (
     Depends,
     Form,
     HTTPException,
+    Query,
     Request,
     Security,
 )
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.internal.audiobookshelf.client import background_abs_trigger_scan
 from app.internal.audiobookshelf.config import abs_config
@@ -22,7 +23,15 @@ from app.internal.db_queries import (
     get_wishlist_counts,
     get_wishlist_results,
 )
-from app.internal.models import GroupEnum, AudiobookRequest, Audiobook
+from app.internal.models import (
+    GroupEnum,
+    AudiobookRequest,
+    Audiobook,
+    User,
+    AudiobookWishlistResult,
+)
+from app.internal.query import background_start_query
+from app.internal.request_logs import get_request_logs, log_request_event
 from app.routers.api.requests import (
     DownloadSourceBody,
     delete_manual_request,
@@ -30,6 +39,7 @@ from app.routers.api.requests import (
     start_auto_download_endpoint,
 )
 from app.routers.api.requests import download_book as api_download_book
+from app.routers.api.requests import delete_request as api_delete_request
 from app.routers.api.requests import list_sources as api_list_sources
 from app.routers.api.requests import mark_downloaded as api_mark_downloaded
 from app.util.connection import get_connection
@@ -39,6 +49,89 @@ from app.util.templates import template_response
 from app.util.toast import ToastException
 
 router = APIRouter(prefix="/wishlist")
+
+
+def _status_stage(processing_status: str, progress: float) -> tuple[int, str]:
+    if processing_status.startswith("failed"):
+        return 2, "Failed"
+    if processing_status == "completed":
+        return 3, "Completed"
+    if processing_status == "review_required":
+        return 2, "Review Required"
+    if processing_status in [
+        "queued",
+        "organizing_files",
+        "generating_metadata",
+        "saving_cover",
+    ]:
+        return 2, "Processing"
+    if processing_status == "download_initiated" or progress > 0:
+        return 1, "Downloading"
+    return 0, "Requested"
+
+
+def _build_attention_results(
+    session: Session,
+    username: str | None,
+    filters: list[str] | None = None,
+) -> tuple[list[AudiobookWishlistResult], dict[str, list[str]]]:
+    results = get_wishlist_results(session, username, "all")
+    issue_map: dict[str, list[str]] = {}
+    filtered: list[AudiobookWishlistResult] = []
+
+    for result in results:
+        book = result.book
+        if book.downloaded:
+            continue
+
+        issues: set[str] = set()
+        if not book.cover_image:
+            issues.add("missing_cover")
+
+        requests = (
+            result.requests
+            if username is None
+            else [req for req in result.requests if req.user_username == username]
+        )
+        for req in requests:
+            if req.processing_status.startswith("failed"):
+                issues.add("failed")
+            if req.processing_status == "review_required":
+                issues.add("review")
+
+        if not issues:
+            continue
+        if filters and not issues.intersection(filters):
+            continue
+
+        issue_map[book.asin] = sorted(issues)
+        filtered.append(result)
+
+    return filtered, issue_map
+
+
+def _render_wishlist_page(
+    request: Request,
+    session: Session,
+    user: DetailedUser,
+    page: str,
+):
+    username = None if user.is_admin() else user.username
+    response_type = "downloaded" if page == "downloaded" else "not_downloaded"
+    results = get_wishlist_results(session, username, response_type)
+    counts = get_wishlist_counts(session, user)
+    return template_response(
+        "wishlist_page/wishlist.html",
+        request,
+        user,
+        {
+            "results": results,
+            "page": page,
+            "counts": counts,
+            "update_tablist": True,
+        },
+        block_name="book_wishlist",
+    )
 
 
 @router.get("/active-downloads")
@@ -143,18 +236,42 @@ async def active_downloads(
         if is_processing:
             display_state = processing_status.replace("_", " ").title()
 
+        progress_value = req.download_progress if req else t.get("progress", 0)
+        stage, stage_label = _status_stage(processing_status, progress_value)
+        error_reason = None
+        if processing_status.startswith("failed:"):
+            error_reason = processing_status.split(":", 1)[1].strip()
+        logs = []
+        if req:
+            logs = [
+                {
+                    "message": log.message,
+                    "level": log.level.value,
+                    "timestamp": log.created_at.strftime("%b %d %H:%M"),
+                }
+                for log in get_request_logs(
+                    session,
+                    req.asin,
+                    None if user.is_admin() else user.username,
+                )
+            ]
+
         downloads.append(
             {
                 "title": title,
                 "asin": asin,
                 "cover": cover,
-                "progress": req.download_progress if req else t.get("progress", 0),
+                "progress": progress_value,
                 "state": t.get("state", "unknown"),
                 "processing_status": processing_status,
                 "speed": t.get("dlspeed", 0),
                 "eta": t.get("eta", 0),
                 "hash": t.get("hash"),
                 "display_state": display_state,
+                "stage": stage,
+                "stage_label": stage_label,
+                "error_reason": error_reason,
+                "logs": logs,
             }
         )
 
@@ -176,6 +293,23 @@ async def active_downloads(
                 "eta": 0,
                 "hash": req.torrent_hash,
                 "display_state": req.processing_status.replace("_", " ").title(),
+                "stage": _status_stage(req.processing_status, req.download_progress)[0],
+                "stage_label": _status_stage(req.processing_status, req.download_progress)[1],
+                "error_reason": req.processing_status.split(":", 1)[1].strip()
+                if req.processing_status.startswith("failed:")
+                else None,
+                "logs": [
+                    {
+                        "message": log.message,
+                        "level": log.level.value,
+                        "timestamp": log.created_at.strftime("%b %d %H:%M"),
+                    }
+                    for log in get_request_logs(
+                        session,
+                        req.asin,
+                        None if user.is_admin() else user.username,
+                    )
+                ],
             }
         )
 
@@ -233,6 +367,357 @@ async def downloading(
         request,
         user,
         {"page": "downloading", "counts": counts},
+    )
+
+
+@router.get("/attention")
+async def attention(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+    filter: Annotated[list[str] | None, Query()] = None,
+):
+    username = None if user.is_admin() else user.username
+    active_filters = filter or []
+    filter_query = ""
+    if active_filters:
+        filter_query = "?" + "&".join([f"filter={f}" for f in active_filters])
+    results, issue_map = _build_attention_results(session, username, active_filters)
+    counts = get_wishlist_counts(session, user)
+    return template_response(
+        "wishlist_page/wishlist.html",
+        request,
+        user,
+        {
+            "results": results,
+            "page": "attention",
+            "counts": counts,
+            "issue_map": issue_map,
+            "active_filters": active_filters,
+            "filter_query": filter_query,
+        },
+    )
+
+
+@router.post("/retry/{asin}")
+async def retry_request(
+    request: Request,
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    background_task: BackgroundTasks,
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.trusted))],
+):
+    statement = select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+    if not user.is_admin():
+        statement = statement.where(AudiobookRequest.user_username == user.username)
+    req = session.exec(statement).first()
+    if not req:
+        raise ToastException("Request not found.", "error")
+
+    req.processing_status = "pending"
+    req.download_progress = 0.0
+    req.download_state = "queued"
+    req.torrent_hash = None
+    session.add(req)
+    session.commit()
+    log_request_event(
+        session,
+        req.asin,
+        req.user_username,
+        "Retry requested. Re-queueing auto-download.",
+        commit=True,
+    )
+    background_task.add_task(
+        background_start_query,
+        asin=asin,
+        requester=User.model_validate(user),
+        auto_download=True,
+    )
+
+    return await active_downloads(request, session, user)
+
+
+@router.post("/bulk/retry")
+async def bulk_retry(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    background_task: BackgroundTasks,
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.trusted))],
+    asins: Annotated[list[str], Form()] = [],
+):
+    username = None if user.is_admin() else user.username
+    for asin in asins:
+        statement = select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+        if username:
+            statement = statement.where(AudiobookRequest.user_username == username)
+        req = session.exec(statement).first()
+        if not req:
+            continue
+        req.processing_status = "pending"
+        req.download_progress = 0.0
+        req.download_state = "queued"
+        req.torrent_hash = None
+        session.add(req)
+        log_request_event(
+            session,
+            req.asin,
+            req.user_username,
+            "Retry requested. Re-queueing auto-download.",
+            commit=False,
+        )
+        background_task.add_task(
+            background_start_query,
+            asin=asin,
+            requester=User.model_validate(user),
+            auto_download=True,
+        )
+
+    session.commit()
+
+    results, issue_map = _build_attention_results(
+        session, username, request.query_params.getlist("filter")
+    )
+    counts = get_wishlist_counts(session, user)
+    return template_response(
+        "wishlist_page/wishlist.html",
+        request,
+        user,
+        {
+            "results": results,
+            "page": "attention",
+            "counts": counts,
+            "issue_map": issue_map,
+            "active_filters": request.query_params.getlist("filter"),
+            "filter_query": "?"
+            + "&".join(
+                [f"filter={f}" for f in request.query_params.getlist("filter")]
+            )
+            if request.query_params.getlist("filter")
+            else "",
+            "update_tablist": True,
+        },
+        block_name="book_wishlist",
+    )
+
+
+@router.post("/bulk/auto-download")
+async def bulk_auto_download(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    background_task: BackgroundTasks,
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.trusted))],
+    asins: Annotated[list[str], Form()] = [],
+):
+    username = None if user.is_admin() else user.username
+    for asin in asins:
+        statement = select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+        if username:
+            statement = statement.where(AudiobookRequest.user_username == username)
+        req = session.exec(statement).first()
+        if not req:
+            continue
+        log_request_event(
+            session,
+            req.asin,
+            req.user_username,
+            "Bulk auto-download requested.",
+            commit=False,
+        )
+        background_task.add_task(
+            background_start_query,
+            asin=asin,
+            requester=User.model_validate(user),
+            auto_download=True,
+        )
+
+    session.commit()
+    page = request.query_params.get("page", "wishlist")
+    return _render_wishlist_page(request, session, user, page)
+
+
+@router.post("/bulk/mark-downloaded")
+async def bulk_mark_downloaded(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    background_task: BackgroundTasks,
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    asins: Annotated[list[str], Form()] = [],
+):
+    for asin in asins:
+        try:
+            await api_mark_downloaded(asin, session, background_task, admin_user)
+        except HTTPException:
+            continue
+    page = request.query_params.get("page", "wishlist")
+    return _render_wishlist_page(request, session, admin_user, page)
+
+
+@router.post("/bulk/delete")
+async def bulk_delete(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth())],
+    asins: Annotated[list[str], Form()] = [],
+):
+    for asin in asins:
+        try:
+            await api_delete_request(asin, session, user)
+        except HTTPException:
+            continue
+
+    page = request.query_params.get("page", "attention")
+    if page != "attention":
+        return _render_wishlist_page(request, session, user, page)
+
+    username = None if user.is_admin() else user.username
+    results, issue_map = _build_attention_results(
+        session, username, request.query_params.getlist("filter")
+    )
+    counts = get_wishlist_counts(session, user)
+
+    return template_response(
+        "wishlist_page/wishlist.html",
+        request,
+        user,
+        {
+            "results": results,
+            "page": "attention",
+            "counts": counts,
+            "issue_map": issue_map,
+            "active_filters": request.query_params.getlist("filter"),
+            "filter_query": "?"
+            + "&".join(
+                [f"filter={f}" for f in request.query_params.getlist("filter")]
+            )
+            if request.query_params.getlist("filter")
+            else "",
+            "update_tablist": True,
+        },
+        block_name="book_wishlist",
+    )
+
+
+@router.get("/review/{asin}")
+async def review_metadata(
+    request: Request,
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+):
+    book = session.get(Audiobook, asin)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    req = session.exec(
+        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+    ).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    return template_response(
+        "wishlist_page/review.html",
+        request,
+        admin_user,
+        {
+            "book": book,
+            "request": req,
+            "authors_str": ", ".join(book.authors or []),
+            "narrators_str": ", ".join(book.narrators or []),
+            "series_str": ", ".join(book.series or []),
+        },
+    )
+
+
+@router.post("/review/{asin}")
+async def review_metadata_submit(
+    request: Request,
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    title: Annotated[str, Form()],
+    subtitle: Annotated[str | None, Form()] = None,
+    authors: Annotated[str | None, Form()] = None,
+    narrators: Annotated[str | None, Form()] = None,
+    series: Annotated[str | None, Form()] = None,
+    action: Annotated[str | None, Form()] = None,
+):
+    book = session.get(Audiobook, asin)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    req = session.exec(
+        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+    ).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    def parse_list(value: str | None) -> list[str]:
+        if not value:
+            return []
+        return [v.strip() for v in value.split(",") if v.strip()]
+
+    book.title = title.strip()
+    book.subtitle = subtitle.strip() if subtitle else None
+    book.authors = parse_list(authors)
+    book.narrators = parse_list(narrators)
+    book.series = parse_list(series)
+    session.add(book)
+    session.commit()
+    log_request_event(
+        session,
+        asin,
+        req.user_username,
+        "Metadata reviewed and updated.",
+        commit=True,
+    )
+
+    if action == "import":
+        from app.internal.download_clients.qbittorrent import QbittorrentClient
+        from app.internal.processing.processor import process_completed_download
+
+        client = QbittorrentClient(session)
+        torrents = await client.get_torrents()
+        matching_torrent = None
+        for t in torrents:
+            if f"asin:{asin}" in t.get("tags", ""):
+                matching_torrent = t
+                break
+        if not matching_torrent:
+            raise ToastException("No matching torrent found for this request.", "error")
+
+        download_path = matching_torrent.get("content_path")
+        if not download_path:
+            raise ToastException("Torrent content path is missing.", "error")
+
+        req.processing_status = "queued"
+        session.add(req)
+        session.commit()
+        log_request_event(
+            session,
+            asin,
+            req.user_username,
+            "Metadata approved. Starting import.",
+            commit=True,
+        )
+
+        await process_completed_download(session, req, download_path)
+        await client.add_torrent_tags(matching_torrent.get("hash"), ["processed"])
+        await client.delete_torrent(matching_torrent.get("hash"), delete_files=False)
+
+        return BaseUrlRedirectResponse("/wishlist/downloading")
+
+    return template_response(
+        "wishlist_page/review.html",
+        request,
+        admin_user,
+        {
+            "book": book,
+            "request": req,
+            "authors_str": ", ".join(book.authors or []),
+            "narrators_str": ", ".join(book.narrators or []),
+            "series_str": ", ".join(book.series or []),
+            "success": "Metadata saved. Review is still required before import.",
+        },
     )
 
 

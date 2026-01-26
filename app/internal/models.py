@@ -103,9 +103,11 @@ class Audiobook(BaseSQLModel, table=True):
 class AudiobookRequest(BaseSQLModel, table=True):
     ACTIVE_DOWNLOAD_STATUSES: ClassVar[list[str]] = [
         "download_initiated",
+        "queued",
+        "organizing_files",
         "generating_metadata",
-        "organizing",
-        "importing",
+        "saving_cover",
+        "review_required",
     ]
 
     asin: str = Field(
@@ -137,6 +139,28 @@ class AudiobookRequest(BaseSQLModel, table=True):
 
     model_config: SQLModelConfig = cast(
         SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))
+    )
+
+
+class RequestLogLevel(str, Enum):
+    info = "info"
+    warning = "warning"
+    error = "error"
+
+
+class RequestLog(BaseSQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    asin: str = Field(index=True)
+    user_username: str | None = Field(default=None, index=True)
+    message: str
+    level: RequestLogLevel = Field(default=RequestLogLevel.info)
+    created_at: datetime = Field(
+        default_factory=datetime.now,
+        sa_column=Column(
+            server_default=func.now(),
+            type_=DateTime,
+            nullable=False,
+        ),
     )
 
 

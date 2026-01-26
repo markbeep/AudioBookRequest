@@ -19,6 +19,7 @@ class WishlistCounts(BaseModel):
     downloaded: int
     manual: int
     downloading: int
+    attention: int
 
 
 def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistCounts:
@@ -84,11 +85,31 @@ def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistC
         manual_query = manual_query.where(ManualBookRequest.user_username == username)
     manual = session.exec(manual_query).one()
 
+    # 5. Count "Needs Attention"
+    attention_query = (
+        select(func.count(Audiobook.asin.distinct()))
+        .join(AudiobookRequest)
+        .where(
+            Audiobook.downloaded.is_(False),
+            (
+                col(AudiobookRequest.processing_status).startswith("failed")
+                | (col(AudiobookRequest.processing_status) == "review_required")
+                | (Audiobook.cover_image.is_(None))
+            ),
+        )
+    )
+    if username:
+        attention_query = attention_query.where(
+            AudiobookRequest.user_username == username
+        )
+    attention = session.exec(attention_query).one()
+
     return WishlistCounts(
         requests=requests,
         downloaded=downloaded,
         manual=manual,
         downloading=downloading_count,
+        attention=attention,
     )
 
 

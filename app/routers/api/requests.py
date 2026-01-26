@@ -22,6 +22,7 @@ from app.internal.book_search import (
     get_region_from_settings,
     audible_regions,
 )
+from app.internal.library.service import library_contains_asin
 from app.internal.models import (
     Audiobook,
     AudiobookRequest,
@@ -40,6 +41,7 @@ from app.internal.prowlarr.util import ProwlarrMisconfigured, prowlarr_config
 from app.internal.query import query_sources, QueryResult, background_start_query
 from app.internal.ranking.quality import quality_config
 from app.internal.db_queries import get_wishlist_results
+from app.internal.request_logs import log_request_event
 from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.log import logger
@@ -71,6 +73,11 @@ async def create_request(
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
+    if library_contains_asin(session, asin):
+        raise HTTPException(
+            status_code=400, detail="Book already exists in library folder"
+        )
+
     if book.downloaded:
         raise HTTPException(status_code=400, detail="Book already in library")
 
@@ -83,6 +90,13 @@ async def create_request(
         book_request = AudiobookRequest(asin=asin, user_username=user.username)
         session.add(book_request)
         session.commit()
+        log_request_event(
+            session,
+            asin,
+            user.username,
+            "Request created.",
+            commit=True,
+        )
         logger.info(
             "Added new audiobook request",
             username=user.username,
@@ -453,6 +467,13 @@ async def start_auto_download_endpoint(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.trusted))],
 ):
+    log_request_event(
+        session,
+        asin,
+        user.username,
+        "Auto-download queued.",
+        commit=True,
+    )
     try:
         await query_sources(
             asin=asin,

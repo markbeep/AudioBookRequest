@@ -7,7 +7,9 @@ from app.internal.audiobookshelf.config import abs_config
 from app.internal.processing.processor import process_completed_download
 from app.util.db import get_session
 from app.internal.audiobookshelf.client import background_abs_trigger_scan
-from app.internal.models import AudiobookRequest, Audiobook  # Import Audiobook
+from app.internal.media_management.config import media_management_config
+from app.internal.models import AudiobookRequest, Audiobook, RequestLogLevel
+from app.internal.request_logs import log_request_event
 
 
 async def download_monitor_loop():
@@ -112,7 +114,22 @@ async def check_qbittorrent(session: Session):
                 "completed",
                 "failed",
                 "queued",
+                "review_required",
             ]:
+                if media_management_config.get_review_before_import(session):
+                    req.processing_status = "review_required"
+                    log_request_event(
+                        session,
+                        req.asin,
+                        req.user_username,
+                        "Download complete. Review metadata before import.",
+                        level=RequestLogLevel.warning,
+                        commit=False,
+                    )
+                    session.add(req)
+                    session.commit()
+                    continue
+
                 logger.info(
                     "Monitor: Found completed download for ASIN, starting processing",
                     asin=asin,
@@ -124,6 +141,13 @@ async def check_qbittorrent(session: Session):
                         # Update processing status before calling
                         req.processing_status = "queued"
                         session.add(req)
+                        log_request_event(
+                            session,
+                            req.asin,
+                            req.user_username,
+                            "Download complete. Starting import.",
+                            commit=False,
+                        )
                         session.commit()  # Commit to make status visible
 
                         await process_completed_download(session, req, download_path)
@@ -144,6 +168,13 @@ async def check_qbittorrent(session: Session):
                         any_processed = True
 
                         req.processing_status = "completed"
+                        log_request_event(
+                            session,
+                            req.asin,
+                            req.user_username,
+                            "Import completed.",
+                            commit=False,
+                        )
                         # Mark the associated Audiobook as fully processed and downloaded
                         book_to_mark = session.exec(
                             select(Audiobook).where(Audiobook.asin == req.asin)
@@ -160,12 +191,28 @@ async def check_qbittorrent(session: Session):
                             error=str(e),
                         )
                         req.processing_status = f"failed: {str(e)}"
+                        log_request_event(
+                            session,
+                            req.asin,
+                            req.user_username,
+                            f"Processing failed: {str(e)}",
+                            level=RequestLogLevel.error,
+                            commit=False,
+                        )
                         session.add(req)
                 else:
                     logger.warning(
                         "Monitor: Completed torrent has no content_path", asin=asin
                     )
                     req.processing_status = "failed: no content path"
+                    log_request_event(
+                        session,
+                        req.asin,
+                        req.user_username,
+                        "Processing failed: no content path.",
+                        level=RequestLogLevel.error,
+                        commit=False,
+                    )
                     session.add(req)
         elif (
             req.torrent_hash
@@ -180,6 +227,14 @@ async def check_qbittorrent(session: Session):
             )
             req.download_state = "torrent_missing"
             req.processing_status = "failed: torrent missing"
+            log_request_event(
+                session,
+                req.asin,
+                req.user_username,
+                "Download failed: torrent missing in qBittorrent.",
+                level=RequestLogLevel.error,
+                commit=False,
+            )
             session.add(req)
         session.commit()  # Commit changes for this request
 

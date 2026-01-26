@@ -3,41 +3,60 @@
 <title>Settings - Media Management</title>
 {% endblock head %}
 {% block content %}
-<div class="app-card app-panel flex flex-col gap-4 app-stagger">
-    <h2 class="text-lg">Media Management</h2>
-    <p class="text-sm opacity-70 mb-4">Configure how books are processed, moved, and renamed after downloading.</p>
+<div class="app-card app-panel flex flex-col gap-6 app-stagger">
+    <div>
+        <p class="text-sm opacity-70">Set where files go and how they are named after download.</p>
+    </div>
 
     {% block media_form %}
-    <form class="flex flex-col gap-4" 
+    <form id="media-management-form" class="flex flex-col gap-6"
           hx-put="{{ base_url }}/settings/media-management"
           hx-target="this"
           hx-swap="outerHTML">
         {% if success %}<script>toast("{{success|safe}}", "success");</script>{% endif %}
-        <div class="flex flex-col w-full">
-            <label for="library-path" class="font-bold">Library Root Path</label>
-            <input id="library-path" name="library_path" type="text" value="{{ library_path or '' }}" placeholder="/mnt/audiobooks" class="input w-full" required />
-            <p class="text-xs opacity-60">The base directory where your audiobook library is stored.</p>
-        </div>
 
-        <div class="flex flex-col w-full">
-            <label for="folder-pattern" class="font-bold">Folder Pattern</label>
-            <input id="folder-pattern" name="folder_pattern" type="text" value="{{ folder_pattern }}" class="input w-full" required />
-            <div class="text-[10px] opacity-60 mt-1">
-                Available tags: <span class="badge badge-xs">{author}</span> <span class="badge badge-xs">{title}</span> <span class="badge badge-xs">{series}</span> <span class="badge badge-xs">{series_index}</span> <span class="badge badge-xs">{year}</span> <span class="badge badge-xs">{asin}</span>
+        <section class="flex flex-col gap-3">
+            <h3 class="text-sm font-semibold">Library Location</h3>
+            <div class="flex flex-col w-full">
+                <label for="library-path" class="font-bold">Library Root Path</label>
+                <input id="library-path" name="library_path" type="text" value="{{ library_path or '' }}" placeholder="/mnt/audiobooks" class="input w-full" required />
+                <p class="text-xs opacity-60">Base directory where your audiobook library is stored.</p>
             </div>
-            <p class="text-xs opacity-60">Example: {author}/{series}/{title} ({year})</p>
-        </div>
+        </section>
 
-        <div class="flex flex-col w-full">
-            <label for="file-pattern" class="font-bold">File Naming Pattern</label>
-            <input id="file-pattern" name="file_pattern" type="text" value="{{ file_pattern }}" class="input w-full" required />
-            <div class="text-[10px] opacity-60 mt-1">
-                Available tags: <span class="badge badge-xs">{author}</span> <span class="badge badge-xs">{title}</span> <span class="badge badge-xs">{series}</span> <span class="badge badge-xs">{series_index}</span> <span class="badge badge-xs">{year}</span> <span class="badge badge-xs">{asin}</span> <span class="badge badge-xs">{part}</span>
+        <div class="divider m-0"></div>
+
+        <section class="flex flex-col gap-4">
+            <div>
+                <h3 class="text-sm font-semibold">Naming Patterns</h3>
+                <p class="text-xs opacity-60">Use tags to build folder and file names.</p>
             </div>
-            <p class="text-xs opacity-60">Example: {title} - {part}</p>
-        </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-2">
+                    <label for="folder-pattern" class="font-bold">Folder Pattern</label>
+                    <input id="folder-pattern" name="folder_pattern" type="text" value="{{ folder_pattern }}" class="input w-full" required />
+                    <p class="text-xs opacity-60">Example: {author}/{series}/{title} ({year})</p>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="file-pattern" class="font-bold">File Naming Pattern</label>
+                    <input id="file-pattern" name="file_pattern" type="text" value="{{ file_pattern }}" class="input w-full" required />
+                    <p class="text-xs opacity-60">Example: {title} - {part}</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-1.5 text-[10px] opacity-70">
+                <span class="badge badge-xs">{author}</span>
+                <span class="badge badge-xs">{title}</span>
+                <span class="badge badge-xs">{series}</span>
+                <span class="badge badge-xs">{series_index}</span>
+                <span class="badge badge-xs">{year}</span>
+                <span class="badge badge-xs">{asin}</span>
+                <span class="badge badge-xs">{part}</span>
+            </div>
+        </section>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="divider m-0"></div>
+
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="form-control">
                 <label class="label cursor-pointer justify-start gap-4">
                     <input type="checkbox" name="use_series_folders" class="checkbox checkbox-primary" {% if use_series_folders %}checked{% endif %} />
@@ -45,7 +64,6 @@
                 </label>
                 <p class="text-[10px] opacity-60">Organize books into series subfolders automatically.</p>
             </div>
-
             <div class="form-control">
                 <label class="label cursor-pointer justify-start gap-4">
                     <input type="checkbox" name="use_hardlinks" class="checkbox checkbox-primary" {% if use_hardlinks %}checked{% endif %} />
@@ -53,20 +71,43 @@
                 </label>
                 <p class="text-[10px] opacity-60">Save space by hardlinking files (same filesystem only).</p>
             </div>
-        </div>
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-4">
+                    <input type="checkbox" name="review_before_import" class="checkbox checkbox-primary" {% if review_before_import %}checked{% endif %} />
+                    <span class="label-text font-bold">Review Before Import</span>
+                </label>
+                <p class="text-[10px] opacity-60">Pause after download so you can verify metadata before importing.</p>
+            </div>
+        </section>
 
-        <button class="btn btn-primary mt-2">Save Media Management Settings</button>
+        <div class="divider m-0"></div>
+
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-2">
+                <h3 class="text-sm font-semibold">Preview</h3>
+                <div class="bg-base-200/60 rounded-2xl p-3 border border-base-300 text-xs font-mono break-all">
+                    {{ library_path or "/mnt/audiobooks" }}/{{ folder_pattern or "{author}/{series}/{title} ({year})" }}
+                </div>
+                <div class="bg-base-200/60 rounded-2xl p-3 border border-base-300 text-xs font-mono break-all">
+                    {{ file_pattern or "{title} - {part}" }}
+                </div>
+            </div>
+            <div class="flex flex-col gap-2">
+                <h3 class="text-sm font-semibold">Automatic Metadata</h3>
+                <p class="text-xs opacity-60">These files are written alongside your audiobooks.</p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="badge badge-sm font-bold bg-base-300 border-0">metadata.json</span>
+                    <span class="badge badge-sm font-bold bg-base-300 border-0">metadata.opf</span>
+                    <span class="badge badge-sm font-bold bg-base-300 border-0">cover.jpg</span>
+                    <span class="badge badge-sm font-bold bg-base-300 border-0">desc.txt</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="flex justify-end">
+            <button class="btn btn-primary" type="submit">Save Media Management Settings</button>
+        </div>
     </form>
     {% endblock media_form %}
-
-    <div class="mt-6 p-4 bg-base-200/50 rounded-xl border border-base-300">
-        <h3 class="text-xs font-black uppercase tracking-widest opacity-50 mb-3">Automatic Metadata</h3>
-        <div class="flex flex-wrap gap-2">
-            <span class="badge badge-sm font-bold bg-base-300 border-0">metadata.json</span>
-            <span class="badge badge-sm font-bold bg-base-300 border-0">metadata.opf</span>
-            <span class="badge badge-sm font-bold bg-base-300 border-0">cover.jpg</span>
-            <span class="badge badge-sm font-bold bg-base-300 border-0">desc.txt</span>
-        </div>
-    </div>
 </div>
 {% endblock content %}

@@ -8,6 +8,7 @@ MediaManagementConfigKey = Literal[
     "file_pattern",
     "use_series_folders",
     "use_hardlinks",
+    "review_before_import",
 ]
 
 
@@ -41,6 +42,12 @@ class MediaManagementConfig(StringConfigCache[MediaManagementConfigKey]):
 
     def set_use_hardlinks(self, session: Session, enabled: bool):
         self.set_bool(session, "use_hardlinks", enabled)
+
+    def get_review_before_import(self, session: Session) -> bool:
+        return bool(self.get_bool(session, "review_before_import") or False)
+
+    def set_review_before_import(self, session: Session, enabled: bool):
+        self.set_bool(session, "review_before_import", enabled)
 
 
 media_management_config = MediaManagementConfig()

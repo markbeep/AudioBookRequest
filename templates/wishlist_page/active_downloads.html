@@ -1,10 +1,10 @@
-<div class="w-full">
+<div id="active-downloads-panel" class="w-full">
   {% if downloads %}
-  <div class="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 app-stagger">
+  <div class="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
     {% for dl in downloads %}
     <div class="bg-base-100 rounded-lg border border-base-300 overflow-hidden p-3 space-y-3 hover:shadow-md transition-shadow">
       <!-- Cover -->
-      <div class="relative w-full aspect-square rounded-lg bg-base-300 overflow-hidden shadow-inner">
+      <div class="relative w-full aspect-square bg-base-300 overflow-hidden shadow-inner app-media">
         {% if dl.cover %}
         <img src="{{ dl.cover }}" alt="Cover" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500">
         {% else %}
@@ -22,6 +22,11 @@
       <!-- Title -->
       <div>
         <h3 class="font-black text-[11px] line-clamp-1 leading-tight" title="{{ dl.title }}">{{ dl.title }}</h3>
+        {% if dl.processing_status == 'review_required' %}
+        <p class="text-[10px] font-semibold text-warning mt-1">Review required before import</p>
+        {% elif dl.processing_status.startswith('failed') %}
+        <p class="text-[10px] font-semibold text-error mt-1">Failed{% if dl.error_reason %}: {{ dl.error_reason }}{% endif %}</p>
+        {% endif %}
       </div>
 
       <!-- Progress Section -->
@@ -65,6 +70,32 @@
           max="100"></progress>
       </div>
 
+      <!-- Timeline -->
+      <div class="space-y-1">
+        {% set stage = dl.stage %}
+        <div class="flex items-center gap-1 text-[8px] font-semibold uppercase tracking-widest opacity-70">
+          <div class="flex items-center gap-1">
+            <span class="h-2 w-2 rounded-full {% if stage >= 0 %}bg-primary{% else %}bg-base-300{% endif %}"></span>
+            <span>Requested</span>
+          </div>
+          <span class="h-px flex-1 {% if stage >= 1 %}bg-primary{% else %}bg-base-300{% endif %}"></span>
+          <div class="flex items-center gap-1">
+            <span class="h-2 w-2 rounded-full {% if stage >= 1 %}bg-primary{% else %}bg-base-300{% endif %}"></span>
+            <span>Downloading</span>
+          </div>
+          <span class="h-px flex-1 {% if stage >= 2 %}bg-primary{% else %}bg-base-300{% endif %}"></span>
+          <div class="flex items-center gap-1">
+            <span class="h-2 w-2 rounded-full {% if stage >= 2 %}bg-primary{% else %}bg-base-300{% endif %}"></span>
+            <span>Processing</span>
+          </div>
+          <span class="h-px flex-1 {% if stage >= 3 %}bg-primary{% else %}bg-base-300{% endif %}"></span>
+          <div class="flex items-center gap-1">
+            <span class="h-2 w-2 rounded-full {% if stage >= 3 %}bg-primary{% else %}bg-base-300{% endif %}"></span>
+            <span>Done</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Stats Grid -->
       <div class="grid grid-cols-2 gap-1 text-xs text-center">
         <div class="flex flex-col gap-0.5">
@@ -89,6 +120,36 @@
           </span>
         </div>
       </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2">
+        {% if dl.processing_status == 'review_required' and dl.asin %}
+        <a preload href="{{ base_url }}/wishlist/review/{{ dl.asin }}" class="btn btn-xs btn-primary">Review</a>
+        {% endif %}
+        {% if dl.processing_status.startswith('failed') and dl.asin %}
+        <button class="btn btn-xs btn-outline"
+                hx-post="{{ base_url }}/wishlist/retry/{{ dl.asin }}"
+                hx-target="#active-downloads-panel"
+                hx-swap="outerHTML">
+          Retry
+        </button>
+        {% endif %}
+      </div>
+
+      <!-- Logs -->
+      {% if dl.logs %}
+      <details class="group text-[10px]">
+        <summary class="cursor-pointer opacity-70 group-open:opacity-100">Logs ({{ dl.logs|length }})</summary>
+        <div class="mt-2 space-y-1">
+          {% for log in dl.logs %}
+          <div class="flex gap-2 items-start">
+            <span class="font-mono opacity-50">{{ log.timestamp }}</span>
+            <span class="{% if log.level == 'error' %}text-error{% elif log.level == 'warning' %}text-warning{% else %}opacity-80{% endif %}">{{ log.message }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
     </div>
     {% endfor %}
   </div>

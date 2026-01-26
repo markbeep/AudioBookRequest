@@ -6,6 +6,76 @@
   <div id="wishlist-container" class="w-full">
     {% block book_wishlist %}
       {% if update_tablist %}{% include "wishlist_page/tablist.html" %}{% endif %}
+
+      {% if page == 'attention' or page == 'wishlist' %}
+      <div class="flex flex-col gap-3 mb-4">
+        {% if page == 'attention' %}
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-semibold uppercase tracking-widest opacity-50">Filter</span>
+          <a preload href="{{ base_url }}/wishlist/attention"
+             class="btn btn-xs {% if not active_filters %}btn-primary{% else %}btn-ghost{% endif %}">All</a>
+          <a preload href="{{ base_url }}/wishlist/attention?filter=failed"
+             class="btn btn-xs {% if 'failed' in active_filters %}btn-primary{% else %}btn-ghost{% endif %}">Failed</a>
+          <a preload href="{{ base_url }}/wishlist/attention?filter=review"
+             class="btn btn-xs {% if 'review' in active_filters %}btn-primary{% else %}btn-ghost{% endif %}">Review</a>
+          <a preload href="{{ base_url }}/wishlist/attention?filter=missing_cover"
+             class="btn btn-xs {% if 'missing_cover' in active_filters %}btn-primary{% else %}btn-ghost{% endif %}">Missing Cover</a>
+        </div>
+        {% endif %}
+
+        <div id="bulk-action-bar" class="hidden app-card app-panel flex flex-wrap items-center gap-3 justify-between">
+          <div class="text-xs font-semibold uppercase tracking-widest opacity-60">
+            Selected <span id="bulk-action-count" class="font-black">0</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            {% if page == 'attention' %}
+            <button class="btn btn-xs btn-outline"
+                    hx-post="{{ base_url }}/wishlist/bulk/retry{{ filter_query or '' }}"
+                    hx-include="#book-grid input[name='asins']:checked"
+                    hx-target="#wishlist-container"
+                    hx-swap="innerHTML">
+              Retry
+            </button>
+            <button class="btn btn-xs btn-outline btn-error"
+                    hx-post="{{ base_url }}/wishlist/bulk/delete{{ filter_query or '' }}"
+                    hx-include="#book-grid input[name='asins']:checked"
+                    hx-target="#wishlist-container"
+                    hx-swap="innerHTML"
+                    hx-confirm="Remove selected requests?">
+              Delete
+            </button>
+            {% else %}
+            <button class="btn btn-xs btn-outline"
+                    hx-post="{{ base_url }}/wishlist/bulk/auto-download?page=wishlist"
+                    hx-include="#book-grid input[name='asins']:checked"
+                    hx-target="#wishlist-container"
+                    hx-swap="innerHTML"
+                    {% if not user.can_download() %}disabled{% endif %}>
+              Auto Download
+            </button>
+            {% if user.is_admin() %}
+            <button class="btn btn-xs btn-outline"
+                    hx-post="{{ base_url }}/wishlist/bulk/mark-downloaded?page=wishlist"
+                    hx-include="#book-grid input[name='asins']:checked"
+                    hx-target="#wishlist-container"
+                    hx-swap="innerHTML">
+              Mark Downloaded
+            </button>
+            {% endif %}
+            <button class="btn btn-xs btn-outline btn-error"
+                    hx-post="{{ base_url }}/wishlist/bulk/delete?page=wishlist"
+                    hx-include="#book-grid input[name='asins']:checked"
+                    hx-target="#wishlist-container"
+                    hx-swap="innerHTML"
+                    hx-confirm="Remove selected requests?">
+              Delete
+            </button>
+            {% endif %}
+            <button type="button" class="btn btn-xs btn-ghost" onclick="clearSelection()">Clear</button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
       
       {% if not results %}
           <div role="alert" class="alert my-2">
@@ -16,11 +86,12 @@
                 books by heading to the
                 <a preload class="link link-primary" href="{{ base_url }}/search">search</a> tab {%
                 elif page.__eq__("downloaded") %} No books have been downloaded yet. {%
+                elif page.__eq__("attention") %} Nothing needs attention right now. {%
                 endif %}
               </span>
             </div>
       {% else %}
-      <div id="book-grid" class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 app-stagger">
+      <div id="book-grid" class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {% for result in results %}
           {% set book = result.book %}
           <div id="{{ book.asin }}" data-book-card class="group app-card overflow-hidden hover:shadow-lg transition-shadow relative">
@@ -34,7 +105,7 @@
             </div>
 
             <!-- Image Section -->
-            <div class="relative w-full aspect-square bg-base-300 overflow-hidden">
+            <div class="relative w-full aspect-square bg-base-300 overflow-hidden app-media">
               <img {% if book.cover_image %}src="{{ book.cover_image }}"{% else %}src=""{% endif %}
                    alt="{{ book.title }}"
                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -51,12 +122,24 @@
                   {% else %}
                   <div class="badge badge-info badge-xs font-black uppercase text-[8px] tracking-tighter py-2">Requested</div>
                   {% endif %}
+                  {% if issue_map and issue_map.get(book.asin) %}
+                  <div class="flex flex-wrap gap-1 justify-end">
+                    {% for issue in issue_map.get(book.asin) %}
+                      {% if issue == 'failed' %}
+                      <span class="badge badge-error badge-xs font-black uppercase text-[8px] tracking-tighter py-2">Failed</span>
+                      {% elif issue == 'review' %}
+                      <span class="badge badge-warning badge-xs font-black uppercase text-[8px] tracking-tighter py-2">Review</span>
+                      {% elif issue == 'missing_cover' %}
+                      <span class="badge badge-ghost badge-xs font-black uppercase text-[8px] tracking-tighter py-2">No Cover</span>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+              </div>
               <!-- Request Count Badge -->
               {% if result.amount_requested > 1 %}
               <div class="absolute bottom-2 right-2 badge badge-outline bg-base-100/80 backdrop-blur-md badge-xs font-black text-[8px] py-2">{{ result.amount_requested }}x</div>
               {% endif %}
-
-              </div>
             </div>
 
             <!-- Content Section -->
@@ -72,63 +155,63 @@
               </div>
 
               <!-- Action Buttons (Compact Square) -->
-              <div class="flex justify-between items-center pt-1 mt-1 border-t border-base-300">
+              <div class="flex justify-between items-center pt-1 mt-1 border-t border-base-300 min-h-[32px]">
                 <div class="flex gap-0.5">
                     <a preload
                        title="View Details"
                        href="{{ base_url }}/book/{{ book.asin }}"
-                       class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center">
-                      <span class="size-3.5 opacity-70">{% include "icons/info-circle.html" %}</span>
+                       class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center leading-none">
+                      <span class="size-3.5 opacity-70 flex items-center justify-center">{% include "icons/info-circle.html" %}</span>
                     </a>
                     <a preload
                        title="Torrent Sources"
                        href="{{ base_url }}/wishlist/sources/{{ book.asin }}"
                        {% if not user.is_admin() %}disabled{% endif %}
-                       class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center">
-                      <span class="size-3.5 opacity-70">{% include "icons/list.html" %}</span>
+                       class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center leading-none">
+                      <span class="size-3.5 opacity-70 flex items-center justify-center">{% include "icons/list.html" %}</span>
                     </a>
                     {% if not book.downloaded %}
                     <button title="Auto Download"
-                            class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center"
+                            class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center leading-none"
                             {% if not user.can_download() %}disabled{% endif %}
                             hx-post="{{ base_url }}/wishlist/auto-download/{{ book.asin }}"
                             hx-swap="innerHTML"
                             hx-target="#wishlist-container"
                             hx-disabled-elt="this">
-                      <span class="size-3.5 opacity-70">{% include "icons/download.html" %}</span>
+                      <span class="size-3.5 opacity-70 flex items-center justify-center">{% include "icons/download.html" %}</span>
                     </button>
                     {% else %}
                     {% if page == 'downloaded' %}
-                    <button class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center"
+                    <button class="btn btn-xs btn-ghost btn-square h-7 w-7 flex items-center justify-center leading-none"
                             title="Reprocess Metadata"
                             hx-post="{{ base_url }}/wishlist/reprocess/{{ book.asin }}"
                             hx-swap="none"
                             hx-disabled-elt="this">
-                      <span class="size-3.5 opacity-70">{% include "icons/pencil.html" %}</span>
+                      <span class="size-3.5 opacity-70 flex items-center justify-center">{% include "icons/pencil.html" %}</span>
                     </button>
                     {% endif %}
                     {% endif %}
                     
                     <button title="Remove"
-                            class="btn btn-xs btn-ghost btn-square text-error h-7 w-7 flex items-center justify-center"
+                            class="btn btn-xs btn-ghost btn-square text-error h-7 w-7 flex items-center justify-center leading-none"
                             hx-delete="{{ base_url }}/search/request/{{ book.asin }}{%- if page.__eq__('downloaded') -%}?downloaded=true{%- endif -%}"
                             hx-swap="innerHTML"
                             hx-target="#wishlist-container"
                             hx-confirm="Are you sure you want to remove this request?"
                             hx-disabled-elt="this">
-                      <span class="size-3.5">{% include "icons/trash.html" %}</span>
+                      <span class="size-3.5 flex items-center justify-center">{% include "icons/trash.html" %}</span>
                     </button>
                 </div>
                 
                 {% if not book.downloaded %}
-                <button class="btn btn-xs btn-ghost btn-square text-success h-7 w-7 flex items-center justify-center"
+                <button class="btn btn-xs btn-ghost btn-square text-success h-7 w-7 flex items-center justify-center leading-none"
                         title="Mark as Downloaded"
                         hx-patch="{{ base_url }}/wishlist/downloaded/{{ book.asin }}"
                         {% if not user.is_admin() %}disabled{% endif %}
                         hx-swap="innerHTML"
                         hx-target="#wishlist-container"
                         hx-disabled-elt="this">
-                  <span class="size-3.5">{% include "icons/checkmark.html" %}</span>
+                  <span class="size-3.5 flex items-center justify-center">{% include "icons/checkmark.html" %}</span>
                 </button>
                 {% endif %}
               </div>
@@ -139,4 +222,42 @@
       {% endif %}
     {% endblock book_wishlist %}
   </div>
+  {% if page == 'attention' or page == 'wishlist' %}
+  <script>
+    const updateActionBar = () => {
+      const bar = document.getElementById("bulk-action-bar");
+      const count = document.getElementById("bulk-action-count");
+      if (!bar || !count) return;
+      const checked = document.querySelectorAll(
+        "#book-grid input[name='asins']:checked",
+      );
+      count.textContent = checked.length;
+      if (checked.length > 0) {
+        bar.classList.remove("hidden");
+      } else {
+        bar.classList.add("hidden");
+      }
+    };
+    const clearSelection = () => {
+      document
+        .querySelectorAll("#book-grid input[name='asins']:checked")
+        .forEach((input) => {
+          input.checked = false;
+          const card = input.closest("[data-book-card]");
+          if (card) card.classList.remove("is-selected");
+        });
+      updateActionBar();
+    };
+    document.addEventListener("change", (event) => {
+      if (event.target?.matches?.("#book-grid input[name='asins']")) {
+        updateActionBar();
+      }
+    });
+    document.addEventListener("htmx:afterSwap", () => {
+      updateActionBar();
+    });
+    window.updateActionBar = updateActionBar;
+    window.clearSelection = clearSelection;
+  </script>
+  {% endif %}
   {% endblock content %}

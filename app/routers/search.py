@@ -32,6 +32,7 @@ from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.log import logger
 from app.util.templates import template_response
+from app.util.toast import ToastException
 from app.routers.api.search import (
     search_books,
     search_suggestions as api_search_suggestions,
@@ -141,6 +142,7 @@ async def add_request(
             username=user.username,
             asin=asin,
         )
+        raise ToastException(str(e.detail), "error") from None
 
     results = []
     if query:

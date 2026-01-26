@@ -31,6 +31,9 @@ async def read_media_management(
                 session
             ),
             "use_hardlinks": media_management_config.get_use_hardlinks(session),
+            "review_before_import": media_management_config.get_review_before_import(
+                session
+            ),
         },
     )
 
@@ -45,12 +48,14 @@ async def update_media_management(
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     use_series_folders: Annotated[bool, Form()] = False,
     use_hardlinks: Annotated[bool, Form()] = False,
+    review_before_import: Annotated[bool, Form()] = False,
 ):
     media_management_config.set_library_path(session, library_path)
     media_management_config.set_folder_pattern(session, folder_pattern)
     media_management_config.set_file_pattern(session, file_pattern)
     media_management_config.set_use_series_folders(session, use_series_folders)
     media_management_config.set_use_hardlinks(session, use_hardlinks)
+    media_management_config.set_review_before_import(session, review_before_import)
 
     return template_response(
         "settings_page/media_management.html",
@@ -64,6 +69,7 @@ async def update_media_management(
             "file_pattern": file_pattern,
             "use_series_folders": use_series_folders,
             "use_hardlinks": use_hardlinks,
+            "review_before_import": review_before_import,
         },
         block_name="media_form",
     )

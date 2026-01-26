@@ -3,6 +3,7 @@ import shutil
 from typing import Optional
 from sqlmodel import Session
 from app.internal.models import Audiobook, AudiobookRequest
+from app.internal.request_logs import log_request_event
 from app.internal.media_management.config import media_management_config
 from app.internal.library.service import (
     get_book_folder_path,
@@ -82,6 +83,13 @@ async def process_completed_download(
     )
 
     book_request.processing_status = "organizing_files"
+    log_request_event(
+        session,
+        book_request.asin,
+        book_request.user_username,
+        "Organizing and renaming files.",
+        commit=False,
+    )
     session.add(book_request)
     session.commit()
 
@@ -134,6 +142,13 @@ async def process_completed_download(
 
     book_request.processing_status = "generating_metadata"
     book_request.download_progress = 0.95
+    log_request_event(
+        session,
+        book_request.asin,
+        book_request.user_username,
+        "Generating metadata files.",
+        commit=False,
+    )
     session.add(book_request)
     session.commit()
 
@@ -173,6 +188,13 @@ async def process_completed_download(
     if book.cover_image:
         book_request.processing_status = "saving_cover"
         book_request.download_progress = 0.98
+        log_request_event(
+            session,
+            book_request.asin,
+            book_request.user_username,
+            "Saving cover image.",
+            commit=False,
+        )
         session.add(book_request)
         session.commit()
         try:
@@ -194,6 +216,13 @@ async def process_completed_download(
 
     book_request.processing_status = "completed"
     book_request.download_progress = 1.0
+    log_request_event(
+        session,
+        book_request.asin,
+        book_request.user_username,
+        "Import completed.",
+        commit=False,
+    )
     session.add(book_request)
     session.commit()
 

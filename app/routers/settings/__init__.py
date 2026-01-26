@@ -9,6 +9,7 @@ from app.routers.settings.media_management import router as media_management_rou
 from app.routers.settings.notification import router as notification_router
 from app.routers.settings.prowlarr import router as prowlarr_router
 from app.routers.settings.security import router as security_router
+from app.routers.settings.stats import router as stats_router
 from app.routers.settings.users import router as users_router
 
 router = APIRouter(prefix="/settings")
@@ -22,4 +23,5 @@ router.include_router(media_management_router)
 router.include_router(notification_router)
 router.include_router(prowlarr_router)
 router.include_router(security_router)
+router.include_router(stats_router)
 router.include_router(users_router)

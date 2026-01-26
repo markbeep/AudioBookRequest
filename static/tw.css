@@ -18,7 +18,7 @@
     --app-font-body: "Space Grotesk", "Avenir Next", "Trebuchet MS", sans-serif;
     --app-font-heading: "Fraunces", "Iowan Old Style", "Palatino Linotype", serif;
     --app-radius: 24px;
-    --app-radius-sm: 16px;
+    --app-radius-sm: 18px;
     --app-shadow: 0 24px 60px -40px rgba(15, 23, 42, 0.45);
     --app-shadow-soft: 0 14px 36px -28px rgba(15, 23, 42, 0.45);
   }
@@ -31,11 +31,13 @@
     --app-nav-bg: rgba(239, 246, 255, 0.86);
     --app-surface: rgba(248, 252, 255, 0.74);
     --app-surface-strong: rgba(255, 255, 255, 0.92);
+    --app-surface-tint: rgba(255, 255, 255, 0.6);
     --app-border: rgba(59, 130, 246, 0.18);
     --app-accent: #3b82f6;
     --app-accent-strong: #2563eb;
     --app-glow: rgba(59, 130, 246, 0.3);
     --app-accent-glow: rgba(59, 130, 246, 0.22);
+    --app-card-inset: rgba(255, 255, 255, 0.5);
   }
 
   :root[data-theme="night"] {
@@ -46,11 +48,13 @@
     --app-nav-bg: rgba(12, 18, 32, 0.82);
     --app-surface: rgba(15, 23, 42, 0.8);
     --app-surface-strong: rgba(15, 23, 42, 0.92);
+    --app-surface-tint: rgba(148, 163, 184, 0.08);
     --app-border: rgba(96, 165, 250, 0.22);
     --app-accent: #60a5fa;
     --app-accent-strong: #3b82f6;
     --app-glow: rgba(59, 130, 246, 0.35);
     --app-accent-glow: rgba(96, 165, 250, 0.25);
+    --app-card-inset: rgba(255, 255, 255, 0.06);
   }
 
   html {
@@ -119,17 +123,17 @@
   .app-card {
     position: relative;
     overflow: hidden;
-    background: var(--app-surface);
+    background: linear-gradient(140deg, var(--app-surface-tint), transparent), var(--app-surface);
     border: 1px solid var(--app-border);
     border-radius: var(--app-radius);
-    box-shadow: var(--app-shadow-soft);
+    box-shadow: var(--app-shadow-soft), inset 0 1px 0 var(--app-card-inset);
     backdrop-filter: blur(16px) saturate(1.15);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.12s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   }
 
   @media (hover: hover) {
     .app-card:hover {
-      transform: translateY(-2px);
+      transform: scale(1.01);
       box-shadow: var(--app-shadow);
       border-color: rgba(59, 130, 246, 0.28);
     }
@@ -182,6 +186,13 @@
     animation-delay: 420ms;
   }
 
+  .htmx-swapping .app-stagger > *,
+  .htmx-settling .app-stagger > *,
+  .htmx-swapping .stat-card,
+  .htmx-settling .stat-card {
+    animation: none !important;
+  }
+
   .app-tabs {
     background: var(--app-surface);
     border: 1px solid var(--app-border);
@@ -193,6 +204,12 @@
   .select,
   .textarea {
     @apply border-base-300/80 bg-base-100/80 text-base-content shadow-sm;
+    backdrop-filter: blur(8px);
+  }
+
+  .input::placeholder,
+  .textarea::placeholder {
+    opacity: 0.6;
   }
 
   .input:not(.join-item),
@@ -209,6 +226,7 @@
 
   .btn {
     @apply font-semibold;
+    transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
   }
 
   .btn:not(.join-item) {
@@ -223,13 +241,60 @@
 
   @media (hover: hover) {
     .btn-primary:hover {
-      transform: translateY(-1px);
+      transform: scale(1.01);
       filter: brightness(1.04);
     }
   }
 
   .badge {
     @apply rounded-full;
+  }
+
+  .btn-ghost:hover,
+  .btn-ghost:focus-visible {
+    background-color: var(--app-accent-glow);
+  }
+
+  .btn-outline {
+    border-color: var(--app-border);
+  }
+
+  .btn-outline:hover {
+    border-color: var(--app-accent);
+    color: var(--app-accent);
+    box-shadow: 0 12px 24px -20px var(--app-glow);
+  }
+
+  .tab {
+    border-radius: calc(var(--app-radius) - 10px);
+    font-weight: 600;
+  }
+
+  .tab.tab-active {
+    background-image: linear-gradient(135deg, var(--app-accent-strong), var(--app-accent));
+    color: #ffffff;
+    box-shadow: 0 14px 24px -20px var(--app-glow);
+  }
+
+  .table thead th {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.6;
+  }
+
+  .table tbody tr:hover {
+    background-color: var(--app-accent-glow);
+  }
+
+  .modal-box,
+  .alert,
+  .card {
+    border-radius: var(--app-radius);
+    background: linear-gradient(140deg, var(--app-surface-tint), transparent), var(--app-surface);
+    border: 1px solid var(--app-border);
+    box-shadow: var(--app-shadow-soft), inset 0 1px 0 var(--app-card-inset);
+    backdrop-filter: blur(16px) saturate(1.1);
   }
 
   .radio-checkbox {
@@ -269,6 +334,10 @@
 
   .selection-indicator {
     border-radius: calc(var(--app-radius) - 6px);
+  }
+
+  .app-media {
+    border-radius: var(--app-radius-sm);
   }
 
   .stat-card {

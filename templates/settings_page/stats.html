@@ -1,0 +1,113 @@
+{% extends "settings_page/base.html" %}
+{% block head %}
+<title>Settings - Stats</title>
+{% endblock head %}
+{% block content %}
+<div class="app-card app-panel flex flex-col gap-6 app-stagger">
+    <div>
+        <h2 class="text-lg">Statistics</h2>
+        <p class="text-sm opacity-70">Quick health check of requests, downloads, and activity.</p>
+    </div>
+
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="app-card app-panel stat-card">
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-50">Requests</p>
+            <p class="text-2xl font-black mt-2">{{ total_requests }}</p>
+            <p class="text-[10px] opacity-60">Unique: {{ unique_requests }}</p>
+        </div>
+        <div class="app-card app-panel stat-card">
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-50">Pending</p>
+            <p class="text-2xl font-black mt-2">{{ pending_requests }}</p>
+            <p class="text-[10px] opacity-60">Active: {{ active_downloads }}</p>
+        </div>
+        <div class="app-card app-panel stat-card">
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-50">Needs Attention</p>
+            <p class="text-2xl font-black mt-2">{{ failed_requests + review_required }}</p>
+            <p class="text-[10px] opacity-60">Failed: {{ failed_requests }} · Review: {{ review_required }}</p>
+        </div>
+        <div class="app-card app-panel stat-card">
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-50">Manual</p>
+            <p class="text-2xl font-black mt-2">{{ manual_requests }}</p>
+            <p class="text-[10px] opacity-60">Manual pending</p>
+        </div>
+    </section>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="app-card app-panel">
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-50">Library</p>
+            <p class="text-xl font-black mt-2">{{ downloaded_books }}</p>
+            <p class="text-[10px] opacity-60">Downloaded</p>
+            <p class="text-xs opacity-60 mt-2">Cached total: {{ total_books }}</p>
+        </div>
+        <div class="app-card app-panel">
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-50">Request Volume</p>
+            <div class="flex flex-col gap-2 mt-2 text-sm">
+                <div class="flex justify-between"><span>Last 24h</span><span class="font-bold">{{ requests_24h }}</span></div>
+                <div class="flex justify-between"><span>Last 7d</span><span class="font-bold">{{ requests_7d }}</span></div>
+                <div class="flex justify-between"><span>Last 30d</span><span class="font-bold">{{ requests_30d }}</span></div>
+            </div>
+        </div>
+        <div class="app-card app-panel">
+            <p class="text-[10px] font-bold uppercase tracking-widest opacity-50">Queue</p>
+            <div class="flex flex-col gap-2 mt-2 text-sm">
+                <div class="flex justify-between"><span>Pending</span><span class="font-bold">{{ pending_requests }}</span></div>
+                <div class="flex justify-between"><span>Downloading</span><span class="font-bold">{{ active_downloads }}</span></div>
+                <div class="flex justify-between"><span>Needs Review</span><span class="font-bold">{{ review_required }}</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="app-card app-panel">
+            <h3 class="text-sm font-semibold mb-3">Top Requested</h3>
+            {% if top_requested %}
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th class="text-right">Requests</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in top_requested %}
+                        <tr>
+                            <td class="truncate max-w-[280px]" title="{{ row.title }}">{{ row.title }}</td>
+                            <td class="text-right font-bold">{{ row.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-sm opacity-60">No requests yet.</p>
+            {% endif %}
+        </div>
+        <div class="app-card app-panel">
+            <h3 class="text-sm font-semibold mb-3">Recent Requests</h3>
+            {% if recent_requests %}
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th class="text-right">Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in recent_requests %}
+                        <tr>
+                            <td class="truncate max-w-[280px]" title="{{ row.title }}">{{ row.title }}</td>
+                            <td class="text-right text-xs opacity-60">{{ row.updated_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-sm opacity-60">No recent activity.</p>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock content %}

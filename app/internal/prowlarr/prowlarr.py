@@ -20,6 +20,7 @@ from app.internal.models import (
     UsenetSource,
     User,
     AudiobookRequest,  # Import AudiobookRequest
+    RequestLogLevel,
 )
 from app.internal.prowlarr.source_metadata import edit_source_metadata
 from app.internal.prowlarr.util import (
@@ -29,6 +30,7 @@ from app.internal.prowlarr.util import (
 )
 from app.util.connection import USER_AGENT
 from app.util.log import logger
+from app.internal.request_logs import log_request_event
 
 
 async def _get_torrent_info_hash(
@@ -158,11 +160,26 @@ async def start_download(
         audiobook_request.processing_status = "download_initiated"
         session.add(audiobook_request)
         session.commit()
+        log_request_event(
+            session,
+            audiobook_request.asin,
+            audiobook_request.user_username,
+            "Download initiated in qBittorrent.",
+            commit=True,
+        )
 
         # Notifications will be handled by the caller
         return True
     else:
         logger.error("Failed to add torrent to qBittorrent directly")
+        log_request_event(
+            session,
+            audiobook_request.asin,
+            audiobook_request.user_username,
+            "Failed to start download in qBittorrent.",
+            level=RequestLogLevel.error,
+            commit=True,
+        )
         # Notifications will be handled by the caller
         return False
 

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block head %}
+  <title>Review Metadata</title>
+{% endblock head %}
+{% block body %}
+<div class="app-shell p-6 sm:p-8">
+  <div class="app-content app-stack">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-3xl font-bold">Review Metadata</h1>
+        <p class="text-sm opacity-60">Verify details before importing into your library.</p>
+      </div>
+      <a preload href="{{ base_url }}/wishlist/downloading" class="btn btn-ghost btn-sm">Back to Queue</a>
+    </div>
+
+    {% if success %}
+    <div role="alert" class="alert success-alert">
+      <span class="stroke-success h-6 w-6 shrink-0">{% include "icons/checkmark.html" %}</span>
+      <span>{{ success }}</span>
+    </div>
+    {% endif %}
+
+    <form method="post" class="app-card app-panel space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1">
+          <div class="aspect-square rounded-xl overflow-hidden border border-base-300 bg-base-300">
+            {% if book.cover_image %}
+            <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="w-full h-full object-cover" />
+            {% else %}
+            <div class="w-full h-full flex items-center justify-center opacity-30">
+              {% include "icons/photo-off.html" %}
+            </div>
+            {% endif %}
+          </div>
+          <div class="mt-4 text-xs uppercase tracking-widest opacity-50">ASIN</div>
+          <div class="font-mono font-semibold text-sm">{{ book.asin }}</div>
+        </div>
+        <div class="lg:col-span-2 space-y-4">
+          <label class="form-control w-full">
+            <span class="label-text">Title</span>
+            <input name="title" class="input w-full" value="{{ book.title }}" required />
+          </label>
+          <label class="form-control w-full">
+            <span class="label-text">Subtitle</span>
+            <input name="subtitle" class="input w-full" value="{{ book.subtitle or '' }}" />
+          </label>
+          <label class="form-control w-full">
+            <span class="label-text">Authors (comma separated)</span>
+            <input name="authors" class="input w-full" value="{{ authors_str }}" />
+          </label>
+          <label class="form-control w-full">
+            <span class="label-text">Narrators (comma separated)</span>
+            <input name="narrators" class="input w-full" value="{{ narrators_str }}" />
+          </label>
+          <label class="form-control w-full">
+            <span class="label-text">Series (comma separated)</span>
+            <input name="series" class="input w-full" value="{{ series_str }}" />
+          </label>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 justify-end">
+        <button name="action" value="save" class="btn btn-outline">Save</button>
+        <button name="action" value="import" class="btn btn-primary">Save &amp; Import</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock body %}
