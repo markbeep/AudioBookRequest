@@ -24,7 +24,7 @@
         {% for result in results %}
           {% set book = result.book %}
           <div id="{{ book.asin }}" data-book-card class="group app-card overflow-hidden hover:shadow-lg transition-shadow relative">
-            <div class="selection-indicator hidden absolute inset-0 rounded-2xl border-[3px] border-primary/40 bg-primary/10 pointer-events-none z-[20]"></div>
+            <div class="selection-indicator hidden absolute inset-0 border-[3px] border-primary/40 bg-primary/10 pointer-events-none z-[20]"></div>
             
             <!-- Selection Checkbox (Top Left) -->
             <div class="absolute top-2 left-2 z-[40]">

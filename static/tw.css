@@ -17,37 +17,40 @@
   :root {
     --app-font-body: "Space Grotesk", "Avenir Next", "Trebuchet MS", sans-serif;
     --app-font-heading: "Fraunces", "Iowan Old Style", "Palatino Linotype", serif;
-    --app-radius: 20px;
+    --app-radius: 24px;
+    --app-radius-sm: 16px;
     --app-shadow: 0 24px 60px -40px rgba(15, 23, 42, 0.45);
     --app-shadow-soft: 0 14px 36px -28px rgba(15, 23, 42, 0.45);
   }
 
   :root[data-theme="nord"] {
     --app-bg:
-      radial-gradient(900px circle at 12% -10%, rgba(245, 231, 203, 0.9) 0%, rgba(245, 231, 203, 0) 60%),
-      radial-gradient(700px circle at 88% 0%, rgba(203, 234, 223, 0.8) 0%, rgba(203, 234, 223, 0) 55%),
-      linear-gradient(180deg, #f8f3ea 0%, #f1ede3 100%);
-    --app-nav-bg: rgba(250, 245, 236, 0.86);
-    --app-surface: rgba(255, 255, 255, 0.78);
+      radial-gradient(900px circle at 12% -10%, rgba(219, 234, 254, 0.85) 0%, rgba(219, 234, 254, 0) 60%),
+      radial-gradient(720px circle at 88% 0%, rgba(191, 219, 254, 0.65) 0%, rgba(191, 219, 254, 0) 55%),
+      linear-gradient(180deg, #f7faff 0%, #eef4ff 55%, #f7f2ea 100%);
+    --app-nav-bg: rgba(239, 246, 255, 0.86);
+    --app-surface: rgba(248, 252, 255, 0.74);
     --app-surface-strong: rgba(255, 255, 255, 0.92);
-    --app-border: rgba(71, 64, 52, 0.16);
-    --app-accent: hsl(var(--p));
-    --app-accent-strong: hsl(var(--p));
-    --app-glow: rgba(13, 148, 136, 0.2);
+    --app-border: rgba(59, 130, 246, 0.18);
+    --app-accent: #3b82f6;
+    --app-accent-strong: #2563eb;
+    --app-glow: rgba(59, 130, 246, 0.3);
+    --app-accent-glow: rgba(59, 130, 246, 0.22);
   }
 
   :root[data-theme="night"] {
     --app-bg:
-      radial-gradient(900px circle at 10% -20%, rgba(45, 212, 191, 0.18) 0%, rgba(45, 212, 191, 0) 55%),
-      radial-gradient(700px circle at 90% 0%, rgba(251, 146, 60, 0.12) 0%, rgba(251, 146, 60, 0) 60%),
+      radial-gradient(900px circle at 10% -20%, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0) 55%),
+      radial-gradient(700px circle at 90% 0%, rgba(96, 165, 250, 0.16) 0%, rgba(96, 165, 250, 0) 60%),
       linear-gradient(180deg, #0b1120 0%, #0b1222 100%);
     --app-nav-bg: rgba(12, 18, 32, 0.82);
-    --app-surface: rgba(15, 23, 42, 0.78);
+    --app-surface: rgba(15, 23, 42, 0.8);
     --app-surface-strong: rgba(15, 23, 42, 0.92);
-    --app-border: rgba(148, 163, 184, 0.2);
-    --app-accent: hsl(var(--p));
-    --app-accent-strong: hsl(var(--p));
-    --app-glow: rgba(94, 234, 212, 0.25);
+    --app-border: rgba(96, 165, 250, 0.22);
+    --app-accent: #60a5fa;
+    --app-accent-strong: #3b82f6;
+    --app-glow: rgba(59, 130, 246, 0.35);
+    --app-accent-glow: rgba(96, 165, 250, 0.25);
   }
 
   html {
@@ -114,11 +117,22 @@
   }
 
   .app-card {
+    position: relative;
+    overflow: hidden;
     background: var(--app-surface);
     border: 1px solid var(--app-border);
     border-radius: var(--app-radius);
     box-shadow: var(--app-shadow-soft);
-    backdrop-filter: blur(14px);
+    backdrop-filter: blur(16px) saturate(1.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    .app-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--app-shadow);
+      border-color: rgba(59, 130, 246, 0.28);
+    }
   }
 
   .app-panel {
@@ -172,6 +186,7 @@
     background: var(--app-surface);
     border: 1px solid var(--app-border);
     box-shadow: var(--app-shadow-soft);
+    border-radius: calc(var(--app-radius) - 6px);
   }
 
   .input,
@@ -201,7 +216,16 @@
   }
 
   .btn-primary {
-    box-shadow: 0 16px 30px -20px var(--app-accent);
+    background-image: linear-gradient(135deg, var(--app-accent-strong), var(--app-accent));
+    border-color: transparent;
+    box-shadow: 0 18px 32px -22px var(--app-glow);
+  }
+
+  @media (hover: hover) {
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
   }
 
   .badge {
@@ -225,7 +249,7 @@
     background-size: 70% 70%;
     background-position: center;
     background-repeat: no-repeat;
-    box-shadow: 0 0 0 4px hsl(var(--p) / 0.2);
+    box-shadow: 0 0 0 4px var(--app-accent-glow);
   }
 
   .radio-checkbox:hover {
@@ -236,10 +260,15 @@
   .is-selected {
     outline: 4px solid var(--app-accent);
     outline-offset: -4px;
+    box-shadow: 0 0 0 2px var(--app-accent-glow);
   }
 
   .is-selected .selection-indicator {
     display: block !important;
+  }
+
+  .selection-indicator {
+    border-radius: calc(var(--app-radius) - 6px);
   }
 
   .stat-card {
