@@ -7,6 +7,8 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     HTTPException,
+    Form,
+    Query,
     Security,
     Response,
 )
@@ -140,9 +142,14 @@ async def delete_request(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    delete_files: Annotated[bool, Form()] = False,
+    delete_files_q: Annotated[bool | None, Query()] = None,
 ):
     from app.internal.download_clients.qbittorrent import QbittorrentClient
     from app.internal.download_clients.config import download_client_config
+
+    if delete_files_q is not None:
+        delete_files = delete_files_q
 
     # Try to delete from qBittorrent if enabled
     if download_client_config.get_qbit_enabled(session):
@@ -151,7 +158,7 @@ async def delete_request(
             torrents = await client.get_torrents()
             for t in torrents:
                 if f"asin:{asin}" in t.get("tags", ""):
-                    await client.delete_torrents([t["hash"]], delete_files=True)
+                    await client.delete_torrents([t["hash"]], delete_files=delete_files)
                     logger.info(
                         "Deleted torrent from qBittorrent for deleted request",
                         asin=asin,

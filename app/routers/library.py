@@ -749,8 +749,12 @@ async def import_page(
         .order_by(LibraryImportSession.created_at.desc())
     ).all()
 
+    view = request.query_params.get("view", "table")
     return template_response(
-        "library/import.html", request, user, {"sessions": active_sessions}
+        "library/import.html",
+        request,
+        user,
+        {"sessions": active_sessions, "view": view},
     )
 
 
@@ -778,7 +782,7 @@ async def start_scan(
         "library/import.html",
         request,
         user,
-        {"session": new_session},
+        {"session": new_session, "view": "table"},
         block_name="session_status",
     )
 
@@ -801,6 +805,20 @@ async def get_session_status(
         select(LibraryImportItem).where(LibraryImportItem.session_id == session_id)
     ).all()
 
+    # Cleanup: no items should remain pending once scan is review_ready
+    if import_session.status == ImportSessionStatus.review_ready:
+        pending_items = [i for i in items if i.status == ImportItemStatus.pending]
+        if pending_items:
+            for item in pending_items:
+                if item.match_asin:
+                    item.status = ImportItemStatus.matched
+                    if not item.match_score:
+                        item.match_score = 1.0
+                else:
+                    item.status = ImportItemStatus.missing
+            session.add_all(pending_items)
+            session.commit()
+
     # Pre-fetch books to avoid N+1 DB calls in template filters
     asins = {i.match_asin for i in items if i.match_asin}
     books_map = {}
@@ -811,11 +829,17 @@ async def get_session_status(
         books_map = {b.asin: b for b in books}
 
     is_htmx = request.headers.get("HX-Request") == "true"
+    view = request.query_params.get("view", "table")
     return template_response(
         "library/import.html",
         request,
         user,
-        {"session": import_session, "items": items, "books_map": books_map},
+        {
+            "session": import_session,
+            "items": items,
+            "books_map": books_map,
+            "view": view,
+        },
         block_name="session_status" if is_htmx else None,
     )
 
@@ -840,12 +864,17 @@ async def get_item_status(
         if book:
             books_map = {book.asin: book}
 
+    view = request.query_params.get("view", "table")
+    template_name = (
+        "library/import_card.html" if view == "grid" else "library/import_row.html"
+    )
+    block_name = "item_card" if view == "grid" else "item_row"
     return template_response(
-        "library/import_row.html",
+        template_name,
         request,
         user,
-        {"item": item, "books_map": books_map},
-        block_name="item_row",
+        {"item": item, "books_map": books_map, "view": view},
+        block_name=block_name,
     )
 
 
@@ -860,11 +889,12 @@ async def fix_match_modal(
     Returns the modal for fixing a match.
     """
     item = session.get(LibraryImportItem, item_id)
+    view = request.query_params.get("view", "table")
     return template_response(
         "library/import_modals.html",
         request,
         user,
-        {"item": item},
+        {"item": item, "view": view},
         block_name="fix_match_modal",
     )
 
@@ -886,11 +916,12 @@ async def search_for_match(
     books = await list_audible_books(session, client_session, q, num_results=5)
     # Wrap in dict for template compatibility: result.book
     results = [{"book": b} for b in books]
+    view = request.query_params.get("view", "table")
     return template_response(
         "library/import_modals.html",
         request,
         user,
-        {"results": results, "item_id": item_id},
+        {"results": results, "item_id": item_id, "view": view},
         block_name="search_results",
     )
 
@@ -920,12 +951,17 @@ async def update_match(
         if book:
             books_map = {book.asin: book}
 
+    view = request.query_params.get("view", "table")
+    template_name = (
+        "library/import_card.html" if view == "grid" else "library/import_row.html"
+    )
+    block_name = "item_card" if view == "grid" else "item_row"
     return template_response(
-        "library/import_row.html",
+        template_name,
         request,
         user,
-        {"item": item, "books_map": books_map},
-        block_name="item_row",
+        {"item": item, "books_map": books_map, "view": view},
+        block_name=block_name,
     )
 
 
@@ -953,8 +989,17 @@ async def execute_item_import(
         run_single_importer_task, item_id, import_mode == "move", user.username
     )
 
+    view = request.query_params.get("view", "table")
+    template_name = (
+        "library/import_card.html" if view == "grid" else "library/import_row.html"
+    )
+    block_name = "item_card" if view == "grid" else "item_row"
     return template_response(
-        "library/import_row.html", request, user, {"item": item}, block_name="item_row"
+        template_name,
+        request,
+        user,
+        {"item": item, "view": view},
+        block_name=block_name,
     )
 
 
@@ -1083,7 +1128,12 @@ async def execute_import(
         "library/import.html",
         request,
         user,
-        {"session": import_session, "items": items, "books_map": books_map},
+        {
+            "session": import_session,
+            "items": items,
+            "books_map": books_map,
+            "view": request.query_params.get("view", "table"),
+        },
         block_name="session_status",
     )
 

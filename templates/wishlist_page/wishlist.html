@@ -36,9 +36,13 @@
                     hx-swap="innerHTML">
               Retry
             </button>
+            <label class="flex items-center gap-2 text-[10px] uppercase tracking-widest opacity-70">
+              <input id="bulk-delete-files" type="checkbox" name="delete_files" value="true" class="checkbox checkbox-error checkbox-xs" />
+              Delete files
+            </label>
             <button class="btn btn-xs btn-outline btn-error"
                     hx-post="{{ base_url }}/wishlist/bulk/delete{{ filter_query or '' }}"
-                    hx-include="#book-grid input[name='asins']:checked"
+                    hx-include="#book-grid input[name='asins']:checked, #bulk-delete-files"
                     hx-target="#wishlist-container"
                     hx-swap="innerHTML"
                     hx-confirm="Remove selected requests?">
@@ -62,9 +66,13 @@
               Mark Downloaded
             </button>
             {% endif %}
+            <label class="flex items-center gap-2 text-[10px] uppercase tracking-widest opacity-70">
+              <input id="bulk-delete-files" type="checkbox" name="delete_files" value="true" class="checkbox checkbox-error checkbox-xs" />
+              Delete files
+            </label>
             <button class="btn btn-xs btn-outline btn-error"
                     hx-post="{{ base_url }}/wishlist/bulk/delete?page=wishlist"
-                    hx-include="#book-grid input[name='asins']:checked"
+                    hx-include="#book-grid input[name='asins']:checked, #bulk-delete-files"
                     hx-target="#wishlist-container"
                     hx-swap="innerHTML"
                     hx-confirm="Remove selected requests?">
@@ -193,12 +201,9 @@
                     {% endif %}
                     
                     <button title="Remove"
+                            type="button"
                             class="btn btn-xs btn-ghost btn-square text-error h-7 w-7 flex items-center justify-center leading-none"
-                            hx-delete="{{ base_url }}/search/request/{{ book.asin }}{%- if page.__eq__('downloaded') -%}?downloaded=true{%- endif -%}"
-                            hx-swap="innerHTML"
-                            hx-target="#wishlist-container"
-                            hx-confirm="Are you sure you want to remove this request?"
-                            hx-disabled-elt="this">
+                            onclick="openRequestDeleteModal('{{ base_url }}/search/request/{{ book.asin }}{%- if page.__eq__('downloaded') -%}?downloaded=true{%- endif -%}');">
                       <span class="size-3.5 flex items-center justify-center">{% include "icons/trash.html" %}</span>
                     </button>
                 </div>

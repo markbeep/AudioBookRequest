@@ -80,6 +80,9 @@ jobs:
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -93,13 +96,29 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
+        if: ${{ secrets.DOCKER_HUB_USERNAME != '' && secrets.DOCKER_HUB_ACCESS_TOKEN != '' }}
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Determine tags
         id: vars
         run: |
+          REPO="${{ github.repository }}"
+          REPO_LC=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
+          GHCR_IMAGE="ghcr.io/$REPO_LC"
+          DH_IMAGE="${{ secrets.DOCKER_HUB_USERNAME }}/audiobookrequest"
+          USE_DH=0
+          if [ -n "${{ secrets.DOCKER_HUB_USERNAME }}" ] && [ -n "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" ]; then
+            USE_DH=1
+          fi
           if [ "${{ github.event_name }}" == "release" ]; then
             VERSION="${{ github.event.release.tag_name }}"
             # Remove leading 'v' if present
@@ -107,12 +126,30 @@ jobs:
             MAJOR=$(echo $VERSION | cut -d. -f1)
             MINOR=$(echo $VERSION | cut -d. -f2)
             PATCH=$(echo $VERSION | cut -d. -f3)
-            echo "::set-output name=tags::${{ secrets.DOCKER_HUB_USERNAME }}/audiobookrequest:$VERSION,${{ secrets.DOCKER_HUB_USERNAME }}/audiobookrequest:$MAJOR.$MINOR,${{ secrets.DOCKER_HUB_USERNAME }}/audiobookrequest:$MAJOR,${{ secrets.DOCKER_HUB_USERNAME }}/audiobookrequest:latest"
-            echo "::set-output name=version::$VERSION"
+            TAGS=""
+            if [ "$USE_DH" -eq 1 ]; then
+              TAGS="$DH_IMAGE:$VERSION,$DH_IMAGE:$MAJOR.$MINOR,$DH_IMAGE:$MAJOR,$DH_IMAGE:latest"
+            fi
+            if [ -n "$TAGS" ]; then
+              TAGS="$TAGS,$GHCR_IMAGE:$VERSION,$GHCR_IMAGE:$MAJOR.$MINOR,$GHCR_IMAGE:$MAJOR,$GHCR_IMAGE:latest"
+            else
+              TAGS="$GHCR_IMAGE:$VERSION,$GHCR_IMAGE:$MAJOR.$MINOR,$GHCR_IMAGE:$MAJOR,$GHCR_IMAGE:latest"
+            fi
+            echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           else
-            echo "::set-output name=tags::${{ secrets.DOCKER_HUB_USERNAME }}/audiobookrequest:nightly"
             github_sha_hash=${{ github.sha }}
-            echo "::set-output name=version::nightly:${github_sha_hash:0:7}"
+            TAGS=""
+            if [ "$USE_DH" -eq 1 ]; then
+              TAGS="$DH_IMAGE:nightly,$DH_IMAGE:sha-${github_sha_hash:0:7}"
+            fi
+            if [ -n "$TAGS" ]; then
+              TAGS="$TAGS,$GHCR_IMAGE:nightly,$GHCR_IMAGE:sha-${github_sha_hash:0:7}"
+            else
+              TAGS="$GHCR_IMAGE:nightly,$GHCR_IMAGE:sha-${github_sha_hash:0:7}"
+            fi
+            echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+            echo "version=nightly:${github_sha_hash:0:7}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build and push

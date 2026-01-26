@@ -198,5 +198,52 @@
     </header>
     {% endif %} {% block body %} {% endblock body %}
     <div id="book-details-modal-container"></div>
+    <dialog id="request-delete-modal" class="modal">
+      <div class="modal-box max-w-md">
+        <h3 class="text-lg font-bold">Remove Request</h3>
+        <p class="text-sm opacity-70 mt-2">This will remove the request. You can also remove files from disk.</p>
+        <label class="flex items-center gap-3 mt-4 cursor-pointer">
+          <input id="delete-files-checkbox" type="checkbox" name="delete_files" value="true" class="checkbox checkbox-error" />
+          <span class="text-sm font-semibold">Delete files from disk</span>
+        </label>
+        <div class="mt-6 flex justify-end gap-2">
+          <button class="btn btn-ghost" onclick="closeRequestDeleteModal()">Cancel</button>
+          <button id="confirm-delete-request"
+                  class="btn btn-error"
+                  hx-delete=""
+                  hx-target="#wishlist-container"
+                  hx-swap="innerHTML"
+                  hx-include="#delete-files-checkbox"
+                  hx-on::after-request="closeRequestDeleteModal()">
+            Delete
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
+    <script>
+      const openRequestDeleteModal = (url, targetSelector = "#wishlist-container", swapMode = "innerHTML") => {
+        const dialog = document.getElementById("request-delete-modal");
+        const confirmButton = document.getElementById("confirm-delete-request");
+        const checkbox = document.getElementById("delete-files-checkbox");
+        if (!dialog || !confirmButton) return;
+        confirmButton.setAttribute("hx-delete", url);
+        confirmButton.setAttribute("hx-target", targetSelector || "");
+        confirmButton.setAttribute("hx-swap", swapMode || "innerHTML");
+        if (checkbox) checkbox.checked = false;
+        if (window.htmx) {
+          window.htmx.process(confirmButton);
+        }
+        dialog.showModal();
+      };
+      const closeRequestDeleteModal = () => {
+        const dialog = document.getElementById("request-delete-modal");
+        if (dialog) dialog.close();
+      };
+      window.openRequestDeleteModal = openRequestDeleteModal;
+      window.closeRequestDeleteModal = closeRequestDeleteModal;
+    </script>
   </body>
 </html>

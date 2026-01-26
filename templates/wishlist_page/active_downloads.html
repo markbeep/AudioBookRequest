@@ -41,11 +41,9 @@
               {% endif %}
             </span>
             <button title="Remove Download"
+                    type="button"
                     class="btn btn-xs btn-ghost text-error size-5 p-0 min-h-0 h-5"
-                    hx-delete="{{ base_url }}/search/request/{{ dl.asin }}"
-                    hx-confirm="Stop and remove this download?"
-                    hx-target="closest .bg-base-100"
-                    hx-swap="outerHTML">
+                    onclick="openRequestDeleteModal('{{ base_url }}/search/request/{{ dl.asin }}', '#active-downloads-panel', 'none');">
               {% include "icons/trash.html" %}
             </button>
           </div>

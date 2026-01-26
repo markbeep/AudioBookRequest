@@ -187,8 +187,9 @@ async def delete_request(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(ABRAuth())],
     downloaded: bool | None = None,
+    delete_files: Annotated[bool, Form()] = False,
 ):
-    await api_delete_request(asin, session, user)
+    await api_delete_request(asin, session, user, delete_files=delete_files)
 
     results = get_wishlist_results(
         session,
