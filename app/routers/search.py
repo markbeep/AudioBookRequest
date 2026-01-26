@@ -16,7 +16,7 @@ from fastapi import (
 from htpy.starlette import HtpyResponse
 from sqlmodel import Session
 
-from app.components.book_card import book_card
+from app.components.book_card_tdom import BookCard
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.book_search import (
     audible_region_type,
@@ -145,7 +145,7 @@ async def add_request_hx(
         raise HTTPException(status_code=404, detail="Book not found")
 
     return HtpyResponse(
-        book_card(
+        BookCard(
             book=book,
             already_requested=True,
             auto_download_enabled=quality_config.get_auto_download(session),

@@ -1,6 +1,6 @@
 from htpy import a, div, fragment, h2
 
-from app.components.book_card import book_card
+from app.components.book_card_tdom import BookCard
 from app.internal.env_settings import Settings
 from app.internal.models import Audiobook
 
@@ -63,7 +63,7 @@ def categories_hx(*, recommendations: dict[str, list[Audiobook]]):
                             div(".flex.gap-4.pb-4")[
                                 div(
                                     ".flex-none.w-32.sm:w-40",
-                                )[book_card(book=book)]
+                                )[BookCard(book=book)]
                             ]
                             for book in books
                         )

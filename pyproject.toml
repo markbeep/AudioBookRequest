@@ -27,6 +27,7 @@ dependencies = [
     "requests>=2.32.5",
     "sqlmodel>=0.0.31",
     "structlog>=25.5.0",
+    "tdom>=0.1.14",
     "terminaltables>=3.1.10",
     "torf>=4.3.1",
     "torrent-parser>=0.4.1",
@@ -50,7 +51,7 @@ typeCheckingMode = "all"
 include = ["app"]
 reportDeprecated = false
 reportUnusedCallResult = false
-allowedUntypedLibraries = ["apscheduler", "torrent_parser"]
+allowedUntypedLibraries = ["apscheduler", "torrent_parser", "tdom"]
 
 [dependency-groups]
 dev = ["basedpyright>=1.37.2", "djlint>=1.36.4", "ruff>=0.14.14"]
