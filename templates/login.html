@@ -7,7 +7,7 @@
 {% endif %}
 {% endblock head %}
 {% block body %}
-<div class="app-shell app-shell-center">
+<div class="app-shell p-6 sm:p-8 app-shell-center">
   <div class="app-content max-w-md text-center space-y-6">
     <h1 class="text-4xl font-bold">Narrarr</h1>
     <form class="flex flex-col gap-2 app-card app-panel text-left" hx-post="{{ base_url }}/auth/token" id="form" hx-target="this">

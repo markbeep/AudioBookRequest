@@ -23,13 +23,14 @@
       <div id="book-grid" class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 app-stagger">
         {% for result in results %}
           {% set book = result.book %}
-          <div id="{{ book.asin }}" class="group app-card overflow-hidden hover:shadow-lg transition-shadow relative">
+          <div id="{{ book.asin }}" data-book-card class="group app-card overflow-hidden hover:shadow-lg transition-shadow relative">
+            <div class="selection-indicator hidden absolute inset-0 rounded-2xl border-[3px] border-primary/40 bg-primary/10 pointer-events-none z-[20]"></div>
             
             <!-- Selection Checkbox (Top Left) -->
             <div class="absolute top-2 left-2 z-[40]">
                 <input type="checkbox" name="asins" value="{{ book.asin }}" 
                        class="radio-checkbox size-5 backdrop-blur-md shadow-xl" 
-                       onclick="if(window.updateActionBar) updateActionBar(); event.stopPropagation();">
+                       onclick="const card = this.closest('[data-book-card]'); if (card) { card.classList.toggle('is-selected', this.checked); } if (window.updateActionBar) updateActionBar(); event.stopPropagation();">
             </div>
 
             <!-- Image Section -->
