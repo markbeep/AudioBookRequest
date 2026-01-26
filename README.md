@@ -2,6 +2,10 @@
 
 Self-hosted audiobook requests + automation with a polished UI and improved import matching.
 
+<img width="2333" height="1251" alt="image" src="https://github.com/user-attachments/assets/48f167fd-5cf6-418d-a0ed-dfe5e9ccac34" />
+<img width="1624" height="1132" alt="image" src="https://github.com/user-attachments/assets/5ae568f5-d3d4-4d2c-bda6-f55f3acc8308" />
+
+
 Original project and credit: `https://github.com/markbeep/AudioBookRequest`
 
 ## Features
