@@ -57,7 +57,7 @@
                 <!-- Actions -->
                 <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {% if book.downloaded %}
-                    <button hx-get="{{ base_url }}/library/rematch/{{ book.asin }}" hx-target="#book-details-modal-container"
+                    <button hx-get="{{ base_url }}/library/rematch/modal/{{ book.asin }}" hx-target="#book-details-modal-container"
                             class="btn btn-ghost btn-xs btn-square rounded-lg" title="Rematch">
                         {% include "icons/pencil.html" %}
                     </button>

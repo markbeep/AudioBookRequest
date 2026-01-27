@@ -914,7 +914,7 @@ async def search_for_match(
     )
 
 
-@router.get("/rematch/{asin}")
+@router.get("/rematch/modal/{asin}")
 async def rematch_modal(
     asin: str,
     request: Request,
@@ -961,7 +961,7 @@ async def rematch_search(
     )
 
 
-@router.post("/rematch/{old_asin}/{new_asin}")
+@router.post("/rematch/apply/{old_asin}/{new_asin}")
 async def rematch_apply(
     old_asin: str,
     new_asin: str,
