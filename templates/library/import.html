@@ -175,26 +175,47 @@
                     <!-- Live Results -->
 
                     {% block session_results %}
-                    <div class="flex items-center justify-between gap-3">
-                        <div class="text-[10px] font-black uppercase tracking-widest opacity-40">Results</div>
-                        <div class="join">
-                            <button class="btn btn-xs join-item font-black uppercase text-[9px] {% if view != 'grid' %}btn-primary{% else %}btn-ghost{% endif %}"
-                                    hx-get="{{ base_url }}/library/import/session/{{ session.id }}?view=table"
-                                    hx-target="#session-status-container"
-                                    hx-swap="innerHTML">
-                                List
-                            </button>
-                            <button class="btn btn-xs join-item font-black uppercase text-[9px] {% if view == 'grid' %}btn-primary{% else %}btn-ghost{% endif %}"
-                                    hx-get="{{ base_url }}/library/import/session/{{ session.id }}?view=grid"
-                                    hx-target="#session-status-container"
-                                    hx-swap="innerHTML">
-                                Grid
-                            </button>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="text-[10px] font-black uppercase tracking-widest opacity-40">Results</div>
+                            <div class="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                                <span class="opacity-40">Sort</span>
+                                <button type="button" class="import-sort-btn cursor-pointer text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition" data-sort-key="source" data-sort-type="string">
+                                    <span>Source</span><span class="ml-1" data-sort-arrow></span>
+                                </button>
+                                <button type="button" class="import-sort-btn cursor-pointer text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition" data-sort-key="match" data-sort-type="string">
+                                    <span>Matched To</span><span class="ml-1" data-sort-arrow></span>
+                                </button>
+                                <button type="button" class="import-sort-btn cursor-pointer text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition" data-sort-key="confidence" data-sort-type="number">
+                                    <span>Confidence</span><span class="ml-1" data-sort-arrow></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="import-view-indicator" class="loading loading-spinner loading-xs text-primary htmx-indicator"></span>
+                            <div class="join">
+                                <button class="btn btn-xs join-item font-black uppercase text-[9px] {% if view != 'grid' %}btn-primary{% else %}btn-ghost{% endif %}"
+                                        hx-get="{{ base_url }}/library/import/session/{{ session.id }}?view=table"
+                                        hx-target="#session-status-container"
+                                        hx-swap="innerHTML"
+                                        hx-indicator="#import-view-indicator"
+                                        hx-sync="#session-status-container:replace">
+                                    List
+                                </button>
+                                <button class="btn btn-xs join-item font-black uppercase text-[9px] {% if view == 'grid' %}btn-primary{% else %}btn-ghost{% endif %}"
+                                        hx-get="{{ base_url }}/library/import/session/{{ session.id }}?view=grid"
+                                        hx-target="#session-status-container"
+                                        hx-swap="innerHTML"
+                                        hx-indicator="#import-view-indicator"
+                                        hx-sync="#session-status-container:replace">
+                                    Grid
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     {% if view == 'grid' %}
-                    <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 mt-2 pb-24">
+                    <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 mt-2 pb-24" data-import-grid>
                         {% if items %}
                             {% for item in items %}
                                 {% include "library/import_card.html" %}
@@ -215,16 +236,26 @@
                         <div class="app-card overflow-x-auto">
                             <table class="table table-sm w-full min-w-0 md:min-w-[760px]">
                                 <thead>
-                                    <tr class="text-[10px] font-black uppercase tracking-widest opacity-60">
-                                        <th class="py-3">Source</th>
-                                        <th class="py-3 hidden md:table-cell">Detected</th>
-                                        <th class="py-3 hidden md:table-cell">Match</th>
-                                        <th class="py-3 hidden lg:table-cell text-center">Score</th>
-                                        <th class="py-3 hidden sm:table-cell">Status</th>
-                                        <th class="py-3 text-right">Actions</th>
+                                    <tr class="text-[10px] font-black uppercase tracking-widest">
+                                        <th class="py-3">
+                                            <button type="button" class="import-sort-btn cursor-pointer text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition" data-sort-key="source" data-sort-type="string">
+                                                <span>Source</span><span class="ml-1" data-sort-arrow></span>
+                                            </button>
+                                        </th>
+                                        <th class="py-3 hidden sm:table-cell">
+                                            <button type="button" class="import-sort-btn cursor-pointer text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition" data-sort-key="match" data-sort-type="string">
+                                                <span>Matched To</span><span class="ml-1" data-sort-arrow></span>
+                                            </button>
+                                        </th>
+                                        <th class="py-3 hidden sm:table-cell text-center">
+                                            <button type="button" class="import-sort-btn cursor-pointer text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition" data-sort-key="confidence" data-sort-type="number">
+                                                <span>Confidence</span><span class="ml-1" data-sort-arrow></span>
+                                            </button>
+                                        </th>
+                                        <th class="py-3 text-right opacity-60">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody data-import-table>
                                     {% if items %}
                                         {% for item in items %}
                                             {% include "library/import_row.html" %}
@@ -284,15 +315,123 @@
 <div id="import-modals-container"></div>
 
 <script>
+    const IMPORT_MODE_KEY = "abr_import_mode";
+    const IMPORT_SORT_KEY = "abr_import_sort";
+
     function syncImportMode(val) {
         document.querySelectorAll('input[name="import_mode"][type="hidden"]').forEach(el => {
             el.value = val;
         });
+        document.querySelectorAll('input[name="import_mode"][type="radio"]').forEach(el => {
+            el.checked = el.value === val;
+        });
     }
+
+    function getImportMode() {
+        return localStorage.getItem(IMPORT_MODE_KEY) || "copy";
+    }
+
+    function setImportMode(val) {
+        localStorage.setItem(IMPORT_MODE_KEY, val);
+        syncImportMode(val);
+    }
+
+    function getSortState() {
+        try {
+            const raw = localStorage.getItem(IMPORT_SORT_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function setSortState(state) {
+        localStorage.setItem(IMPORT_SORT_KEY, JSON.stringify(state));
+    }
+
+    function getSortValue(el, key, type) {
+        const raw = (el.dataset && el.dataset[key]) ? el.dataset[key] : "";
+        if (type === "number") {
+            const num = parseFloat(raw);
+            return Number.isNaN(num) ? 0 : num;
+        }
+        return String(raw).toLowerCase();
+    }
+
+    function applyImportSort() {
+        const state = getSortState();
+        if (!state || !state.key) {
+            updateSortButtons(null);
+            return;
+        }
+        const { key, dir, type } = state;
+        const grid = document.querySelector("[data-import-grid]");
+        const table = document.querySelector("[data-import-table]");
+
+        function sortContainer(container, selector) {
+            if (!container) return;
+            const items = Array.from(container.querySelectorAll(selector));
+            if (!items.length) return;
+            items.sort((a, b) => {
+                const av = getSortValue(a, key, type);
+                const bv = getSortValue(b, key, type);
+                if (av < bv) return dir === "asc" ? -1 : 1;
+                if (av > bv) return dir === "asc" ? 1 : -1;
+                return 0;
+            });
+            const frag = document.createDocumentFragment();
+            items.forEach(item => frag.appendChild(item));
+            container.appendChild(frag);
+        }
+
+        sortContainer(grid, "[data-import-item]");
+        sortContainer(table, "[data-import-item]");
+        updateSortButtons(state);
+    }
+
+    function updateSortButtons(state) {
+        document.querySelectorAll(".import-sort-btn").forEach(btn => {
+            const key = btn.dataset.sortKey;
+            const arrow = btn.querySelector("[data-sort-arrow]");
+            const isActive = state && key === state.key;
+            btn.classList.toggle("text-primary", isActive);
+            btn.classList.toggle("opacity-100", isActive);
+            btn.classList.toggle("opacity-60", !isActive);
+            if (arrow) {
+                arrow.textContent = isActive ? (state.dir === "asc" ? "^" : "v") : "";
+            }
+        });
+    }
+
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest(".import-sort-btn");
+        if (!btn) return;
+        e.preventDefault();
+        const current = getSortState() || {};
+        const key = btn.dataset.sortKey;
+        const type = btn.dataset.sortType || "string";
+        const dir = (current.key === key && current.dir === "asc") ? "desc" : "asc";
+        const next = { key, dir, type };
+        setSortState(next);
+        applyImportSort();
+    });
     
     document.addEventListener('change', (e) => {
         if (e.target.name === 'import_mode' && e.target.type === 'radio') {
-            syncImportMode(e.target.value);
+            setImportMode(e.target.value);
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        syncImportMode(getImportMode());
+        applyImportSort();
+    });
+
+    document.addEventListener("htmx:afterSwap", (e) => {
+        const container = document.getElementById("session-status-container");
+        if (container && container.contains(e.target)) {
+            syncImportMode(getImportMode());
+            applyImportSort();
         }
     });
 </script>

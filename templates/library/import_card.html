@@ -1,7 +1,15 @@
 {% block item_card %}
 {% set book = books_map.get(item.match_asin) if books_map else None %}
 {% set status_value = item.status.value if item.status else '' %}
-<div id="row-{{ item.id }}" class="app-card p-3 flex flex-col gap-3">
+{% set match_title = book.title if book else (item.match_asin|asin_to_title if item.match_asin else '') %}
+{% set match_author = book.authors|join(', ') if book and book.authors else (item.match_asin|asin_to_author if item.match_asin else '') %}
+<div id="row-{{ item.id }}"
+     class="app-card p-3 flex flex-col gap-3"
+     data-import-item
+     data-source="{{ item.source_path|basename|lower }}"
+     data-match="{{ (match_title or '')|lower }}"
+     data-confidence="{{ item.match_score or 0 }}"
+     data-status="{{ status_value }}">
     <div class="relative aspect-square w-full overflow-hidden bg-base-300 border border-base-300 app-media">
         {% if item.match_asin %}
             {% if book and book.cover_image %}

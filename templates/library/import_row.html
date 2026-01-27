@@ -6,6 +6,7 @@
 <tr id="row-{{ item.id }}"
     class="border-b border-base-300/60 last:border-b-0 hover:bg-base-200/60 transition-colors"
     data-row="import"
+    data-import-item
     data-source="{{ item.source_path|basename|lower }}"
     data-detected="{{ ((item.detected_title or '') ~ ' ' ~ (item.detected_author or ''))|lower }}"
     data-match="{{ (match_title or '')|lower }}"
@@ -14,23 +15,18 @@
     <td class="py-3 pr-4 align-top">
         <div class="font-semibold text-xs truncate max-w-[220px]" title="{{ item.source_path|basename }}">{{ item.source_path|basename }}</div>
         <div class="mt-2 space-y-1 text-[10px] opacity-70 sm:hidden">
-            {% if item.detected_title or item.detected_author %}
-            <div class="truncate">
-                <span class="font-bold">Detected:</span>
-                {{ item.detected_title or 'Unknown title' }}{% if item.detected_author %} - {{ item.detected_author }}{% endif %}
-            </div>
-            {% else %}
-            <div class="italic opacity-60">No extracted metadata</div>
-            {% endif %}
             {% if item.match_asin %}
             <div class="truncate">
-                <span class="font-bold">Match:</span>
+                <span class="font-bold">Matched To:</span>
                 {{ match_title }}{% if match_author %} - {{ match_author }}{% endif %}
             </div>
             {% else %}
             <div class="italic opacity-60">No automatic match</div>
             {% endif %}
             <div class="flex items-center gap-2">
+                {% if item.match_asin %}
+                <span class="font-bold">{{ (item.match_score * 100)|int }}%</span>
+                {% endif %}
                 <span class="badge badge-xs font-black uppercase px-2 py-2 border-0
                     {% if status_value == 'matched' %}badge-success
                     {% elif status_value == 'missing' %}badge-warning
@@ -40,29 +36,18 @@
                     {% else %}badge-ghost{% endif %}">
                     {{ status_value|replace('_', ' ') }}
                 </span>
-                {% if item.match_asin %}
-                <span class="font-bold">{{ (item.match_score * 100)|int }}%</span>
-                {% endif %}
             </div>
         </div>
     </td>
-    <td class="py-3 hidden md:table-cell align-top">
-        {% if item.detected_title or item.detected_author %}
-        <div class="font-semibold text-xs truncate max-w-[220px]" title="{{ item.detected_title or '' }}">{{ item.detected_title or 'Unknown title' }}</div>
-        <div class="text-[10px] opacity-60 truncate max-w-[220px]">{{ item.detected_author or 'Unknown author' }}</div>
-        {% else %}
-        <span class="text-[10px] opacity-40 italic">No extracted metadata</span>
-        {% endif %}
-    </td>
-    <td class="py-3 hidden md:table-cell align-top">
+    <td class="py-3 hidden sm:table-cell align-top">
         {% if item.match_asin %}
-        <div class="font-semibold text-xs text-primary truncate max-w-[220px]" title="{{ match_title }}">{{ match_title }}</div>
-        <div class="text-[10px] opacity-60 truncate max-w-[220px]">{{ match_author }}</div>
+        <div class="font-semibold text-xs text-primary truncate max-w-[260px]" title="{{ match_title }}">{{ match_title }}</div>
+        <div class="text-[10px] opacity-60 truncate max-w-[260px]">{{ match_author }}</div>
         {% else %}
         <span class="text-[10px] opacity-40 italic">No automatic match</span>
         {% endif %}
     </td>
-    <td class="py-3 hidden lg:table-cell align-top text-center">
+    <td class="py-3 hidden sm:table-cell align-top text-center">
         {% if item.match_asin %}
         <span class="badge badge-xs font-black border-0 px-2 py-2
             {% if item.match_score >= 0.85 %}badge-success
@@ -73,17 +58,6 @@
         {% else %}
         <span class="text-[10px] opacity-40">-</span>
         {% endif %}
-    </td>
-    <td class="py-3 hidden sm:table-cell align-top">
-        <span class="badge badge-xs font-black uppercase px-2 py-2 border-0
-            {% if status_value == 'matched' %}badge-success
-            {% elif status_value == 'missing' %}badge-warning
-            {% elif status_value == 'pending' %}badge-info
-            {% elif status_value == 'imported' %}badge-success
-            {% elif status_value == 'error' %}badge-error
-            {% else %}badge-ghost{% endif %}">
-            {{ status_value|replace('_', ' ') }}
-        </span>
     </td>
     <td class="py-3 align-top">
         <div class="flex flex-wrap gap-2 sm:justify-end">

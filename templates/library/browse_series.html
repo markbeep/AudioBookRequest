@@ -54,7 +54,11 @@
                     </div>
 
                     <!-- Action -->
-                    <button class="btn btn-primary btn-sm btn-block rounded-lg mt-2">
+                    <button class="btn btn-primary btn-sm btn-block rounded-lg mt-2"
+                            type="button"
+                            hx-get="{{ base_url }}/library/series/{{ series_name|urlencode|replace('+', '%20') }}"
+                            hx-target="#book-details-modal-container"
+                            hx-swap="innerHTML">
                         View Series &rarr;
                     </button>
                 </div>

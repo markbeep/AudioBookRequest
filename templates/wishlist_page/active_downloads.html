@@ -2,7 +2,7 @@
   {% if downloads %}
   <div class="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
     {% for dl in downloads %}
-    <div class="app-card p-3 space-y-3 transition-shadow">
+    <div class="app-card p-3 space-y-3 transition-shadow group" data-download-card>
       <!-- Cover -->
       <div class="relative w-full aspect-square bg-base-300 overflow-hidden app-media shadow-inner">
         {% if dl.cover %}
@@ -39,7 +39,7 @@
                     class="btn btn-xs btn-ghost text-error size-5 p-0 min-h-0 h-5"
                     hx-delete="{{ base_url }}/search/request/{{ dl.asin }}"
                     hx-confirm="Stop and remove this download?"
-                    hx-target="closest .bg-base-100"
+                    hx-target="closest [data-download-card]"
                     hx-swap="outerHTML">
               {% include "icons/trash.html" %}
             </button>

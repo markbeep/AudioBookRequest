@@ -21,9 +21,10 @@
         <!-- Authors List -->
         <div class="space-y-3">
             {% for author_name, author_books in authors %}
+                {% set author_id = loop.index0 %}
                 <div class="app-card overflow-hidden">
                     <!-- Author Header -->
-                    <div class="p-4 hover:bg-base-200/50 transition cursor-pointer" onclick="toggleAuthorExpanded('{{ author_name }}')">
+                    <div class="p-4 hover:bg-base-200/50 transition cursor-pointer" onclick="toggleAuthorExpanded('{{ author_id }}')">
                         <div class="flex items-center justify-between gap-4">
                             <div class="flex-1">
                                 <h3 class="font-black text-lg">{{ author_name }}</h3>
@@ -39,7 +40,7 @@
                                     {{ unique_series_in_author|length }} series &bull; {{ author_books|length }} books
                                 </p>
                             </div>
-                            <button class="btn btn-ghost btn-sm btn-square transition-transform" data-author-toggle="{{ author_name }}">
+                            <button class="btn btn-ghost btn-sm btn-square transition-transform" data-author-toggle="{{ author_id }}">
                                 &#x25BC;
                             </button>
                         </div>
@@ -60,15 +61,16 @@
                         {% endfor %}
                         
                         {% for series_name in series_in_author.keys()|sort %}
+                            {% set series_id = author_id ~ '-' ~ loop.index0 %}
                             {% set series_books = series_in_author[series_name] %}
-                            <div class="px-4" data-author-series="{{ author_name }}">
-                                <div class="py-3 hover:bg-base-200/30 transition cursor-pointer border-b border-base-300 last:border-b-0" onclick="toggleSeriesExpanded('{{ series_name }}')">
+                            <div class="px-4" data-author-series="{{ author_id }}">
+                                <div class="py-3 hover:bg-base-200/30 transition cursor-pointer border-b border-base-300 last:border-b-0" onclick="toggleSeriesExpanded('{{ series_id }}')">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="flex-1">
                                             <h4 class="font-bold">{{ series_name }}</h4>
                                             <p class="text-xs opacity-60">{{ series_books|length }} books</p>
                                         </div>
-                                        <button class="btn btn-ghost btn-xs btn-square transition-transform" data-series-toggle="{{ series_name }}">
+                                        <button class="btn btn-ghost btn-xs btn-square transition-transform" data-series-toggle="{{ series_id }}">
                                             &#x25BC;
                                         </button>
                                     </div>
@@ -76,7 +78,7 @@
                                 
                                 <!-- Books -->
                                 {% for book in series_books %}
-                                    <div class="hidden pl-4 py-2 border-b border-base-300/50 last:border-b-0 flex items-center justify-between hover:bg-base-200/20 transition" data-series-books="{{ series_name }}">
+                                    <div class="hidden pl-4 py-2 border-b border-base-300/50 last:border-b-0 flex items-center justify-between hover:bg-base-200/20 transition" data-series-books="{{ series_id }}">
                                         <div class="flex items-center gap-3 flex-1">
                                             <span class="badge badge-sm badge-success">&#x2705;</span>
                                             <div class="flex-1">
@@ -97,17 +99,17 @@
 </div>
 
 <script>
-    function toggleAuthorExpanded(authorName) {
-        const series = document.querySelectorAll(`[data-author-series="${authorName}"]`);
-        const btn = document.querySelector(`[data-author-toggle="${authorName}"]`);
+    function toggleAuthorExpanded(authorId) {
+        const series = document.querySelectorAll(`[data-author-series="${authorId}"]`);
+        const btn = document.querySelector(`[data-author-toggle="${authorId}"]`);
         
         series.forEach(s => s.classList.toggle('hidden'));
         if (btn) btn.classList.toggle('rotate-180');
     }
 
-    function toggleSeriesExpanded(seriesName) {
-        const books = document.querySelectorAll(`[data-series-books="${seriesName}"]`);
-        const btn = document.querySelector(`[data-series-toggle="${seriesName}"]`);
+    function toggleSeriesExpanded(seriesId) {
+        const books = document.querySelectorAll(`[data-series-books="${seriesId}"]`);
+        const btn = document.querySelector(`[data-series-toggle="${seriesId}"]`);
         
         books.forEach(b => b.classList.toggle('hidden'));
         if (btn) btn.classList.toggle('rotate-180');
