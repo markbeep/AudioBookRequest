@@ -7,8 +7,8 @@ services:
     environment:
       - ABR_APP__CONFIG_DIR=/config
     volumes:
-      - abr_config:/config
-      - library:/library
-      - import:/import
-      - qbt_downloads:/downloads
+      - ./abr_config:/config
+      - ./library:/library
+      - ./import:/import
+      - ./qbt_downloads:/downloads
 

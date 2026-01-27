@@ -8,6 +8,10 @@ from sqlmodel import select
 
 from app.internal.auth.authentication import RequiresLoginException
 from app.internal.auth.config import auth_config, initialize_force_login_type
+from app.internal.auth.session_middleware import (
+    DynamicSessionMiddleware,
+    middleware_linker,
+)
 from app.internal.auth.oidc_config import InvalidOIDCConfiguration
 from app.internal.book_search import clear_old_book_caches
 from app.internal.env_settings import Settings
@@ -27,6 +31,7 @@ from app.util.fetch_js import fetch_scripts
 from app.util.redirect import BaseUrlRedirectResponse
 from app.util.templates import templates
 from app.util.toast import ToastException
+from app.util.time import Second
 from app.internal.processing.monitor import start_monitor
 
 # intialize js dependencies or throw an error if not in debug mode
@@ -34,6 +39,7 @@ fetch_scripts(Settings().app.debug)
 
 with next(get_session()) as session:
     auth_secret = auth_config.get_auth_secret(session)
+    access_token_expiry = auth_config.get_access_token_expiry_minutes(session)
     initialize_force_login_type(session)
     clear_old_book_caches(session)
 
@@ -42,6 +48,13 @@ app = FastAPI(
     title="Narrarr",
     version=Settings().app.version,
     description="API for Narrarr",
+)
+
+app.add_middleware(
+    DynamicSessionMiddleware,
+    secret_key=auth_secret,
+    linker=middleware_linker,
+    max_age=Second(access_token_expiry * 60),
 )
 
 
