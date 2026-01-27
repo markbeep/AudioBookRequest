@@ -1,5 +1,6 @@
 services:
   audiobookrequest:
+    build: .
     image: ghcr.io/zippy-boy/narrarr:latest
     ports:
       - "8000:8000"

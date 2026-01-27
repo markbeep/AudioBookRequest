@@ -24,7 +24,7 @@ COPY static/tw.css static/tw.css
 RUN /bin/tailwindcss -i static/tw.css -o static/globals.css -m
 
 # ---- Python deps ----
-FROM astral/uv:python3.14-alpine AS python-deps
+FROM astral/uv:python3.13-alpine AS python-deps
 WORKDIR /app
 COPY uv.lock pyproject.toml ./
 RUN uv sync --frozen --no-cache --no-dev
@@ -32,7 +32,7 @@ COPY app/util/fetch_js.py app/util/fetch_js.py
 RUN mkdir -p static && /app/.venv/bin/python app/util/fetch_js.py
 
 # ---- Final ----
-FROM python:3.14-alpine AS final
+FROM python:3.13-alpine AS final
 WORKDIR /app
 
 COPY --from=css /app/static/globals.css static/globals.css
