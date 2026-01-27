@@ -242,12 +242,12 @@
                                                 <span>Source</span><span class="ml-1" data-sort-arrow></span>
                                             </button>
                                         </th>
-                                        <th class="py-3 hidden sm:table-cell">
+                                        <th class="py-3">
                                             <button type="button" class="import-sort-btn cursor-pointer text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition" data-sort-key="match" data-sort-type="string">
                                                 <span>Matched To</span><span class="ml-1" data-sort-arrow></span>
                                             </button>
                                         </th>
-                                        <th class="py-3 hidden sm:table-cell text-center">
+                                        <th class="py-3 text-center">
                                             <button type="button" class="import-sort-btn cursor-pointer text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition" data-sort-key="confidence" data-sort-type="number">
                                                 <span>Confidence</span><span class="ml-1" data-sort-arrow></span>
                                             </button>
@@ -265,7 +265,7 @@
                                             {% include "library/import_skeletons.html" %}
                                         {% else %}
                                             <tr>
-                                                <td colspan="6" class="py-16 text-center opacity-40">
+                                                <td colspan="4" class="py-16 text-center opacity-40">
                                                     <div class="font-black uppercase text-xs">No items found</div>
                                                     <div class="text-[10px] font-mono opacity-50 mt-2">Try a different path</div>
                                                 </td>

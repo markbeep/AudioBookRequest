@@ -14,32 +14,8 @@
     data-status="{{ status_value }}">
     <td class="py-3 pr-4 align-top">
         <div class="font-semibold text-xs truncate max-w-[220px]" title="{{ item.source_path|basename }}">{{ item.source_path|basename }}</div>
-        <div class="mt-2 space-y-1 text-[10px] opacity-70 sm:hidden">
-            {% if item.match_asin %}
-            <div class="truncate">
-                <span class="font-bold">Matched To:</span>
-                {{ match_title }}{% if match_author %} - {{ match_author }}{% endif %}
-            </div>
-            {% else %}
-            <div class="italic opacity-60">No automatic match</div>
-            {% endif %}
-            <div class="flex items-center gap-2">
-                {% if item.match_asin %}
-                <span class="font-bold">{{ (item.match_score * 100)|int }}%</span>
-                {% endif %}
-                <span class="badge badge-xs font-black uppercase px-2 py-2 border-0
-                    {% if status_value == 'matched' %}badge-success
-                    {% elif status_value == 'missing' %}badge-warning
-                    {% elif status_value == 'pending' %}badge-info
-                    {% elif status_value == 'imported' %}badge-success
-                    {% elif status_value == 'error' %}badge-error
-                    {% else %}badge-ghost{% endif %}">
-                    {{ status_value|replace('_', ' ') }}
-                </span>
-            </div>
-        </div>
     </td>
-    <td class="py-3 hidden sm:table-cell align-top">
+    <td class="py-3 align-top">
         {% if item.match_asin %}
         <div class="font-semibold text-xs text-primary truncate max-w-[260px]" title="{{ match_title }}">{{ match_title }}</div>
         <div class="text-[10px] opacity-60 truncate max-w-[260px]">{{ match_author }}</div>
@@ -47,7 +23,7 @@
         <span class="text-[10px] opacity-40 italic">No automatic match</span>
         {% endif %}
     </td>
-    <td class="py-3 hidden sm:table-cell align-top text-center">
+    <td class="py-3 align-top text-center">
         {% if item.match_asin %}
         <span class="badge badge-xs font-black border-0 px-2 py-2
             {% if item.match_score >= 0.85 %}badge-success
