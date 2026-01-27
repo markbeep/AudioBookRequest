@@ -1,0 +1,49 @@
+<div class="bg-base-100 rounded-xl border border-base-300 overflow-hidden hover:border-primary hover:shadow-xl transition-all flex flex-col group relative" 
+     data-book-grid-card data-book-search="{{ book.title }} {{ book.authors|join(' ') }} {{ book.series|join(' ') }}">
+    
+    <!-- Selection Checkbox -->
+    <div class="absolute top-2 left-2 z-[40]">
+        <input type="checkbox" name="asins" value="{{ book.asin }}" 
+               class="checkbox checkbox-primary size-6 rounded-full border-2 border-white/40 bg-black/20 backdrop-blur-md shadow-2xl transition-all duration-300 checked:bg-success checked:border-white/20 hover:scale-110" 
+               onclick="updateActionBar(); event.stopPropagation();">
+    </div>
+    
+    <!-- Cover -->
+    <div class="aspect-[2/3] bg-base-300 relative overflow-hidden flex-shrink-0">
+        {% if book.cover_image %}
+        <img src="{{ book.cover_image }}" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500">
+        {% else %}
+        <div class="w-full h-full flex items-center justify-center opacity-20">📚</div>
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        
+        <!-- Hover Actions -->
+        <div class="absolute bottom-2 right-2 flex gap-1 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+             <button hx-get="{{ base_url }}/library/book/{{ book.asin }}" hx-target="#book-details-modal-container" class="btn btn-xs btn-primary btn-square rounded-lg shadow-lg flex items-center justify-center">
+                <span class="size-3">{% include "icons/info-circle.html" %}</span>
+             </button>
+             {% if book.downloaded %}
+             <button hx-post="{{ base_url }}/library/bulk/reprocess" hx-vals='{"asins": ["{{ book.asin }}"]}' hx-target="#toast-block" hx-swap="innerHTML" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white flex items-center justify-center">
+                <span class="size-3">{% include "icons/pencil.html" %}</span>
+             </button>
+             {% endif %}
+        </div>
+    </div>
+    
+    <!-- Info -->
+    <div class="p-2 flex-1 flex flex-col gap-0.5 min-w-0 text-left">
+        <button hx-get="{{ base_url }}/library/book/{{ book.asin }}" hx-target="#book-details-modal-container" 
+                class="text-[10px] font-black truncate hover:text-primary leading-tight mb-0.5 text-left">{{ book.title }}</button>
+        
+        <p class="text-[8px] font-bold opacity-40 truncate">{{ book.authors|join(', ') }}</p>
+
+        <div class="mt-auto pt-1.5 flex items-center justify-between border-t border-base-200 mt-1">
+            <span class="text-[8px] font-black opacity-30 uppercase tracking-tighter">{{ book.runtime_length_hrs }}h • {{ book.release_date.year if book.release_date else 'N/A' }}</span>
+            {% if book.downloaded %}
+            <span class="text-success text-[8px]">✅</span>
+            {% else %}
+            <span class="text-info text-[8px]">ℹ️</span>
+            {% endif %}
+        </div>
+    </div>
+</div>

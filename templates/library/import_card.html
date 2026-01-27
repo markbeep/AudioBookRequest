@@ -1,0 +1,91 @@
+{% block item_card %}
+{% set book = books_map.get(item.match_asin) if books_map else None %}
+{% set status_value = item.status.value if item.status else '' %}
+<div id="row-{{ item.id }}" class="app-card p-3 flex flex-col gap-3">
+    <div class="relative aspect-square w-full rounded-xl overflow-hidden bg-base-300 border border-base-300">
+        {% if item.match_asin %}
+            {% if book and book.cover_image %}
+                <img src="{{ book.cover_image }}" class="w-full h-full object-cover">
+            {% else %}
+                <img src="{{ item.match_asin|asin_to_cover }}" class="w-full h-full object-cover">
+            {% endif %}
+            <div class="absolute top-2 right-2 badge badge-xs font-black shadow-lg
+                {% if item.match_score >= 0.85 %}badge-success
+                {% elif item.match_score >= 0.6 %}badge-warning
+                {% else %}badge-error{% endif %} border-0 px-1.5 py-2">
+                {{ (item.match_score * 100)|int }}%
+            </div>
+        {% else %}
+            <div class="w-full h-full flex items-center justify-center opacity-20">
+                {% include "icons/photo-off.html" %}
+            </div>
+        {% endif %}
+
+        {% if status_value == 'imported' %}
+            <div class="absolute inset-0 bg-success/20 backdrop-blur-[2px] flex items-center justify-center">
+                <div class="bg-base-100 text-success p-2 rounded-full shadow-2xl scale-110">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="4" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                </div>
+            </div>
+        {% elif status_value == 'pending' %}
+            <div class="absolute inset-0 bg-base-100/40 backdrop-blur-[1px] flex items-center justify-center">
+                <span class="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="flex flex-col gap-1">
+        {% if item.match_asin %}
+            <span class="font-black text-[11px] text-primary truncate" title="{{ book.title if book else item.match_asin|asin_to_title }}">
+                {{ book.title if book else item.match_asin|asin_to_title }}
+            </span>
+            <span class="text-[9px] opacity-60 truncate font-bold">        
+                {{ book.authors|join(', ') if book and book.authors else item.match_asin|asin_to_author }}
+            </span>
+        {% else %}
+            <span class="font-bold text-[11px] opacity-40 italic">No automatic match</span>
+        {% endif %}
+        <p class="text-[8px] font-mono opacity-40 truncate" title="{{ item.source_path|basename }}">{{ item.source_path|basename }}</p>
+    </div>
+
+    <div class="flex gap-1 pt-1 border-t border-base-300/50">
+        {% if status_value != 'imported' and status_value != 'pending' %}
+            {% if status_value == 'matched' %}
+            <form hx-post="/library/import/item/execute/{{ item.id }}?view={{ view }}" 
+                  hx-target="#row-{{ item.id }}" 
+                  hx-swap="outerHTML" 
+                  hx-on::before-request="this.querySelector('button').classList.add('loading'); this.querySelector('button').innerText = '...';"
+                  class="flex-grow">      
+                <input type="hidden" name="import_mode" id="import-mode-hidden-{{ item.id }}" value="copy" />
+                <button type="submit" class="btn btn-[10px] btn-success h-7 min-h-0 w-full rounded-lg font-black uppercase tracking-tighter shadow-sm">
+                    Import
+                </button>
+            </form>
+            {% endif %}
+            <button class="btn btn-[10px] btn-outline h-7 min-h-0 flex-grow rounded-lg font-bold shadow-sm"
+                    hx-get="/library/import/fix-match/{{ item.id }}?view={{ view }}"
+                    hx-target="#import-modals-container">
+                Match
+            </button>
+        {% elif status_value == 'pending' %}
+            <button class="btn btn-[10px] btn-ghost h-7 min-h-0 w-full rounded-lg bg-base-300/50 cursor-wait flex items-center gap-2 px-2" disabled>
+                <span class="loading loading-spinner loading-xs text-primary"></span>
+                <span class="font-black text-[9px] uppercase opacity-60">Importing</span>
+            </button>
+        {% elif status_value == 'error' %}
+            <button class="btn btn-[10px] btn-error h-7 min-h-0 w-full rounded-lg font-black uppercase tracking-tighter shadow-sm"
+                    hx-get="/library/import/fix-match/{{ item.id }}?view={{ view }}"
+                    hx-target="#import-modals-container"
+                    title="{{ item.error_msg }}">
+                Error
+            </button>
+        {% else %}
+            <button class="btn btn-[10px] btn-ghost h-7 min-h-0 w-full rounded-lg opacity-50 cursor-default no-animation bg-success/10 text-success border border-success/20" disabled>
+                <span class="font-black uppercase tracking-tighter">Imported</span>
+            </button>
+        {% endif %}
+    </div>
+</div>
+{% endblock item_card %}

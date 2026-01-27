@@ -1,7 +1,7 @@
 <!-- Book Card Component -->
 <div class="flex flex-col group">
     <div
-        class="relative w-[8rem] h-[8rem] sm:w-[10rem] sm:h-[10rem] overflow-hidden app-card app-media shadow-md group-hover:shadow-lg transition-shadow">
+        class="relative w-[8rem] h-[8rem] sm:w-[10rem] sm:h-[10rem] rounded-lg overflow-hidden shadow-md border border-base-300 bg-base-300 group-hover:shadow-lg transition-shadow">
         {% if book.cover_image %}
         <img class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500 ease-in-out"
             height="128" width="128" src="{{ book.cover_image }}" alt="{{ book.title }}" />
@@ -11,7 +11,7 @@
 
         <!-- Request Button -->
         <button
-            class="absolute top-2 left-2 rounded-2xl btn-sm btn btn-square items-center justify-center flex shadow-md backdrop-blur-md {% if book.downloaded or already_requested %}btn-ghost bg-success/80 text-success-content{% else %}btn-info{% endif %}"
+            class="absolute top-0 left-0 rounded-none rounded-br-lg btn-sm btn btn-square items-center justify-center flex {% if book.downloaded or already_requested %}btn-ghost bg-success text-success/20{% else %}btn-info{% endif %}"
             hx-post="{{ base_url }}/search/request/{{ book.asin }}" hx-disabled-elt="this" hx-target="closest div.flex"
             hx-swap="outerHTML" hx-on:click="this.disabled = true;" {% if book.downloaded or already_requested
             %}disabled{% endif %}>

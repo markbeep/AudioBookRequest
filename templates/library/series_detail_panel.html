@@ -1,0 +1,110 @@
+<dialog id="series-details-modal" class="modal modal-open bg-black/40 backdrop-blur-sm" onclick="if(event.target === this) this.remove()">
+<div class="modal-box max-w-4xl bg-base-100 border border-base-300 shadow-2xl p-0 overflow-hidden" onclick="event.stopPropagation()">
+    <!-- Header -->
+    <div class="bg-base-200 p-6 border-b border-base-300 flex justify-between items-center relative overflow-hidden">
+        <div class="z-10">
+            <h3 class="font-black text-2xl tracking-tight leading-none">{{ series_name }}</h3>
+            <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mt-3">Series Collection • {{ books|length }} Books</p>
+        </div>
+        <form method="dialog" class="z-10">
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="document.getElementById('series-details-modal').remove()">✕</button>
+        </form>
+        <div class="absolute right-0 top-0 text-9xl opacity-5 select-none pointer-events-none translate-x-1/4 -translate-y-1/4 font-black">
+            {{ series_name[0] }}
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="p-4 sm:p-6 overflow-y-auto max-h-[70vh]">
+        <div class="space-y-2">
+            {% for book in books %}
+            <div class="flex items-center gap-4 p-3 bg-base-100 rounded-2xl border border-base-300/50 hover:border-primary transition group relative">
+                <!-- Compact Cover -->
+                <div class="size-14 rounded-xl overflow-hidden bg-base-300 flex-shrink-0 shadow-sm relative">
+                    {% if book.cover_image %}
+                    <img src="{{ book.cover_image }}" class="object-cover w-full h-full">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center opacity-20">📚</div>
+                    {% endif %}
+                    {% if book.downloaded %}
+                    <div class="absolute inset-0 bg-success/20 flex items-center justify-center">
+                        <span class="text-success size-5 shadow-sm">{% include "icons/checkmark.html" %}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <h4 class="font-black text-sm truncate">{{ book.title }}</h4>
+                        {% if book.downloaded %}
+                        <span class="badge badge-xs bg-success/10 text-success border-success/20 font-black uppercase text-[8px] px-1.5 py-2">Library</span>
+                        {% else %}
+                        <span class="badge badge-xs bg-info/10 text-info border-info/20 font-black uppercase text-[8px] px-1.5 py-2">Requested</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold opacity-40 uppercase tracking-tight">
+                        <span>{{ book.authors|join(", ") }}</span>
+                        <span>•</span>
+                        <span>{{ book.runtime_length_hrs }}h</span>
+                        {% if book.release_date %}
+                        <span>•</span>
+                        <span>{{ book.release_date.year }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {% if book.downloaded %}
+                    <button hx-post="{{ base_url }}/library/bulk/reprocess" hx-vals='{"asins": ["{{ book.asin }}"]}'
+                            class="btn btn-ghost btn-xs btn-square rounded-lg" title="Rescan Metadata">
+                        {% include "icons/pencil.html" %}
+                    </button>
+                    <div class="dropdown dropdown-end">
+                        <button tabindex="0" role="button" class="btn btn-ghost btn-xs btn-square rounded-lg text-error" title="Remove from Library">
+                            {% include "icons/trash.html" %}
+                        </button>
+                        <div tabindex="0" class="dropdown-content z-[60] menu p-5 shadow-2xl bg-base-100 text-base-content rounded-2xl w-64 border border-base-300 mt-2">
+                            <h3 class="font-black mb-2 text-xs uppercase tracking-widest">Delete Book</h3>
+                            <p class="text-[10px] opacity-60 mb-4">Remove this book from your library?</p>
+                            <label class="label cursor-pointer justify-start gap-2 bg-base-200 p-2 rounded-xl mb-4">
+                                <input type="checkbox" name="delete_files" class="checkbox checkbox-xs rounded-md" />
+                                <span class="label-text text-[10px] font-bold">Also delete files</span>
+                            </label>
+                            <button hx-post="{{ base_url }}/library/bulk/delete" hx-vals='{"asins": ["{{ book.asin }}"]}' hx-include="closest div.dropdown input[name='delete_files']" 
+                                    class="btn btn-error btn-xs w-full rounded-xl font-black uppercase text-[9px] tracking-wider" hx-target="body" hx-swap="none">Delete</button>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- If not downloaded, show sources/download if admin -->
+                    <a href="{{ base_url }}/wishlist/sources/{{ book.asin }}" class="btn btn-ghost btn-xs btn-square rounded-lg" title="Search Sources">
+                        {% include "icons/search.html" %}
+                    </a>
+                    <button hx-post="{{ base_url }}/wishlist/auto-download/{{ book.asin }}" hx-target="body" hx-swap="none"
+                            class="btn btn-ghost btn-xs btn-square rounded-lg text-primary" title="Start Download">
+                        {% include "icons/download.html" %}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-base-200 p-4 border-t border-base-300 flex justify-between items-center">
+        <div class="flex gap-4">
+            <div class="flex items-center gap-2">
+                <div class="size-2 rounded-full bg-success"></div>
+                <span class="text-[9px] font-black uppercase tracking-widest opacity-40">Library</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="size-2 rounded-full bg-info"></div>
+                <span class="text-[9px] font-black uppercase tracking-widest opacity-40">Requested</span>
+            </div>
+        </div>
+        <button class="btn btn-xs btn-ghost font-black uppercase text-[9px] tracking-widest" onclick="document.getElementById('series-details-modal').remove()">Close Collection</button>
+    </div>
+</div>
+</dialog>

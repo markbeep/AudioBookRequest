@@ -1,0 +1,127 @@
+<dialog id="book-details-modal" class="modal modal-open bg-black/40 backdrop-blur-sm" onclick="if(event.target === this) this.remove()">
+<div class="modal-box max-w-2xl bg-base-100 border border-base-300 shadow-2xl p-0 overflow-hidden" onclick="event.stopPropagation()">
+    <!-- Close Button -->
+    <form method="dialog">
+        <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 z-20 bg-black/20 text-white hover:bg-black/40 backdrop-blur-md border-0" onclick="document.getElementById('book-details-modal').remove()">✕</button>
+    </form>
+
+    <div class="flex flex-col">
+        <!-- Header with Cover Backdrop -->
+        <div class="relative h-64 sm:h-80 overflow-hidden bg-base-300">
+            {% if book.cover_image %}
+            <img src="{{ book.cover_image }}" class="absolute inset-0 w-full h-full object-cover blur-2xl opacity-50 scale-110">
+            <div class="absolute inset-0 flex items-center justify-center p-8">
+                <img src="{{ book.cover_image }}" class="h-full rounded-xl shadow-2xl border-4 border-white/10 relative z-10 aspect-[2/3] object-cover">
+            </div>
+            {% else %}
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="size-32 rounded-3xl bg-base-200 border-4 border-base-100 flex items-center justify-center text-5xl opacity-20">📚</div>
+            </div>
+            {% endif %}
+            <div class="absolute inset-0 bg-gradient-to-t from-base-100 via-base-100/20 to-transparent"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 sm:p-8 space-y-8 -mt-12 relative z-10">
+            <!-- Title & Status -->
+            <div class="space-y-3">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="badge badge-success font-black uppercase text-[10px] tracking-wider py-3 px-4 rounded-xl shadow-sm">✅ Matched & Ready</span>
+                    {% if book.runtime_length_hrs %}
+                    <span class="badge badge-ghost font-black uppercase text-[10px] tracking-wider py-3 px-4 rounded-xl shadow-sm">{{ book.runtime_length_hrs }} Hours</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <h3 class="font-black text-3xl sm:text-4xl leading-tight">{{ book.title }}</h3>
+                    <p class="text-lg font-bold opacity-60 mt-1">{{ book.authors|join(", ") }}</p>
+                </div>
+            </div>
+
+            <!-- Metadata Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-base-200/50 p-4 rounded-2xl border border-base-300/50">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Duration</p>
+                    <p class="font-black text-lg">{{ book.runtime_length_hrs }}h</p>
+                </div>
+                <div class="bg-base-200/50 p-4 rounded-2xl border border-base-300/50">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Released</p>
+                    <p class="font-black text-lg">{{ book.release_date.year if book.release_date else 'N/A' }}</p>
+                </div>
+                <div class="bg-base-200/50 p-4 rounded-2xl border border-base-300/50 col-span-2">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Narrator</p>
+                    <p class="font-black text-sm truncate">{{ book.narrators|join(", ") if book.narrators else "Unknown" }}</p>
+                </div>
+            </div>
+
+            <!-- Series & Genres -->
+            <div class="space-y-4">
+                {% if book.series %}
+                <div class="space-y-2">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-40">Series</p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for s in book.series %}
+                        <span class="px-4 py-2 bg-primary/10 text-primary rounded-xl font-black text-[11px] uppercase tracking-wider border border-primary/20">{{ s }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if book.genres %}
+                <div class="space-y-2">
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-40">Genres</p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for genre in book.genres %}
+                        <span class="px-3 py-1.5 bg-base-200 text-base-content/70 rounded-lg font-bold text-[10px] uppercase tracking-wide border border-base-300">{{ genre }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            {% if book.description %}
+            <div class="space-y-2">
+                <p class="text-[10px] font-black uppercase tracking-widest opacity-40">Description</p>
+                <div class="prose prose-sm max-w-none opacity-80 leading-relaxed">
+                    {{ book.description|safe }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-base-300">
+                <button hx-post="{{ base_url }}/library/bulk/reprocess" 
+                        hx-vals='{"asins": ["{{ book.asin }}"]}' 
+                        class="btn btn-outline flex-1 rounded-2xl font-black uppercase text-[11px] tracking-widest h-14"
+                        hx-target="body" hx-swap="none">
+                    Refresh Metadata
+                </button>
+                
+                <div class="dropdown dropdown-top flex-1">
+                    <button tabindex="0" role="button" class="btn btn-error btn-outline w-full rounded-2xl font-black uppercase text-[11px] tracking-widest h-14">Delete Book</button>
+                    <div tabindex="0" class="dropdown-content z-[50] menu p-6 shadow-2xl bg-base-100 text-base-content rounded-2xl w-full border border-base-300 mb-4">
+                        <h3 class="font-black mb-2 text-sm uppercase tracking-widest">Confirm Delete</h3>
+                        <p class="text-xs opacity-60 mb-4">Are you sure you want to remove this book?</p>
+                        <label class="label cursor-pointer justify-start gap-3 bg-base-200 p-3 rounded-xl mb-4 w-full">
+                            <input type="checkbox" name="delete_files" class="checkbox checkbox-sm rounded-lg" />
+                            <span class="label-text text-xs font-bold">Also delete files from disk</span>
+                        </label>
+                        <button hx-post="{{ base_url }}/library/bulk/delete" 
+                                hx-vals='{"asins": ["{{ book.asin }}"]}' 
+                                hx-include="closest .dropdown-content input[name='delete_files']"
+                                class="btn btn-error btn-sm w-full rounded-xl font-black uppercase text-[10px] tracking-wider" hx-target="body" hx-swap="none">Confirm</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Info -->
+            <div class="p-5 bg-base-200/30 rounded-2xl border border-base-300/50 space-y-2">
+                <div class="flex justify-between items-center text-[10px] font-mono opacity-50">
+                    <span>ASIN: {{ book.asin }}</span>
+                    <span>Updated: {{ book.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</dialog>

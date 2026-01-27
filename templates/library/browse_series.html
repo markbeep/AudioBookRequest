@@ -1,0 +1,66 @@
+{% extends "library/base_library.html" %}
+{% set page = 'library' %}
+{% block head %}
+<title>Browse by Series - Media Management</title>
+{% endblock head %}
+
+{% block content %}
+<div class="w-screen flex flex-col items-center overflow-x-hidden">
+    <div class="w-full max-w-7xl p-6 sm:p-8 space-y-6">
+        
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black">Browse Series</h1>
+                <p class="text-sm opacity-60 mt-2">All series in your collection</p>
+            </div>
+            <a href="{{ base_url }}/library" class="btn btn-ghost btn-sm rounded-lg">
+                ← Back
+            </a>
+        </div>
+
+        <!-- Series Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for series_name, series_data in series_groups %}
+                <div class="bg-base-100 rounded-lg border border-base-300 overflow-hidden hover:border-primary hover:shadow-lg transition-all p-4 space-y-3">
+                    <!-- Series Info -->
+                    <div>
+                        <h3 class="font-black text-lg line-clamp-2">{{ series_name }}</h3>
+                        <p class="text-xs opacity-60 mt-1">{{ series_data.authors|join(", ") }}</p>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="flex items-center justify-between text-sm py-2 border-y border-base-300">
+                        <span class="font-semibold">{{ series_data.books|length }} books</span>
+                        {% set series_total = 0 %}
+                        {% for book in series_data.books %}
+                            {% if book.runtime_length_hrs %}
+                                {% set series_total = series_total + book.runtime_length_hrs %}
+                            {% endif %}
+                        {% endfor %}
+                        <span class="opacity-60">{{ series_total|int }}h</span>
+                    </div>
+
+                    <!-- Books Preview -->
+                    <div class="space-y-1">
+                        {% for book in series_data.books[:3] %}
+                        <div class="text-xs flex items-center justify-between opacity-70">
+                            <span class="truncate">{{ book.title }}</span>
+                            <span class="ml-2 opacity-50">{{ book.runtime_length_hrs }}h</span>
+                        </div>
+                        {% endfor %}
+                        {% if series_data.books|length > 3 %}
+                        <p class="text-xs opacity-50">+{{ series_data.books|length - 3 }} more</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Action -->
+                    <button class="btn btn-primary btn-sm btn-block rounded-lg mt-2">
+                        View Series →
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock content %}

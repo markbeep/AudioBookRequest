@@ -1,0 +1,174 @@
+{% extends "library/base_library.html" %}
+{% set page = 'dashboard' %}
+{% block head %}
+<title>Library Dashboard - Narrarr</title>
+<style>
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .stat-card {
+        animation: slideInUp 0.3s ease-out forwards;
+    }
+    
+    .stat-card:nth-child(2) { animation-delay: 0.1s; }
+    .stat-card:nth-child(3) { animation-delay: 0.2s; }
+    .stat-card:nth-child(4) { animation-delay: 0.3s; }
+</style>
+{% endblock head %}
+
+{% block content %}
+<div class="w-screen flex flex-col items-center overflow-x-hidden">
+    <div class="w-full max-w-7xl p-6 sm:p-8 space-y-8">
+        
+        <!-- Header -->
+        <div class="space-y-2">
+            <h1 class="text-4xl font-black">Library Dashboard</h1>
+            <p class="text-sm opacity-60">Overview of your audiobook collection</p>
+        </div>
+
+        <!-- Main Stats Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total Books -->
+            <div class="stat-card bg-base-100 rounded-2xl border border-base-300 p-6 shadow-sm">
+                <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3">Total Books</p>
+                <p class="text-4xl font-black text-primary">{{ books|length }}</p>
+                <p class="text-[10px] font-bold opacity-40 mt-2 uppercase tracking-tight">In your library</p>
+            </div>
+
+            <!-- Total Authors -->
+            <div class="stat-card bg-base-100 rounded-2xl border border-base-300 p-6 shadow-sm">
+                <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3">Authors</p>
+                <p class="text-4xl font-black text-info">{{ total_authors }}</p>
+                <p class="text-[10px] font-bold opacity-40 mt-2 uppercase tracking-tight">Unique authors</p>
+            </div>
+
+            <!-- Total Series -->
+            <div class="stat-card bg-base-100 rounded-2xl border border-base-300 p-6 shadow-sm">
+                <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3">Series</p>
+                <p class="text-4xl font-black text-success">{{ total_series }}</p>
+                <p class="text-[10px] font-bold opacity-40 mt-2 uppercase tracking-tight">Complete series</p>
+            </div>
+
+            <!-- Total Duration -->
+            <div class="stat-card bg-base-100 rounded-2xl border border-base-300 p-6 shadow-sm">
+                <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3">Duration</p>
+                {% if total_duration >= 24 %}
+                    <p class="text-4xl font-black text-warning">{{ (total_duration / 24)|int }}d <span class="text-lg">{{ (total_duration % 24)|int }}h</span></p>
+                    <p class="text-[10px] font-bold opacity-40 mt-2 uppercase tracking-tight">Listening time</p>
+                {% else %}
+                    <p class="text-4xl font-black text-warning">{{ total_duration|int }}h</p>
+                    <p class="text-[10px] font-bold opacity-40 mt-2 uppercase tracking-tight">Listening time</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions (Full Width Header) -->
+        <div class="bg-base-100 rounded-2xl border border-base-300 p-6 space-y-6 shadow-sm">
+            <h2 class="text-xl font-black uppercase tracking-widest text-[10px] opacity-50">Quick Actions</h2>
+            <div class="flex flex-wrap gap-3">
+                <button hx-post="{{ base_url }}/library/reconcile/start" hx-target="#reconcile-status"
+                        class="btn btn-primary rounded-xl gap-2 font-black uppercase text-[10px] tracking-wider h-14 flex-1 min-w-[140px]">
+                    🔄 Scan New Files
+                </button>
+                <button hx-post="{{ base_url }}/library/bulk/reprocess-all"
+                        hx-confirm="Are you sure you want to refresh metadata for ALL books?"
+                        class="btn btn-outline rounded-xl gap-2 font-black uppercase text-[10px] tracking-wider h-14 flex-1 min-w-[140px]">
+                    🔃 Refresh Meta
+                </button>
+                <button hx-post="{{ base_url }}/library/bulk/reorganize-all"
+                        hx-confirm="This will rename and move files for ALL books according to your patterns. Proceed?"
+                        class="btn btn-outline border-success/30 hover:bg-success/10 hover:text-success rounded-xl gap-2 font-black uppercase text-[10px] tracking-wider h-14 flex-1 min-w-[140px]">
+                    🏷️ Mass Rename
+                </button>
+                {% if untracked_count > 0 %}
+                <a href="{{ base_url }}/library/import" class="btn btn-warning rounded-xl gap-2 font-black uppercase text-[10px] tracking-wider h-14 flex-1 min-w-[140px] flex items-center justify-center text-center">
+                    📋 Review ({{ untracked_count }})
+                </a>
+                {% else %}
+                <a href="{{ base_url }}/library/import" class="btn btn-ghost bg-base-200 rounded-xl gap-2 font-black uppercase text-[10px] tracking-wider h-14 flex-1 min-w-[140px] flex items-center justify-center text-center">
+                    ➕ Import Books
+                </a>
+                {% endif %}
+                <a href="{{ base_url }}/library" class="btn btn-ghost bg-base-200 rounded-xl gap-2 font-black uppercase text-[10px] tracking-wider h-14 flex-1 min-w-[140px] flex items-center justify-center text-center">
+                    📚 Go to Library
+                </a>
+            </div>
+        </div>
+
+        <!-- Status Overview & Activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Library Status -->
+            <div class="bg-base-100 rounded-2xl border border-base-300 p-6 space-y-4 shadow-sm">
+                <h2 class="text-xl font-black uppercase tracking-widest text-[10px] opacity-50">Library Status</h2>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between p-4 bg-success/5 rounded-xl border border-success/20">
+                        <span class="font-bold text-sm">✅ Matched & Ready</span>
+                        <span class="font-black text-xl text-success">{{ books|length }}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-warning/5 rounded-xl border border-warning/20">
+                        <span class="font-bold text-sm">⚠️ Missing Files</span>
+                        <span class="font-black text-xl text-warning">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-error/5 rounded-xl border border-error/20">
+                        <span class="font-bold text-sm">❌ Unmatched</span>
+                        <span class="font-black text-xl text-error">0</span>
+                    </div>
+                    {% if untracked_count > 0 %}
+                    <div class="flex items-center justify-between p-4 bg-info/5 rounded-xl border border-info/20">
+                        <span class="font-bold text-sm">📋 Pending Review</span>
+                        <span class="font-black text-xl text-info">{{ untracked_count }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-base-100 rounded-2xl border border-base-300 p-6 shadow-sm overflow-hidden flex flex-col">
+                <h2 class="text-xl font-black uppercase tracking-widest text-[10px] opacity-50 mb-4">Recently Added</h2>
+                <div class="space-y-1 flex-1 overflow-y-auto max-h-[280px]">
+                    {% if recent_books %}
+                        {% for book in recent_books %}
+                        <div class="flex items-center justify-between p-3 hover:bg-base-200/50 rounded-xl transition group">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-black text-sm truncate group-hover:text-primary transition-colors">{{ book.title }}</p>
+                                <p class="text-[10px] font-bold opacity-40 uppercase truncate tracking-tight">{{ book.authors|join(", ") }}</p>
+                            </div>
+                            <div class="text-right ml-4">
+                                <p class="text-[10px] font-black text-primary uppercase tracking-tighter">{{ book.runtime_length_hrs }}h</p>
+                                <p class="text-[10px] font-bold opacity-30 uppercase tracking-tighter">{{ book.updated_at.strftime('%d %b') }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="flex flex-col items-center justify-center py-12 opacity-20">
+                            <span class="text-4xl mb-2">📚</span>
+                            <p class="text-xs font-black uppercase tracking-widest">No books yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Reconcile Status -->
+        <div id="reconcile-status">
+            {% if recon_session and recon_session.status == 'scanning' %}
+            <div hx-get="{{ base_url }}/library/reconcile/status" hx-trigger="load, every 2s" hx-swap="outerHTML">       
+                <div class="alert bg-primary/10 border-primary/20 text-primary rounded-2xl shadow-sm">
+                    <span class="loading loading-spinner"></span>
+                    <span class="font-black uppercase text-xs tracking-widest">Scanning library...</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock content %}

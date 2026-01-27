@@ -1,0 +1,100 @@
+{% extends "library/base_library.html" %}
+{% set page = 'library' %}
+{% block head %}
+<title>Browse by Status - Media Management</title>
+{% endblock head %}
+
+{% block content %}
+<div class="w-screen flex flex-col items-center overflow-x-hidden">
+    <div class="w-full max-w-7xl p-6 sm:p-8 space-y-6">
+        
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black">Browse by Status</h1>
+                <p class="text-sm opacity-60 mt-2">Filter audiobooks by their import status</p>
+            </div>
+            <a href="{{ base_url }}/library" class="btn btn-ghost btn-sm rounded-lg">
+                ← Back
+            </a>
+        </div>
+
+        <!-- Status Tabs/Sections -->
+        <div class="space-y-6">
+            <!-- Matched & Ready -->
+            <div>
+                <h2 class="text-lg font-black mb-4">✅ Matched & Ready ({{ matched_books|length }})</h2>
+                <div class="space-y-2">
+                    {% if matched_books %}
+                        {% for book in matched_books %}
+                        <div class="flex items-center justify-between p-4 bg-base-100 rounded-lg border border-base-300 hover:border-success hover:shadow-md transition">
+                            <div class="flex items-center gap-3 flex-1">
+                                <span class="badge badge-success badge-lg">✅</span>
+                                <div class="flex-1">
+                                    <p class="font-semibold">{{ book.title }}</p>
+                                    <p class="text-xs opacity-60">{{ book.authors|join(", ") }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-semibold">{{ book.runtime_length_hrs }}h</p>
+                                <p class="text-xs opacity-50">{{ book.release_date.strftime('%Y') }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="p-8 text-center opacity-40">
+                        <p class="text-sm">No matched books</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Missing Files -->
+            {% if missing_books|length > 0 %}
+            <div>
+                <h2 class="text-lg font-black mb-4">⚠️ Missing Files ({{ missing_books|length }})</h2>
+                <div class="space-y-2">
+                    {% for book in missing_books %}
+                    <div class="flex items-center justify-between p-4 bg-base-100 rounded-lg border border-warning hover:border-warning/80 hover:shadow-md transition">
+                        <div class="flex items-center gap-3 flex-1">
+                            <span class="badge badge-warning badge-lg">⚠️</span>
+                            <div class="flex-1">
+                                <p class="font-semibold">{{ book.title }}</p>
+                                <p class="text-xs opacity-60">{{ book.authors|join(", ") }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-semibold opacity-70">{{ book.runtime_length_hrs }}h</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Unmatched -->
+            {% if unmatched_books|length > 0 %}
+            <div>
+                <h2 class="text-lg font-black mb-4">❌ Unmatched ({{ unmatched_books|length }})</h2>
+                <div class="space-y-2">
+                    {% for book in unmatched_books %}
+                    <div class="flex items-center justify-between p-4 bg-base-100 rounded-lg border border-error hover:border-error/80 hover:shadow-md transition">
+                        <div class="flex items-center gap-3 flex-1">
+                            <span class="badge badge-error badge-lg">❌</span>
+                            <div class="flex-1">
+                                <p class="font-semibold">{{ book.title }}</p>
+                                <p class="text-xs opacity-60">{{ book.authors|join(", ") }}</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-error btn-sm rounded-lg">
+                            Match
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,116 @@
+{% extends "library/base_library.html" %}
+{% set page = 'library' %}
+{% block head %}
+<title>Browse by Authors - Media Management</title>
+{% endblock head %}
+
+{% block content %}
+<div class="w-screen flex flex-col items-center overflow-x-hidden">
+    <div class="w-full max-w-7xl p-6 sm:p-8 space-y-6">
+        
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black">Browse Authors</h1>
+                <p class="text-sm opacity-60 mt-2">Organized by author and series</p>
+            </div>
+            <a href="{{ base_url }}/library" class="btn btn-ghost btn-sm rounded-lg">
+                ← Back
+            </a>
+        </div>
+
+        <!-- Authors List -->
+        <div class="space-y-3">
+            {% for author_name, author_books in authors %}
+                <div class="bg-base-100 rounded-lg border border-base-300 overflow-hidden">
+                    <!-- Author Header -->
+                    <div class="p-4 hover:bg-base-200/50 transition cursor-pointer" onclick="toggleAuthorExpanded('{{ author_name }}')">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex-1">
+                                <h3 class="font-black text-lg">{{ author_name }}</h3>
+                                {% set unique_series_in_author = [] %}
+                                {% for book in author_books %}
+                                    {% for series in book.series %}
+                                        {% if series not in unique_series_in_author %}
+                                            {% set _ = unique_series_in_author.append(series) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                                <p class="text-sm opacity-60">
+                                    {{ unique_series_in_author|length }} series • {{ author_books|length }} books
+                                </p>
+                            </div>
+                            <button class="btn btn-ghost btn-sm btn-square transition-transform" data-author-toggle="{{ author_name }}">
+                                ▼
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Series List -->
+                    <div class="border-t border-base-300">
+                        {% set series_in_author = {} %}
+                        {% for book in author_books %}
+                            {% for series in book.series %}
+                                {% if series not in series_in_author %}
+                                    {% set _ = series_in_author.update({series: []}) %}
+                                {% endif %}
+                                {% if book not in series_in_author[series] %}
+                                    {% set _ = series_in_author[series].append(book) %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                        
+                        {% for series_name in series_in_author.keys()|sort %}
+                            {% set series_books = series_in_author[series_name] %}
+                            <div class="px-4" data-author-series="{{ author_name }}">
+                                <div class="py-3 hover:bg-base-200/30 transition cursor-pointer border-b border-base-300 last:border-b-0" onclick="toggleSeriesExpanded('{{ series_name }}')">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="flex-1">
+                                            <h4 class="font-bold">{{ series_name }}</h4>
+                                            <p class="text-xs opacity-60">{{ series_books|length }} books</p>
+                                        </div>
+                                        <button class="btn btn-ghost btn-xs btn-square transition-transform" data-series-toggle="{{ series_name }}">
+                                            ▼
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Books -->
+                                {% for book in series_books %}
+                                    <div class="hidden pl-4 py-2 border-b border-base-300/50 last:border-b-0 flex items-center justify-between hover:bg-base-200/20 transition" data-series-books="{{ series_name }}">
+                                        <div class="flex items-center gap-3 flex-1">
+                                            <span class="badge badge-sm badge-success">✅</span>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-semibold">{{ book.title }}</p>
+                                                <p class="text-xs opacity-60">{{ book.runtime_length_hrs }}h • {{ book.release_date.year }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function toggleAuthorExpanded(authorName) {
+        const series = document.querySelectorAll(`[data-author-series="${authorName}"]`);
+        const btn = document.querySelector(`[data-author-toggle="${authorName}"]`);
+        
+        series.forEach(s => s.classList.toggle('hidden'));
+        if (btn) btn.classList.toggle('rotate-180');
+    }
+
+    function toggleSeriesExpanded(seriesName) {
+        const books = document.querySelectorAll(`[data-series-books="${seriesName}"]`);
+        const btn = document.querySelector(`[data-series-toggle="${seriesName}"]`);
+        
+        books.forEach(b => b.classList.toggle('hidden'));
+        if (btn) btn.classList.toggle('rotate-180');
+    }
+</script>
+{% endblock content %}

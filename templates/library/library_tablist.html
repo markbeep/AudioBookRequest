@@ -1,0 +1,14 @@
+<div id="library-tablist" role="tablist" class="tabs tabs-boxed bg-base-200 p-1 rounded-xl w-fit mb-6 app-tabs">
+    <a preload href="{{ base_url }}/library/dashboard" role="tab"
+        class="tab rounded-lg font-bold text-xs {% if page=='dashboard' %}tab-active{% endif %}">
+        Dashboard
+    </a>
+    <a preload href="{{ base_url }}/library" role="tab"
+        class="tab rounded-lg font-bold text-xs {% if page=='library' %}tab-active{% endif %}">
+        Library
+    </a>
+    <a preload href="{{ base_url }}/library/import" role="tab"
+        class="tab rounded-lg font-bold text-xs {% if page=='import' %}tab-active{% endif %}">
+        Import
+    </a>
+</div>

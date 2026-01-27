@@ -1,0 +1,250 @@
+{% extends "library/base_library.html" %}
+{% set page = 'import' %}
+{% block head %}
+<title>Library Import</title>
+{% endblock head %}
+
+{% block content %}
+<div class="w-screen flex flex-col items-center overflow-x-hidden">
+    <div class="w-full max-w-7xl p-6 sm:p-8">
+        <div class="flex flex-col gap-6">
+        <!-- Start New Scan Section -->
+        <div class="card bg-base-200 shadow-lg border border-base-300 rounded-xl overflow-hidden">
+        <div class="card-body p-6">
+            <h2 class="card-title text-xs font-black opacity-50 uppercase tracking-widest text-left mb-4">New Import Scan</h2>
+            <form hx-post="{{ base_url }}/library/import/scan" hx-target="#session-status-container" hx-swap="innerHTML" class="flex flex-col gap-4">
+                <div class="form-control w-full text-left">
+                    <div class="join w-full rounded-lg overflow-hidden">
+                        <input type="text" name="path" placeholder="/mnt/books/incoming" class="input input-bordered join-item w-full focus:input-primary font-medium" required />
+                        <button type="submit" class="btn btn-primary join-item px-8 rounded-none">
+                            Scan
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        </div>
+
+        <!-- Active/Recent Sessions Section -->
+        <div id="session-status-container">
+
+            {% block session_status %}
+
+            {% if session %}
+
+                {% set total_items = items|length %}
+
+                {% set pending_items = items|selectattr('status', 'equalto', 'pending')|list %}
+
+                {% set imported_items = items|selectattr('status', 'equalto', 'imported')|list %}
+
+                
+
+                            <div hx-get="{{ base_url }}/library/import/session/{{ session.id }}" 
+                                 hx-trigger="{% if session.status in ['scanning', 'importing'] or pending_items|length > 0 %}every 3s{% endif %}"
+                                 hx-swap="innerHTML"
+                                 hx-target="#session-status-container"
+                                 class="flex flex-col gap-6">
+    
+
+                    <!-- Status Header -->
+
+                    <div class="flex items-center justify-between gap-4 p-4 bg-base-200 rounded-3xl border border-base-300 shadow-inner relative overflow-hidden">
+
+                        <div class="flex items-center gap-4 z-10">
+
+                            <div class="shrink-0">
+
+                                {% if session.status in ['scanning', 'importing'] or pending_items|length > 0 %}    
+
+                                    <span class="loading loading-spinner loading-md text-primary"></span>
+
+                                {% else %}
+
+                                    <div class="bg-success/20 text-success p-2 rounded-full">
+
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5"> 
+
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+
+                                        </svg>
+
+                                    </div>
+
+                                {% endif %}
+
+                            </div>
+
+    
+
+                            <div class="text-left">
+
+                                <p class="font-black text-sm uppercase opacity-80 leading-none mb-1">
+
+                                    {{ session.status|replace('_', ' ')|title }}
+
+                                    {% if session.status == 'importing' %}
+
+                                        <span class="ml-2 text-[10px] lowercase font-normal opacity-50">({{ imported_items|length }}/{{ total_items }})</span>
+
+                                    {% endif %}
+
+                                </p>
+
+                                <p class="text-[10px] opacity-40 font-mono truncate max-w-xs sm:max-w-md">{{ session.root_path }}</p>
+
+                            </div>
+
+                        </div>
+
+    
+
+                        {% if session.status == 'review_ready' %}
+
+                        {% set matched_items = items|selectattr('status', 'equalto', 'matched')|list %}
+
+                                                <form hx-post="{{ base_url }}/library/import/execute/{{ session.id }}"
+
+                                                      hx-target="#session-status-container"
+
+                                                      hx-swap="innerHTML"
+
+                                                      hx-on::before-request="this.querySelector('button').classList.add('loading'); this.querySelector('button').innerText = 'Starting...';"
+
+                                                      class="flex items-center gap-3 bg-base-300/50 p-1.5 pr-2 rounded-2xl border border-base-content/5 shadow-sm z-10">
+
+                            
+
+                            <div class="form-control flex-row items-center gap-1 bg-base-100 px-3 py-1.5 rounded-xl shadow-inner">
+
+                                <label class="label cursor-pointer gap-2 p-0">
+
+                                    <input type="radio" name="import_mode" value="copy" class="radio radio-primary radio-xs" checked />
+
+                                    <span class="label-text text-[9px] font-black uppercase">Copy</span>
+
+                                </label>
+
+                                <div class="divider divider-horizontal m-0 w-px h-3"></div>
+
+                                <label class="label cursor-pointer gap-2 p-0">
+
+                                    <input type="radio" name="import_mode" value="move" class="radio radio-secondary radio-xs" />
+
+                                    <span class="label-text text-[9px] font-black uppercase">Move</span>
+
+                                </label>
+
+                            </div>
+
+    
+
+                            <button type="submit" class="btn btn-primary rounded-xl px-6 shadow-md shadow-primary/20 font-black uppercase tracking-wider btn-sm h-10 min-h-0"
+
+                                    {% if matched_items|length == 0 %}disabled{% endif %}>
+
+                                Import {{ matched_items|length }} Books
+
+                            </button>
+
+                        </form>
+
+                        {% endif %}
+
+    
+
+                        <!-- Background Progress Bar for Importing -->
+
+                        {% if session.status == 'importing' and total_items > 0 %}
+
+                        <div class="absolute bottom-0 left-0 h-1 bg-primary/20 w-full">
+
+                            <div class="h-full bg-primary transition-all duration-500" style="width: {{ (imported_items|length / total_items * 100)|int }}%"></div>
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+
+    
+
+                    <!-- Live Results Grid -->
+
+                    {% block session_results %}
+
+                    <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 mt-2 pb-24">
+
+                        {% for item in items %}
+
+                            {% include "library/import_row.html" %}
+
+                        {% endfor %}
+
+                        {% if not items %}
+
+                        <div class="col-span-full py-24 flex flex-col items-center justify-center opacity-20">
+
+                            <span class="loading loading-ring loading-lg"></span>
+
+                            <span class="font-black uppercase text-xs mt-4">Exploring Directory...</span>
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    {% endblock session_results %}
+
+                </div>            </div>
+        {% elif sessions %}
+            <div class="flex flex-col gap-4 text-left">
+                <h2 class="text-xs font-black opacity-40 uppercase tracking-widest">Recent Activity</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {% for s in sessions %}
+                    <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl hover:border-primary/30 transition-colors">
+                        <div class="card-body p-4">
+                            <div class="flex justify-between items-start">
+                                <div class="truncate pr-2">
+                                    <p class="font-bold truncate text-xs" title="{{ s.root_path }}">{{ s.root_path }}</p>
+                                    <p class="text-[9px] opacity-40">{{ s.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                </div>
+                                <span class="badge badge-xs font-black uppercase p-2
+                                    {% if s.status == 'completed' %}badge-success
+                                    {% elif s.status == 'failed' %}badge-error
+                                    {% elif s.status == 'review_ready' %}badge-info
+                                    {% else %}badge-neutral{% endif %} text-[8px] rounded-md">{{ s.status }}</span>
+                            </div>
+                            <div class="card-actions justify-end mt-3">
+                                <button hx-get="{{ base_url }}/library/import/session/{{ s.id }}" hx-target="#session-status-container" class="btn btn-xs rounded-lg btn-ghost bg-base-200 font-bold">Open Session</button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        {% endblock session_status %}
+    </div>
+</div>
+
+<div id="import-modals-container"></div>
+
+<script>
+    function syncImportMode(val) {
+        document.querySelectorAll('input[name="import_mode"][type="hidden"]').forEach(el => {
+            el.value = val;
+        });
+    }
+    
+    document.addEventListener('change', (e) => {
+        if (e.target.name === 'import_mode' && e.target.type === 'radio') {
+            syncImportMode(e.target.value);
+        }
+    });
+</script>
+{% endblock content %}

@@ -1,0 +1,229 @@
+{% extends "library/base_library.html" %}
+{% set page = 'library' %}
+
+{% block head %}
+<title>Library Management - Narrarr</title>
+<script>
+    function updateSelectionState(asin, isChecked) {
+        // Sync all checkboxes for this ASIN across all views (Authors, Series, etc.)
+        const checkboxes = document.querySelectorAll(`input[name="asins"][value="${asin}"]`);
+        checkboxes.forEach(cb => {
+            cb.checked = isChecked;
+            const card = cb.closest('[data-book-grid-card]');
+            if (card) {
+                if (isChecked) {
+                    card.classList.add('is-selected');
+                } else {
+                    card.classList.remove('is-selected');
+                }
+            }
+        });
+    }
+
+    function toggleCardSelection(event, asin) {
+        if (event.target.closest('button') || event.target.closest('a') || event.target.type === 'checkbox') return;
+        const firstCheckbox = document.querySelector(`input[name="asins"][value="${asin}"]`);
+        if (firstCheckbox) {
+            const newState = !firstCheckbox.checked;
+            updateSelectionState(asin, newState);
+            updateActionBar();
+        }
+    }
+
+    function toggleAll(source) {
+        const activeContent = document.querySelector('[data-view-content]:not(.hidden)');
+        if (!activeContent) return;
+        const checkboxes = activeContent.querySelectorAll('input[name="asins"]');
+        const asinsSeen = new Set();
+        checkboxes.forEach(cb => {
+            if (!asinsSeen.has(cb.value)) {
+                updateSelectionState(cb.value, source.checked);
+                asinsSeen.add(cb.value);
+            }
+        });
+        updateActionBar();
+    }
+
+    function updateActionBar() {
+        // Count unique selected ASINs
+        const selected = new Set(Array.from(document.querySelectorAll('input[name="asins"]:checked')).map(cb => cb.value)).size;
+        const bar = document.getElementById('bulk-action-area');
+        const countDisplay = document.getElementById('selected-count-num');
+        if (selected > 0) {
+            bar.classList.remove('hidden');
+            if (countDisplay) countDisplay.innerText = selected;
+        } else {
+            bar.classList.add('hidden');
+        }
+    }
+
+    function switchView(view) {
+        document.querySelectorAll('[data-view-content]').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('[data-view-tab]').forEach(el => el.classList.remove('tab-active'));
+        const content = document.querySelector(`[data-view-content="${view}"]`);
+        const tab = document.querySelector(`[data-view-tab="${view}"]`);
+        if (content) content.classList.remove('hidden');
+        if (tab) tab.classList.add('tab-active');
+        document.getElementById('select-all-master').checked = false;
+        updateActionBar();
+    }
+
+    function filterLibrary() {
+        const query = document.getElementById('lib-filter').value.toLowerCase();
+        const bookCards = document.querySelectorAll('[data-book-grid-card]');
+        bookCards.forEach(card => {
+            const text = card.getAttribute('data-book-search').toLowerCase();
+            card.style.display = text.includes(query) ? '' : 'none';
+        });
+        document.querySelectorAll('[data-group-container]').forEach(container => {
+            const groupName = container.getAttribute('data-group-name').toLowerCase();
+            const hasVisibleBooks = Array.from(container.querySelectorAll('[data-book-grid-card]'))
+                                       .some(card => card.style.display !== 'none');
+            container.classList.toggle('hidden', !groupName.includes(query) && !hasVisibleBooks);
+        });
+    }
+
+    function toggleGroup(id) {
+        const content = document.getElementById(id);
+        const icon = document.querySelector(`[data-toggle-icon="${id}"]`);
+        if (content) content.classList.toggle('hidden');
+        if (icon) icon.classList.toggle('rotate-180');
+    }
+</script>
+<style>
+    .radio-checkbox {
+        appearance: none;
+        border-radius: 9999px;
+        cursor: pointer;
+        background-color: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        border: 2px solid white;
+        transition: all 0.2s;
+    }
+    .radio-checkbox:checked {
+        background-color: #3b82f6 !important;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M13.485 3.485a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06L5.425 10.41l6.97-6.925a.75.75 0 0 1 1.06 0z'/%3E%3C/svg%3E");
+        background-size: 70% 70%;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    .is-selected {
+        outline: 4px solid #3b82f6;
+        outline-offset: -4px;
+    }
+    .is-selected .selection-indicator {
+        display: block !important;
+    }
+</style>
+{% endblock head %}
+
+{% block content %}
+<div class="flex flex-col gap-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div><h2 class="text-3xl font-black">Library</h2><p class="text-sm opacity-60">Manage your collection</p></div>
+        <div class="flex gap-2 items-center">
+            <div class="relative"><span class="absolute inset-y-0 left-3 flex items-center opacity-30">{% include "icons/search.html" %}</span>
+                <input type="text" id="lib-filter" onkeyup="filterLibrary()" placeholder="Search library..." class="input input-bordered input-sm pl-10 rounded-xl font-bold">
+            </div>
+            <button hx-post="{{ base_url }}/library/reconcile/start" hx-target="#reconcile-status" class="btn btn-primary btn-sm rounded-xl font-black uppercase text-[10px]">Scan Files</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-base-100 rounded-2xl p-5 border border-base-300 shadow-sm"><p class="text-[10px] font-black opacity-40 uppercase">Total Books</p><p class="text-3xl font-black text-primary">{{ stats.total_books }}</p></div>
+        <div class="bg-base-100 rounded-2xl p-5 border border-base-300 shadow-sm"><p class="text-[10px] font-black opacity-40 uppercase">Authors</p><p class="text-3xl font-black text-info">{{ stats.total_authors }}</p></div>
+        <div class="bg-base-100 rounded-2xl p-5 border border-base-300 shadow-sm"><p class="text-[10px] font-black opacity-40 uppercase">Series</p><p class="text-3xl font-black text-success">{{ stats.total_series }}</p></div>
+        <div class="bg-base-100 rounded-2xl p-5 border border-base-300 shadow-sm"><p class="text-[10px] font-black opacity-40 uppercase">Duration</p><p class="text-3xl font-black text-warning">{% if stats.total_hours >= 24 %}{{ (stats.total_hours / 24)|int }}d {{ (stats.total_hours % 24)|int }}h{% else %}{{ stats.total_hours|int }}h{% endif %}</p></div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-base-300 pb-1 gap-4">
+        <div class="tabs tabs-lifted">
+            <button class="tab tab-active font-black text-xs uppercase" data-view-tab="authors" onclick="switchView('authors')">By Authors</button>
+            <button class="tab font-black text-xs uppercase" data-view-tab="series" onclick="switchView('series')">By Series</button>
+            <button class="tab font-black text-xs uppercase" data-view-tab="status" onclick="switchView('status')">By Status</button>
+            <button class="tab font-black text-xs uppercase" data-view-tab="table" onclick="switchView('table')">All Books</button>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="bulk-action-area" class="hidden flex items-center gap-2 bg-base-100 px-3 py-1 rounded-xl border border-base-300 shadow-sm">
+                <button hx-post="{{ base_url }}/library/bulk/reprocess" hx-include="input[name='asins']:checked" hx-target="#toast-block" class="btn btn-xs btn-ghost font-black text-[9px]">Rescan</button>
+                <button hx-post="{{ base_url }}/library/bulk/reorganize" hx-include="input[name='asins']:checked" hx-target="#toast-block" class="btn btn-xs btn-ghost font-black text-[9px]">Rename</button>
+                <button hx-post="{{ base_url }}/library/bulk/delete" hx-include="input[name='asins']:checked" hx-confirm="Delete selected books?" hx-on::after-request="window.location.reload();" class="btn btn-xs btn-ghost hover:text-error font-black text-[9px]">Remove</button>
+                <div class="flex items-center gap-1.5 border-l border-base-300 pl-2 ml-1"><span id="selected-count-num" class="text-xs font-black text-primary">0</span><span class="text-[9px] font-black opacity-40">Selected</span></div>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer p-2 hover:bg-base-200 rounded-lg">
+                <input type="checkbox" id="select-all-master" class="radio-checkbox size-4 border-2 border-base-300 bg-transparent" onclick="toggleAll(this)">
+                <span class="text-[10px] font-black opacity-60 uppercase">Select All</span>
+            </label>
+        </div>
+    </div>
+
+    {% macro book_card(book) %}
+    <div class="bg-base-100 rounded-xl border border-base-300 overflow-hidden hover:shadow-xl transition-all flex flex-col group relative cursor-pointer select-none" 
+         data-book-grid-card data-book-search="{{ book.title }} {{ book.authors|join(' ') }} {{ book.series|join(' ') }}"
+         onclick="toggleCardSelection(event, '{{ book.asin }}')">
+        <div class="absolute top-2 left-2 z-[45]">
+            <input type="checkbox" name="asins" value="{{ book.asin }}" class="radio-checkbox size-6 border-2 border-white shadow-xl" onclick="updateSelectionState('{{ book.asin }}', this.checked); updateActionBar(); event.stopPropagation();">
+        </div>
+        <div class="selection-indicator hidden absolute inset-0 bg-primary/20 z-[35] pointer-events-none border-[6px] border-primary rounded-xl"></div>
+        <div class="aspect-square bg-base-300 relative overflow-hidden">
+            {% if book.cover_image %}<img src="{{ book.cover_image }}" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500">{% endif %}
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="absolute bottom-2 right-2 flex gap-1 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+                 <button hx-get="{{ base_url }}/library/book/{{ book.asin }}" hx-target="#book-details-modal-container" class="btn btn-xs btn-primary btn-square rounded-lg shadow-lg">{% include "icons/info-circle.html" %}</button>
+                 <button hx-post="{{ base_url }}/library/reorganize/{{ book.asin }}" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white">{% include "icons/pencil.html" %}</button>
+            </div>
+        </div>
+        <div class="p-3 flex-1 flex flex-col gap-0.5 text-left">
+            <button hx-get="{{ base_url }}/library/book/{{ book.asin }}" hx-target="#book-details-modal-container" class="text-[11px] font-black truncate hover:text-primary leading-tight">{{ book.title }}</button>
+            <p class="text-[9px] font-bold opacity-40 truncate">{{ book.authors|join(', ') }}</p>
+            <div class="mt-auto pt-2 flex items-center justify-between border-t border-base-200">
+                <span class="text-[8px] font-black opacity-30 uppercase tracking-tighter">{{ book.runtime_length_hrs }}h • {{ book.release_date.year if book.release_date else 'N/A' }}</span>
+                <span class="text-success text-[8px]">✅</span>
+            </div>
+        </div>
+    </div>
+    {% endmacro %}
+
+    <div data-view-content="authors" class="space-y-4">
+        {% for author_name, author_books in authors %}
+        <div class="bg-base-100/50 rounded-2xl border border-base-300 overflow-hidden" data-group-container data-group-name="{{ author_name }}">
+            <div class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-200/50 transition" onclick="toggleGroup('author-{{ loop.index }}')">
+                <div class="flex items-center gap-4">
+                    <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-lg">{{ author_name[0] }}</div>
+                    <div><h3 class="font-black text-base">{{ author_name }}</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">{{ author_books|length }} Books</p></div>
+                </div>
+                <button class="btn btn-ghost btn-xs btn-square rounded-lg transition-transform" data-toggle-icon="author-{{ loop.index }}">{% include "icons/chevron-down.html" %}</button>
+            </div>
+            <div id="author-{{ loop.index }}" class="p-4 pt-0"><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">{% for book in author_books|sort(attribute='title') %}{{ book_card(book) }}{% endfor %}</div></div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div data-view-content="series" class="hidden space-y-4">
+        {% for s in series_list %}
+        <div class="bg-base-100/50 rounded-2xl border border-base-300 overflow-hidden" data-group-container data-group-name="{{ s.name }}">
+            <div class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-200/50 transition" onclick="toggleGroup('series-{{ loop.index }}')">
+                <div class="flex items-center gap-4">
+                    <div class="size-10 rounded-xl bg-success/10 flex items-center justify-center text-success font-black text-lg">{{ s.name[0] }}</div>
+                    <div><h3 class="font-black text-base">{{ s.name }}</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">{{ s.book_count }} Books • {{ s.duration|int }}h</p></div>
+                </div>
+                <button class="btn btn-ghost btn-xs btn-square rounded-lg transition-transform" data-toggle-icon="series-{{ loop.index }}">{% include "icons/chevron-down.html" %}</button>
+            </div>
+            <div id="series-{{ loop.index }}" class="p-4 pt-0"><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">{% for book in s.books|sort(attribute='title') %}{{ book_card(book) }}{% endfor %}</div></div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div data-view-content="status" class="hidden space-y-8">
+        <div class="space-y-4">
+            <div class="flex items-center justify-between border-b border-base-300 pb-2"><h3 class="font-black text-xl flex items-center gap-3"><span class="text-success">✅</span> Matched & Ready</h3><span class="badge badge-lg bg-success/10 border-success/30 text-success font-black rounded-xl">{{ matched_books|length }}</span></div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">{% for book in matched_books %}{{ book_card(book) }}{% endfor %}</div>
+        </div>
+    </div>
+
+    <div data-view-content="table" class="hidden">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">{% for book in books %}{{ book_card(book) }}{% endfor %}</div>
+    </div>
+</div>
+<div id="reconcile-status" class="fixed bottom-6 right-6 z-50 w-80"></div>
+{% endblock content %}

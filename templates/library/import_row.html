@@ -1,0 +1,95 @@
+{% block item_row %}
+{% set book = books_map.get(item.match_asin) if books_map else None %}
+{% set match_title = book.title if book else (item.match_asin|asin_to_title if item.match_asin else '') %}
+{% set match_author = book.authors|join(', ') if book and book.authors else (item.match_asin|asin_to_author if item.match_asin else '') %}
+{% set status_value = item.status.value if item.status else '' %}
+<tr id="row-{{ item.id }}"
+    class="hover:bg-base-200/60 transition-colors"
+    data-row="import"
+    data-source="{{ item.source_path|basename|lower }}"
+    data-detected="{{ ((item.detected_title or '') ~ ' ' ~ (item.detected_author or ''))|lower }}"
+    data-match="{{ (match_title or '')|lower }}"
+    data-confidence="{{ item.match_score or 0 }}"
+    data-status="{{ status_value }}">
+    <td class="py-3">
+        <div class="font-semibold text-xs truncate max-w-[220px]" title="{{ item.source_path|basename }}">{{ item.source_path|basename }}</div>
+    </td>
+    <td class="py-3">
+        {% if item.detected_title or item.detected_author %}
+        <div class="font-semibold text-xs truncate max-w-[220px]" title="{{ item.detected_title or '' }}">{{ item.detected_title or 'Unknown title' }}</div>
+        <div class="text-[10px] opacity-60 truncate max-w-[220px]">{{ item.detected_author or 'Unknown author' }}</div>
+        {% else %}
+        <span class="text-[10px] opacity-40 italic">No extracted metadata</span>
+        {% endif %}
+    </td>
+    <td class="py-3">
+        {% if item.match_asin %}
+        <div class="font-semibold text-xs text-primary truncate max-w-[220px]" title="{{ match_title }}">{{ match_title }}</div>
+        <div class="text-[10px] opacity-60 truncate max-w-[220px]">{{ match_author }}</div>
+        {% else %}
+        <span class="text-[10px] opacity-40 italic">No automatic match</span>
+        {% endif %}
+    </td>
+    <td class="py-3">
+        {% if item.match_asin %}
+        <span class="badge badge-xs font-black border-0 px-2 py-2
+            {% if item.match_score >= 0.85 %}badge-success
+            {% elif item.match_score >= 0.6 %}badge-warning
+            {% else %}badge-error{% endif %}">
+            {{ (item.match_score * 100)|int }}%
+        </span>
+        {% else %}
+        <span class="text-[10px] opacity-40">-</span>
+        {% endif %}
+    </td>
+    <td class="py-3">
+        <span class="badge badge-xs font-black uppercase px-2 py-2 border-0
+            {% if status_value == 'matched' %}badge-success
+            {% elif status_value == 'missing' %}badge-warning
+            {% elif status_value == 'pending' %}badge-info
+            {% elif status_value == 'imported' %}badge-success
+            {% elif status_value == 'error' %}badge-error
+            {% else %}badge-ghost{% endif %}">
+            {{ status_value|replace('_', ' ') }}
+        </span>
+    </td>
+    <td class="py-3">
+        <div class="flex flex-wrap gap-2">
+            {% if status_value != 'imported' and status_value != 'pending' %}
+                {% if status_value == 'matched' %}
+                <form hx-post="/library/import/item/execute/{{ item.id }}?view={{ view }}" 
+                      hx-target="#row-{{ item.id }}" 
+                      hx-swap="outerHTML" 
+                      hx-on::before-request="this.querySelector('button').classList.add('loading'); this.querySelector('button').innerText = '...';">      
+                    <input type="hidden" name="import_mode" id="import-mode-hidden-{{ item.id }}" value="copy" />
+                    <button type="submit" class="btn btn-xs btn-success font-black uppercase tracking-tighter">
+                        Import
+                    </button>
+                </form>
+                {% endif %}
+                <button class="btn btn-xs btn-outline font-bold"
+                        hx-get="/library/import/fix-match/{{ item.id }}?view={{ view }}"
+                        hx-target="#import-modals-container">
+                    Match
+                </button>
+            {% elif status_value == 'pending' %}
+                <button class="btn btn-xs btn-ghost cursor-wait flex items-center gap-2" disabled>
+                    <span class="loading loading-spinner loading-xs text-primary"></span>
+                    <span class="font-black text-[9px] uppercase opacity-60">Importing</span>
+                </button>
+            {% elif status_value == 'error' %}
+                <button class="btn btn-xs btn-error font-black uppercase tracking-tighter"
+                        hx-get="/library/import/fix-match/{{ item.id }}?view={{ view }}"
+                        hx-target="#import-modals-container"
+                        title="{{ item.error_msg }}">
+                    Error
+                </button>
+            {% else %}
+                <button class="btn btn-xs btn-ghost opacity-50 cursor-default no-animation bg-success/10 text-success border border-success/20" disabled>
+                    <span class="font-black uppercase tracking-tighter">Imported</span>
+                </button>
+            {% endif %}
+        </div>
+    </td>
+</tr>
+{% endblock item_row %}

@@ -3,14 +3,14 @@
   <title>Manual Entry</title>
 {% endblock head %}
 {% block body %}
-  <div class="app-shell p-6 sm:p-8">
-    <div class="app-content max-w-2xl">
+  <div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6">
+    <div class="w-full max-w-2xl">
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-left mb-2">Manual Request</h1>
         <p class="text-sm opacity-70">Add audiobooks that aren't available through Audible search</p>
       </div>
       {% block form %}
-        <form class="flex flex-col gap-4 w-full app-card app-panel"
+        <form class="flex flex-col gap-4 w-full"
               {% if book %}
               hx-post="{{ base_url }}/search/manual?id={{ book.id }}"
               {% else %}

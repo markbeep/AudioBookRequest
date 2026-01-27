@@ -3,9 +3,9 @@
 <title>Narrarr</title>
 {% endblock head %}
 {% block body %}
-<div class="app-shell p-6 sm:p-8">
+<div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6">
     <!-- Welcome Header -->
-    <div class="app-content app-stack app-stagger">
+    <div class="w-full max-w-7xl">
         <div class="flex justify-between items-center mb-4">
             <div>
                 <h1 class="text-4xl font-bold text-left">Welcome, {{ user.username }}!</h1>
@@ -16,6 +16,8 @@
                 {% include "icons/search.html" %}
             </a>
         </div>
+    </div>
+
     <!-- For You Section (Personalized) -->
     <div class="w-full max-w-7xl mb-8">
         <div class="flex justify-between items-center mb-4">
@@ -33,7 +35,7 @@
                 </div>
                 {% block for_you %}
                 {% if for_you %}
-                <div class="flex gap-4 pb-4 app-stagger">
+                <div class="flex gap-4 pb-4">
                     {% for recommendation in for_you[:12] %}
                     {% set book = recommendation.book %}
                     <div class="flex-none w-32 sm:w-40" title="{{ recommendation.reason }}">
@@ -61,14 +63,14 @@
             </div>
         </div>
         <div class="overflow-x-auto">
-            <div id="popular" class="w-full max-w-7xl mb-8" hx-get="{{ base_url }}/recommendations/popular"
+            <div id="for-you" class="w-full max-w-7xl mb-8" hx-get="{{ base_url }}/recommendations/popular"
                 hx-trigger="load" hx-swap="outerHTML">
                 <div class="w-full flex justify-center">
                     <span class="loading loading-dots loading-xl"></span>
                 </div>
                 {% block popular %}
                 {% if popular %}
-                <div class="flex gap-4 pb-4 app-stagger">
+                <div class="flex gap-4 pb-4">
                     {% for poularity in popular[:12] %}
                     {% set book = poularity.book %}
                     <div class="flex-none w-32 sm:w-40" title="{{ poularity.requested_amount() }}">
@@ -99,7 +101,7 @@
                 <a href="{{ base_url }}/search?q=trending" class="link link-primary">View all →</a>
             </div>
             <div class="overflow-x-auto">
-                <div class="flex gap-4 pb-4 app-stagger" style="width: max-content;">
+                <div class="flex gap-4 pb-4" style="width: max-content;">
                     {% for book in categories.trending[:12] %}
                     <div class="flex-none w-[8rem] sm:w-[10rem]">
                         {% include "components/book_card.html" %}
@@ -118,7 +120,7 @@
                 <a href="{{ base_url }}/search?q=business" class="link link-primary">View all →</a>
             </div>
             <div class="overflow-x-auto">
-                <div class="flex gap-4 pb-4 app-stagger" style="width: max-content;">
+                <div class="flex gap-4 pb-4" style="width: max-content;">
                     {% for book in categories.business[:12] %}
                     <div class="flex-none w-[8rem] sm:w-[10rem]">
                         {% include "components/book_card.html" %}
@@ -137,7 +139,7 @@
                 <a href="{{ base_url }}/search?q=fiction" class="link link-primary">View all →</a>
             </div>
             <div class="overflow-x-auto">
-                <div class="flex gap-4 pb-4 app-stagger" style="width: max-content;">
+                <div class="flex gap-4 pb-4" style="width: max-content;">
                     {% for book in categories.fiction[:12] %}
                     <div class="flex-none w-[8rem] sm:w-[10rem]">
                         {% include "components/book_card.html" %}
@@ -156,7 +158,7 @@
                 <a href="{{ base_url }}/search?q=biography" class="link link-primary">View all →</a>
             </div>
             <div class="overflow-x-auto">
-                <div class="flex gap-4 pb-4 app-stagger" style="width: max-content;">
+                <div class="flex gap-4 pb-4" style="width: max-content;">
                     {% for book in categories.biography[:12] %}
                     <div class="flex-none w-[8rem] sm:w-[10rem]">
                         {% include "components/book_card.html" %}
@@ -175,7 +177,7 @@
                 <a href="{{ base_url }}/search?q=science" class="link link-primary">View all →</a>
             </div>
             <div class="overflow-x-auto">
-                <div class="flex gap-4 pb-4 app-stagger" style="width: max-content;">
+                <div class="flex gap-4 pb-4" style="width: max-content;">
                     {% for book in categories.science[:12] %}
                     <div class="flex-none w-[8rem] sm:w-[10rem]">
                         {% include "components/book_card.html" %}
@@ -194,7 +196,7 @@
                 <a href="{{ base_url }}/search?q=new+release" class="link link-primary">View all →</a>
             </div>
             <div class="overflow-x-auto">
-                <div class="flex gap-4 pb-4 app-stagger" style="width: max-content;">
+                <div class="flex gap-4 pb-4" style="width: max-content;">
                     {% for book in categories.recent_releases[:12] %}
                     <div class="flex-none w-[8rem] sm:w-[10rem]">
                         {% include "components/book_card.html" %}
@@ -213,6 +215,5 @@
         {% endif %}
         {% endblock categories %}
     </div>
-</div>
 </div>
 {% endblock body %}
