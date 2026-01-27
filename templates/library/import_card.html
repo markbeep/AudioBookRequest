@@ -2,7 +2,7 @@
 {% set book = books_map.get(item.match_asin) if books_map else None %}
 {% set status_value = item.status.value if item.status else '' %}
 <div id="row-{{ item.id }}" class="app-card p-3 flex flex-col gap-3">
-    <div class="relative aspect-square w-full rounded-xl overflow-hidden bg-base-300 border border-base-300">
+    <div class="relative aspect-square w-full overflow-hidden bg-base-300 border border-base-300 app-media">
         {% if item.match_asin %}
             {% if book and book.cover_image %}
                 <img src="{{ book.cover_image }}" class="w-full h-full object-cover">

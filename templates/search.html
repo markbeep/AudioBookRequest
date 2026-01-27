@@ -4,9 +4,9 @@
   <script src="{{ base_url }}/static/search.js?v={{ version }}"></script>
 {% endblock head %}
 {% block body %}
-  <div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6">
-    <div class="w-full max-w-7xl">
-      <div class="flex w-full justify-between items-center mb-8 gap-4">
+  <div class="app-shell app-shell-compact">
+    <div class="app-content app-stack">
+      <div class="flex w-full justify-between items-center gap-4">
         <div>
           <h1 class="text-4xl font-bold text-left">Search</h1>
           <p class="text-sm opacity-70 mt-1">Find audiobooks from Audible or add manually</p>
@@ -20,7 +20,7 @@
         </a>
       </div>
 
-      <div class="flex flex-col gap-8 justify-start items-center w-full mb-12">
+      <div class="flex flex-col gap-6 justify-start items-center w-full">
         <form class="flex items-center w-full max-w-3xl gap-2" onsubmit="onSearch();">
           <input name="q"
                  class="input focus:z-10 flex-1"
@@ -53,7 +53,7 @@
 
       {% block book_results %}
         <div id="book-results"
-             class="w-full grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 pb-12">
+             class="w-full grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
           {% for result in search_results %}
             {% set book = result.book %}
             {% set already_requested = result.already_requested %}
@@ -67,14 +67,14 @@
             <div class="join">
               <button class="join-item btn"
                       onclick="onPageChange('{{ page-1 }}')"
-                      {% if page.__eq__(0) %}disabled{% endif %}>«</button>
+                      {% if page.__eq__(0) %}disabled{% endif %}>&laquo;</button>
               <button class="join-item btn flex flex-col gap-0"
                       onclick="onPageChange('{{ 0 }}')"
                       {% if page.__eq__(0) %}disabled{% endif %}>
                 Page {{ page+1 }}
                 <span class="text-[0.5rem]">back to first</span>
               </button>
-              <button class="join-item btn" onclick="onPageChange('{{ page+1 }}')">»</button>
+              <button class="join-item btn" onclick="onPageChange('{{ page+1 }}')">&raquo;</button>
             </div>
         </div>
       {% endif %}

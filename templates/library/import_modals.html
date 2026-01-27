@@ -7,7 +7,7 @@
             <h3 class="font-black text-lg uppercase tracking-tight">Fix Match</h3>
             <p class="text-[10px] font-mono opacity-50 truncate max-w-md">{{ item.source_path }}</p>
         </div>
-        <button class="btn btn-sm btn-circle btn-ghost" onclick="document.getElementById('fix_match_modal').remove()">✕</button>
+        <button class="btn btn-sm btn-circle btn-ghost" onclick="document.getElementById('fix_match_modal').remove()">&times;</button>
     </div>
     
     <!-- Search Bar -->
@@ -48,7 +48,7 @@
 <div class="flex flex-col gap-1.5">
     {% for result in results %}
     {% set book = result.book %}
-    <div class="flex items-center gap-4 p-3 bg-base-100 rounded-xl border border-base-200 hover:border-primary/40 hover:bg-base-200/50 transition-all group">
+    <div class="app-card flex items-center gap-4 p-3 hover:border-primary/40 hover:bg-base-200/50 transition-all group">
         <!-- Compact Thumbnail -->
         <div class="size-16 shrink-0 rounded-lg overflow-hidden shadow-sm border border-base-300 bg-base-300">
             {% if book.cover_image %}

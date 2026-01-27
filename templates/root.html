@@ -3,9 +3,9 @@
 <title>Narrarr</title>
 {% endblock head %}
 {% block body %}
-<div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6">
+<div class="app-shell">
     <!-- Welcome Header -->
-    <div class="w-full max-w-7xl">
+    <div class="app-content">
         <div class="flex justify-between items-center mb-4">
             <div>
                 <h1 class="text-4xl font-bold text-left">Welcome, {{ user.username }}!</h1>
@@ -19,16 +19,16 @@
     </div>
 
     <!-- For You Section (Personalized) -->
-    <div class="w-full max-w-7xl mb-8">
+    <div class="app-content mb-8">
         <div class="flex justify-between items-center mb-4">
             <div>
                 <h2 class="text-2xl font-bold">For You</h2>
                 <p class="text-sm opacity-70">Personalized recommendations based on your requests</p>
             </div>
-            <a href="{{ base_url }}/recommendations/for-you" class="link link-primary">Discover more →</a>
+            <a href="{{ base_url }}/recommendations/for-you" class="link link-primary">Discover more &rarr;</a>
         </div>
         <div class="overflow-x-auto">
-            <div id="for-you" class="w-full max-w-7xl mb-8" hx-get="{{ base_url }}/recommendations/user"
+            <div id="for-you" class="w-full mb-8" hx-get="{{ base_url }}/recommendations/user"
                 hx-trigger="load" hx-swap="outerHTML">
                 <div class="w-full flex justify-center">
                     <span class="loading loading-dots loading-xl"></span>
@@ -55,7 +55,7 @@
     </div>
 
     <!-- Popular Books Section -->
-    <div class="w-full max-w-7xl mb-8">
+    <div class="app-content mb-8">
         <div class="flex justify-between items-center mb-4">
             <div>
                 <h2 class="text-2xl font-bold">Popular</h2>
@@ -63,7 +63,7 @@
             </div>
         </div>
         <div class="overflow-x-auto">
-            <div id="for-you" class="w-full max-w-7xl mb-8" hx-get="{{ base_url }}/recommendations/popular"
+            <div id="for-you" class="w-full mb-8" hx-get="{{ base_url }}/recommendations/popular"
                 hx-trigger="load" hx-swap="outerHTML">
                 <div class="w-full flex justify-center">
                     <span class="loading loading-dots loading-xl"></span>
@@ -95,10 +95,10 @@
         {% block categories %}
         {% if categories %}
         {% if categories.trending %}
-        <div class="w-full max-w-7xl mb-8">
+        <div class="app-content mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Trending This Week</h2>
-                <a href="{{ base_url }}/search?q=trending" class="link link-primary">View all →</a>
+                <a href="{{ base_url }}/search?q=trending" class="link link-primary">View all &rarr;</a>
             </div>
             <div class="overflow-x-auto">
                 <div class="flex gap-4 pb-4" style="width: max-content;">
@@ -114,10 +114,10 @@
 
         <!-- Business & Self-Help -->
         {% if categories.business %}
-        <div class="w-full max-w-7xl mb-8">
+        <div class="app-content mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Business & Self-Help</h2>
-                <a href="{{ base_url }}/search?q=business" class="link link-primary">View all →</a>
+                <a href="{{ base_url }}/search?q=business" class="link link-primary">View all &rarr;</a>
             </div>
             <div class="overflow-x-auto">
                 <div class="flex gap-4 pb-4" style="width: max-content;">
@@ -133,10 +133,10 @@
 
         <!-- Fiction & Literature -->
         {% if categories.fiction %}
-        <div class="w-full max-w-7xl mb-8">
+        <div class="app-content mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Fiction & Literature</h2>
-                <a href="{{ base_url }}/search?q=fiction" class="link link-primary">View all →</a>
+                <a href="{{ base_url }}/search?q=fiction" class="link link-primary">View all &rarr;</a>
             </div>
             <div class="overflow-x-auto">
                 <div class="flex gap-4 pb-4" style="width: max-content;">
@@ -152,10 +152,10 @@
 
         <!-- Biography & History -->
         {% if categories.biography %}
-        <div class="w-full max-w-7xl mb-8">
+        <div class="app-content mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Biography & History</h2>
-                <a href="{{ base_url }}/search?q=biography" class="link link-primary">View all →</a>
+                <a href="{{ base_url }}/search?q=biography" class="link link-primary">View all &rarr;</a>
             </div>
             <div class="overflow-x-auto">
                 <div class="flex gap-4 pb-4" style="width: max-content;">
@@ -171,10 +171,10 @@
 
         <!-- Science & Technology -->
         {% if categories.science %}
-        <div class="w-full max-w-7xl mb-8">
+        <div class="app-content mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Science & Technology</h2>
-                <a href="{{ base_url }}/search?q=science" class="link link-primary">View all →</a>
+                <a href="{{ base_url }}/search?q=science" class="link link-primary">View all &rarr;</a>
             </div>
             <div class="overflow-x-auto">
                 <div class="flex gap-4 pb-4" style="width: max-content;">
@@ -190,10 +190,10 @@
 
         <!-- New Releases -->
         {% if categories.recent_releases %}
-        <div class="w-full max-w-7xl mb-8">
+        <div class="app-content mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">New Releases</h2>
-                <a href="{{ base_url }}/search?q=new+release" class="link link-primary">View all →</a>
+                <a href="{{ base_url }}/search?q=new+release" class="link link-primary">View all &rarr;</a>
             </div>
             <div class="overflow-x-auto">
                 <div class="flex gap-4 pb-4" style="width: max-content;">
@@ -207,7 +207,7 @@
         </div>
         {% endif %}
         {% elif initial_page %}
-        <div class="w-full max-w-7xl mb-8 flex flex-col items-center justify-center">
+        <div class="app-content mb-8 flex flex-col items-center justify-center">
             <h3 class="text-xl font-semibold mb-4">Loading Categories...</h3>
             <span class="loading loading-dots loading-xl"></span>
         </div>

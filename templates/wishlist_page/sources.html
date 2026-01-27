@@ -3,8 +3,8 @@
   <title>Sources</title>
 {% endblock head %}
 {% block body %}
-  <div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6" id="sources">
-    <div class="w-full max-w-7xl">
+  <div class="app-shell app-shell-center" id="sources">
+    <div class="app-content">
       <div class="flex items-center justify-between mb-8">
           <div>
               <h1 class="text-4xl font-black">Sources</h1>
@@ -12,7 +12,7 @@
           </div>
           <a preload
              href="{{ base_url }}/wishlist#{{ result.book.asin }}"
-             class="btn btn-ghost bg-base-200 btn-sm rounded-xl font-black uppercase text-[10px] tracking-wider px-4">← Back to Wishlist</a>
+             class="btn btn-ghost bg-base-200 btn-sm rounded-xl font-black uppercase text-[10px] tracking-wider px-4">&larr; Back to Wishlist</a>
       </div>
       
       {% if result.state.ok and not result.sources %}
@@ -35,7 +35,7 @@
       {% if result.sources %}
       <div class="flex flex-col gap-2">
         {% for source in (result.sources or []) %}
-          <div class="bg-base-100 rounded-xl border border-base-300 p-4 flex flex-col md:flex-row items-center justify-between gap-6 hover:border-primary transition-all group {% if loop.index==1 %}ring-2 ring-success/30 border-success{% endif %}">
+          <div class="app-card p-4 flex flex-col md:flex-row items-center justify-between gap-6 transition-all group {% if loop.index==1 %}ring-2 ring-success/30 border-success{% endif %}">
             
             <!-- Left: Main Info -->
             <div class="flex-1 min-w-0 w-full">

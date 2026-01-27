@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block head %}
-<title>For You — AudioBook Request</title>
+<title>For You &mdash; AudioBook Request</title>
 <script>
     const onPageChange = page => {
         const url = new URL(window.location);
@@ -47,14 +47,14 @@
     {% if recommendations or page > 0 %}
     <div class="join">
         <button class="join-item btn" onclick="onPageChange('{{ page-1 }}')" {% if page.__eq__(1) %}disabled{% endif
-            %}>«</button>
+            %}>&laquo;</button>
         <button class="join-item btn flex flex-col gap-0" onclick="onPageChange('{{ 1 }}')" {% if page.__eq__(1)
             %}disabled{% endif %}>
             Page {{ page }}
             <span class="text-[0.5rem]">back to first</span>
         </button>
         <button class="join-item btn" {% if not has_next %}disabled{% endif %}
-            onclick="onPageChange('{{ page+1 }}')">»</button>
+            onclick="onPageChange('{{ page+1 }}')">&raquo;</button>
     </div>
     {% endif %}
     </div>

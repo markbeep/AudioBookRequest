@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block body %}
-<div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6">
-  <div class="w-full max-w-7xl">
+<div class="app-shell app-shell-compact">
+  <div class="app-content">
     <h1 class="text-3xl font-bold text-left mb-6">Wishlist</h1>
     {% include "wishlist_page/tablist.html" %}
-    {% block content %}
-    {% endblock content %}
+    <div class="h-px w-full bg-base-300/60 mt-4"></div>
+    <div class="mt-4">
+      {% block content %}
+      {% endblock content %}
+    </div>
   </div>
 </div>
 {% endblock body %}

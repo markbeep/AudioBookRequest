@@ -2,7 +2,7 @@
 <div class="modal-box max-w-2xl bg-base-100 border border-base-300 shadow-2xl p-0 overflow-hidden" onclick="event.stopPropagation()">
     <!-- Close Button -->
     <form method="dialog">
-        <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 z-20 bg-black/20 text-white hover:bg-black/40 backdrop-blur-md border-0" onclick="document.getElementById('book-details-modal').remove()">✕</button>
+        <button class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4 z-20 bg-black/20 text-white hover:bg-black/40 backdrop-blur-md border-0" onclick="document.getElementById('book-details-modal').remove()">&times;</button>
     </form>
 
     <div class="flex flex-col">
@@ -11,11 +11,11 @@
             {% if book.cover_image %}
             <img src="{{ book.cover_image }}" class="absolute inset-0 w-full h-full object-cover blur-2xl opacity-50 scale-110">
             <div class="absolute inset-0 flex items-center justify-center p-8">
-                <img src="{{ book.cover_image }}" class="h-full rounded-xl shadow-2xl border-4 border-white/10 relative z-10 aspect-[2/3] object-cover">
+            <img src="{{ book.cover_image }}" class="h-full border-4 border-white/10 relative z-10 aspect-[2/3] object-cover app-media">
             </div>
             {% else %}
             <div class="absolute inset-0 flex items-center justify-center">
-                <div class="size-32 rounded-3xl bg-base-200 border-4 border-base-100 flex items-center justify-center text-5xl opacity-20">📚</div>
+                <div class="size-32 bg-base-200 border-4 border-base-100 flex items-center justify-center text-5xl opacity-20 app-media">&#x1F4DA;</div>
             </div>
             {% endif %}
             <div class="absolute inset-0 bg-gradient-to-t from-base-100 via-base-100/20 to-transparent"></div>
@@ -26,7 +26,7 @@
             <!-- Title & Status -->
             <div class="space-y-3">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="badge badge-success font-black uppercase text-[10px] tracking-wider py-3 px-4 rounded-xl shadow-sm">✅ Matched & Ready</span>
+                    <span class="badge badge-success font-black uppercase text-[10px] tracking-wider py-3 px-4 rounded-xl shadow-sm">&#x2705; Matched & Ready</span>
                     {% if book.runtime_length_hrs %}
                     <span class="badge badge-ghost font-black uppercase text-[10px] tracking-wider py-3 px-4 rounded-xl shadow-sm">{{ book.runtime_length_hrs }} Hours</span>
                     {% endif %}
@@ -39,15 +39,15 @@
 
             <!-- Metadata Grid -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div class="bg-base-200/50 p-4 rounded-2xl border border-base-300/50">
+                <div class="app-card app-panel">
                     <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Duration</p>
                     <p class="font-black text-lg">{{ book.runtime_length_hrs }}h</p>
                 </div>
-                <div class="bg-base-200/50 p-4 rounded-2xl border border-base-300/50">
+                <div class="app-card app-panel">
                     <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Released</p>
                     <p class="font-black text-lg">{{ book.release_date.year if book.release_date else 'N/A' }}</p>
                 </div>
-                <div class="bg-base-200/50 p-4 rounded-2xl border border-base-300/50 col-span-2">
+                <div class="app-card app-panel col-span-2">
                     <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Narrator</p>
                     <p class="font-black text-sm truncate">{{ book.narrators|join(", ") if book.narrators else "Unknown" }}</p>
                 </div>
@@ -115,7 +115,7 @@
             </div>
 
             <!-- Technical Info -->
-            <div class="p-5 bg-base-200/30 rounded-2xl border border-base-300/50 space-y-2">
+            <div class="app-card app-panel space-y-2">
                 <div class="flex justify-between items-center text-[10px] font-mono opacity-50">
                     <span>ASIN: {{ book.asin }}</span>
                     <span>Updated: {{ book.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>

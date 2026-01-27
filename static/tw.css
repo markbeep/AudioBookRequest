@@ -112,6 +112,10 @@
     @apply justify-center;
   }
 
+  .app-shell-compact {
+    @apply pt-4 pb-6 gap-6 sm:pt-6 sm:pb-8;
+  }
+
   .app-content {
     @apply w-full max-w-7xl;
   }
@@ -154,7 +158,7 @@
   }
 
   .app-nav-inner {
-    @apply w-full max-w-7xl mx-auto px-3 sm:px-6;
+    @apply w-full max-w-7xl mx-auto px-5 sm:px-8;
   }
 
   .app-stagger > * {

@@ -5,8 +5,8 @@
 {% endblock head %}
 
 {% block content %}
-<div class="w-screen flex flex-col items-center overflow-x-hidden">
-    <div class="w-full max-w-7xl p-6 sm:p-8 space-y-6">
+<div class="w-full">
+    <div class="space-y-6">
         
         <div class="flex items-center justify-between">
             <div>
@@ -14,14 +14,14 @@
                 <p class="text-sm opacity-60 mt-2">All series in your collection</p>
             </div>
             <a href="{{ base_url }}/library" class="btn btn-ghost btn-sm rounded-lg">
-                ← Back
+                &larr; Back
             </a>
         </div>
 
         <!-- Series Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for series_name, series_data in series_groups %}
-                <div class="bg-base-100 rounded-lg border border-base-300 overflow-hidden hover:border-primary hover:shadow-lg transition-all p-4 space-y-3">
+            <div class="app-card overflow-hidden transition-all p-4 space-y-3 hover:border-primary">
                     <!-- Series Info -->
                     <div>
                         <h3 class="font-black text-lg line-clamp-2">{{ series_name }}</h3>
@@ -55,7 +55,7 @@
 
                     <!-- Action -->
                     <button class="btn btn-primary btn-sm btn-block rounded-lg mt-2">
-                        View Series →
+                        View Series &rarr;
                     </button>
                 </div>
             {% endfor %}

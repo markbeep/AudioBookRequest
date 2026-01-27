@@ -1,18 +1,18 @@
 {% extends "library/base_library.html" %}
 {% set page = 'import' %}
+{% set view = view|default('table') %}
 {% block head %}
 <title>Library Import</title>
 {% endblock head %}
 
 {% block content %}
-<div class="w-screen flex flex-col items-center overflow-x-hidden">
-    <div class="w-full max-w-7xl p-6 sm:p-8">
-        <div class="flex flex-col gap-6">
+<div class="w-full">
+    <div class="flex flex-col gap-6">
         <!-- Start New Scan Section -->
-        <div class="card bg-base-200 shadow-lg border border-base-300 rounded-xl overflow-hidden">
+        <div class="app-card overflow-hidden">
         <div class="card-body p-6">
             <h2 class="card-title text-xs font-black opacity-50 uppercase tracking-widest text-left mb-4">New Import Scan</h2>
-            <form hx-post="{{ base_url }}/library/import/scan" hx-target="#session-status-container" hx-swap="innerHTML" class="flex flex-col gap-4">
+            <form hx-post="{{ base_url }}/library/import/scan?view={{ view }}" hx-target="#session-status-container" hx-swap="innerHTML" class="flex flex-col gap-4">
                 <div class="form-control w-full text-left">
                     <div class="join w-full rounded-lg overflow-hidden">
                         <input type="text" name="path" placeholder="/mnt/books/incoming" class="input input-bordered join-item w-full focus:input-primary font-medium" required />
@@ -27,6 +27,8 @@
             </form>
         </div>
         </div>
+
+        <div class="h-px w-full bg-base-300/60"></div>
 
         <!-- Active/Recent Sessions Section -->
         <div id="session-status-container">
@@ -43,7 +45,7 @@
 
                 
 
-                            <div hx-get="{{ base_url }}/library/import/session/{{ session.id }}" 
+                            <div hx-get="{{ base_url }}/library/import/session/{{ session.id }}?view={{ view }}" 
                                  hx-trigger="{% if session.status in ['scanning', 'importing'] or pending_items|length > 0 %}every 3s{% endif %}"
                                  hx-swap="innerHTML"
                                  hx-target="#session-status-container"
@@ -52,16 +54,14 @@
 
                     <!-- Status Header -->
 
-                    <div class="flex items-center justify-between gap-4 p-4 bg-base-200 rounded-3xl border border-base-300 shadow-inner relative overflow-hidden">
+                    <div class="app-card p-4 relative overflow-hidden">
 
                         <div class="flex items-center gap-4 z-10">
 
                             <div class="shrink-0">
 
-                                {% if session.status in ['scanning', 'importing'] or pending_items|length > 0 %}    
-
-                                    <span class="loading loading-spinner loading-md text-primary"></span>
-
+                        {% if session.status in ['scanning', 'importing'] or pending_items|length > 0 %}
+                                    <div class="animate-pulse size-6 rounded-full bg-primary/20 border border-primary/30"></div>
                                 {% else %}
 
                                     <div class="bg-success/20 text-success p-2 rounded-full">
@@ -106,7 +106,7 @@
 
                         {% set matched_items = items|selectattr('status', 'equalto', 'matched')|list %}
 
-                                                <form hx-post="{{ base_url }}/library/import/execute/{{ session.id }}"
+                                                <form hx-post="{{ base_url }}/library/import/execute/{{ session.id }}?view={{ view }}"
 
                                                       hx-target="#session-status-container"
 
@@ -172,31 +172,80 @@
 
     
 
-                    <!-- Live Results Grid -->
+                    <!-- Live Results -->
 
                     {% block session_results %}
-
-                    <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 mt-2 pb-24">
-
-                        {% for item in items %}
-
-                            {% include "library/import_row.html" %}
-
-                        {% endfor %}
-
-                        {% if not items %}
-
-                        <div class="col-span-full py-24 flex flex-col items-center justify-center opacity-20">
-
-                            <span class="loading loading-ring loading-lg"></span>
-
-                            <span class="font-black uppercase text-xs mt-4">Exploring Directory...</span>
-
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="text-[10px] font-black uppercase tracking-widest opacity-40">Results</div>
+                        <div class="join">
+                            <button class="btn btn-xs join-item font-black uppercase text-[9px] {% if view != 'grid' %}btn-primary{% else %}btn-ghost{% endif %}"
+                                    hx-get="{{ base_url }}/library/import/session/{{ session.id }}?view=table"
+                                    hx-target="#session-status-container"
+                                    hx-swap="innerHTML">
+                                List
+                            </button>
+                            <button class="btn btn-xs join-item font-black uppercase text-[9px] {% if view == 'grid' %}btn-primary{% else %}btn-ghost{% endif %}"
+                                    hx-get="{{ base_url }}/library/import/session/{{ session.id }}?view=grid"
+                                    hx-target="#session-status-container"
+                                    hx-swap="innerHTML">
+                                Grid
+                            </button>
                         </div>
-
-                        {% endif %}
-
                     </div>
+
+                    {% if view == 'grid' %}
+                    <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 mt-2 pb-24">
+                        {% if items %}
+                            {% for item in items %}
+                                {% include "library/import_card.html" %}
+                            {% endfor %}
+                        {% else %}
+                            {% if session.status in ['scanning', 'importing'] or pending_items|length > 0 %}
+                                {% include "library/import_skeletons.html" %}
+                            {% else %}
+                                <div class="col-span-full py-16 flex flex-col items-center justify-center opacity-40">
+                                    <span class="font-black uppercase text-xs">No items found</span>
+                                    <span class="text-[10px] font-mono opacity-50 mt-2">Try a different path</span>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="mt-2 pb-24">
+                        <div class="app-card overflow-x-auto">
+                            <table class="table table-sm w-full min-w-0 md:min-w-[760px]">
+                                <thead>
+                                    <tr class="text-[10px] font-black uppercase tracking-widest opacity-60">
+                                        <th class="py-3">Source</th>
+                                        <th class="py-3 hidden md:table-cell">Detected</th>
+                                        <th class="py-3 hidden md:table-cell">Match</th>
+                                        <th class="py-3 hidden lg:table-cell text-center">Score</th>
+                                        <th class="py-3 hidden sm:table-cell">Status</th>
+                                        <th class="py-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if items %}
+                                        {% for item in items %}
+                                            {% include "library/import_row.html" %}
+                                        {% endfor %}
+                                    {% else %}
+                                        {% if session.status in ['scanning', 'importing'] or pending_items|length > 0 %}
+                                            {% include "library/import_skeletons.html" %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="6" class="py-16 text-center opacity-40">
+                                                    <div class="font-black uppercase text-xs">No items found</div>
+                                                    <div class="text-[10px] font-mono opacity-50 mt-2">Try a different path</div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     {% endblock session_results %}
 
@@ -206,7 +255,7 @@
                 <h2 class="text-xs font-black opacity-40 uppercase tracking-widest">Recent Activity</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {% for s in sessions %}
-                    <div class="card bg-base-100 border border-base-300 shadow-sm rounded-2xl hover:border-primary/30 transition-colors">
+                    <div class="app-card hover:border-primary/30 transition-colors">
                         <div class="card-body p-4">
                             <div class="flex justify-between items-start">
                                 <div class="truncate pr-2">
@@ -220,7 +269,7 @@
                                     {% else %}badge-neutral{% endif %} text-[8px] rounded-md">{{ s.status }}</span>
                             </div>
                             <div class="card-actions justify-end mt-3">
-                                <button hx-get="{{ base_url }}/library/import/session/{{ s.id }}" hx-target="#session-status-container" class="btn btn-xs rounded-lg btn-ghost bg-base-200 font-bold">Open Session</button>
+                                <button hx-get="{{ base_url }}/library/import/session/{{ s.id }}?view={{ view }}" hx-target="#session-status-container" class="btn btn-xs rounded-lg btn-ghost bg-base-200 font-bold">Open Session</button>
                             </div>
                         </div>
                     </div>

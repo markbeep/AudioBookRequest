@@ -4,10 +4,10 @@
     <div class="bg-base-200 p-6 border-b border-base-300 flex justify-between items-center relative overflow-hidden">
         <div class="z-10">
             <h3 class="font-black text-2xl tracking-tight leading-none">{{ series_name }}</h3>
-            <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mt-3">Series Collection • {{ books|length }} Books</p>
+            <p class="text-[10px] font-black uppercase tracking-widest opacity-40 mt-3">Series Collection &bull; {{ books|length }} Books</p>
         </div>
         <form method="dialog" class="z-10">
-            <button class="btn btn-sm btn-circle btn-ghost" onclick="document.getElementById('series-details-modal').remove()">✕</button>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="document.getElementById('series-details-modal').remove()">&times;</button>
         </form>
         <div class="absolute right-0 top-0 text-9xl opacity-5 select-none pointer-events-none translate-x-1/4 -translate-y-1/4 font-black">
             {{ series_name[0] }}
@@ -18,13 +18,13 @@
     <div class="p-4 sm:p-6 overflow-y-auto max-h-[70vh]">
         <div class="space-y-2">
             {% for book in books %}
-            <div class="flex items-center gap-4 p-3 bg-base-100 rounded-2xl border border-base-300/50 hover:border-primary transition group relative">
+            <div class="app-card flex items-center gap-4 p-3 transition group relative">
                 <!-- Compact Cover -->
-                <div class="size-14 rounded-xl overflow-hidden bg-base-300 flex-shrink-0 shadow-sm relative">
+                <div class="size-14 overflow-hidden bg-base-300 flex-shrink-0 shadow-sm relative app-media">
                     {% if book.cover_image %}
                     <img src="{{ book.cover_image }}" class="object-cover w-full h-full">
                     {% else %}
-                    <div class="w-full h-full flex items-center justify-center opacity-20">📚</div>
+                    <div class="w-full h-full flex items-center justify-center opacity-20">&#x1F4DA;</div>
                     {% endif %}
                     {% if book.downloaded %}
                     <div class="absolute inset-0 bg-success/20 flex items-center justify-center">
@@ -45,10 +45,10 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold opacity-40 uppercase tracking-tight">
                         <span>{{ book.authors|join(", ") }}</span>
-                        <span>•</span>
+                        <span>&bull;</span>
                         <span>{{ book.runtime_length_hrs }}h</span>
                         {% if book.release_date %}
-                        <span>•</span>
+                        <span>&bull;</span>
                         <span>{{ book.release_date.year }}</span>
                         {% endif %}
                     </div>

@@ -130,10 +130,10 @@
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-base-100 rounded-2xl p-5 border border-base-300 shadow-sm"><p class="text-[10px] font-black opacity-40 uppercase">Total Books</p><p class="text-3xl font-black text-primary">{{ stats.total_books }}</p></div>
-        <div class="bg-base-100 rounded-2xl p-5 border border-base-300 shadow-sm"><p class="text-[10px] font-black opacity-40 uppercase">Authors</p><p class="text-3xl font-black text-info">{{ stats.total_authors }}</p></div>
-        <div class="bg-base-100 rounded-2xl p-5 border border-base-300 shadow-sm"><p class="text-[10px] font-black opacity-40 uppercase">Series</p><p class="text-3xl font-black text-success">{{ stats.total_series }}</p></div>
-        <div class="bg-base-100 rounded-2xl p-5 border border-base-300 shadow-sm"><p class="text-[10px] font-black opacity-40 uppercase">Duration</p><p class="text-3xl font-black text-warning">{% if stats.total_hours >= 24 %}{{ (stats.total_hours / 24)|int }}d {{ (stats.total_hours % 24)|int }}h{% else %}{{ stats.total_hours|int }}h{% endif %}</p></div>
+        <div class="app-card app-panel"><p class="text-[10px] font-black opacity-40 uppercase">Total Books</p><p class="text-3xl font-black text-primary">{{ stats.total_books }}</p></div>
+        <div class="app-card app-panel"><p class="text-[10px] font-black opacity-40 uppercase">Authors</p><p class="text-3xl font-black text-info">{{ stats.total_authors }}</p></div>
+        <div class="app-card app-panel"><p class="text-[10px] font-black opacity-40 uppercase">Series</p><p class="text-3xl font-black text-success">{{ stats.total_series }}</p></div>
+        <div class="app-card app-panel"><p class="text-[10px] font-black opacity-40 uppercase">Duration</p><p class="text-3xl font-black text-warning">{% if stats.total_hours >= 24 %}{{ (stats.total_hours / 24)|int }}d {{ (stats.total_hours % 24)|int }}h{% else %}{{ stats.total_hours|int }}h{% endif %}</p></div>
     </div>
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-base-300 pb-1 gap-4">
@@ -144,7 +144,7 @@
             <button class="tab font-black text-xs uppercase" data-view-tab="table" onclick="switchView('table')">All Books</button>
         </div>
         <div class="flex items-center gap-3">
-            <div id="bulk-action-area" class="hidden flex items-center gap-2 bg-base-100 px-3 py-1 rounded-xl border border-base-300 shadow-sm">
+        <div id="bulk-action-area" class="hidden flex items-center gap-2 app-card px-3 py-1">
                 <button hx-post="{{ base_url }}/library/bulk/reprocess" hx-include="input[name='asins']:checked" hx-target="#toast-block" class="btn btn-xs btn-ghost font-black text-[9px]">Rescan</button>
                 <button hx-post="{{ base_url }}/library/bulk/reorganize" hx-include="input[name='asins']:checked" hx-target="#toast-block" class="btn btn-xs btn-ghost font-black text-[9px]">Rename</button>
                 <button hx-post="{{ base_url }}/library/bulk/delete" hx-include="input[name='asins']:checked" hx-confirm="Delete selected books?" hx-on::after-request="window.location.reload();" class="btn btn-xs btn-ghost hover:text-error font-black text-[9px]">Remove</button>
@@ -158,7 +158,7 @@
     </div>
 
     {% macro book_card(book) %}
-    <div class="bg-base-100 rounded-xl border border-base-300 overflow-hidden hover:shadow-xl transition-all flex flex-col group relative cursor-pointer select-none" 
+    <div class="app-card overflow-hidden transition-all flex flex-col group relative cursor-pointer select-none" 
          data-book-grid-card data-book-search="{{ book.title }} {{ book.authors|join(' ') }} {{ book.series|join(' ') }}"
          onclick="toggleCardSelection(event, '{{ book.asin }}')">
         <div class="absolute top-2 left-2 z-[45]">
@@ -177,8 +177,8 @@
             <button hx-get="{{ base_url }}/library/book/{{ book.asin }}" hx-target="#book-details-modal-container" class="text-[11px] font-black truncate hover:text-primary leading-tight">{{ book.title }}</button>
             <p class="text-[9px] font-bold opacity-40 truncate">{{ book.authors|join(', ') }}</p>
             <div class="mt-auto pt-2 flex items-center justify-between border-t border-base-200">
-                <span class="text-[8px] font-black opacity-30 uppercase tracking-tighter">{{ book.runtime_length_hrs }}h • {{ book.release_date.year if book.release_date else 'N/A' }}</span>
-                <span class="text-success text-[8px]">✅</span>
+                <span class="text-[8px] font-black opacity-30 uppercase tracking-tighter">{{ book.runtime_length_hrs }}h &bull; {{ book.release_date.year if book.release_date else 'N/A' }}</span>
+                <span class="text-success text-[8px]">&#x2705;</span>
             </div>
         </div>
     </div>
@@ -186,7 +186,7 @@
 
     <div data-view-content="authors" class="space-y-4">
         {% for author_name, author_books in authors %}
-        <div class="bg-base-100/50 rounded-2xl border border-base-300 overflow-hidden" data-group-container data-group-name="{{ author_name }}">
+        <div class="app-card overflow-hidden" data-group-container data-group-name="{{ author_name }}">
             <div class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-200/50 transition" onclick="toggleGroup('author-{{ loop.index }}')">
                 <div class="flex items-center gap-4">
                     <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-lg">{{ author_name[0] }}</div>
@@ -201,11 +201,11 @@
 
     <div data-view-content="series" class="hidden space-y-4">
         {% for s in series_list %}
-        <div class="bg-base-100/50 rounded-2xl border border-base-300 overflow-hidden" data-group-container data-group-name="{{ s.name }}">
+        <div class="app-card overflow-hidden" data-group-container data-group-name="{{ s.name }}">
             <div class="p-4 flex items-center justify-between cursor-pointer hover:bg-base-200/50 transition" onclick="toggleGroup('series-{{ loop.index }}')">
                 <div class="flex items-center gap-4">
                     <div class="size-10 rounded-xl bg-success/10 flex items-center justify-center text-success font-black text-lg">{{ s.name[0] }}</div>
-                    <div><h3 class="font-black text-base">{{ s.name }}</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">{{ s.book_count }} Books • {{ s.duration|int }}h</p></div>
+                    <div><h3 class="font-black text-base">{{ s.name }}</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">{{ s.book_count }} Books &bull; {{ s.duration|int }}h</p></div>
                 </div>
                 <button class="btn btn-ghost btn-xs btn-square rounded-lg transition-transform" data-toggle-icon="series-{{ loop.index }}">{% include "icons/chevron-down.html" %}</button>
             </div>
@@ -216,7 +216,7 @@
 
     <div data-view-content="status" class="hidden space-y-8">
         <div class="space-y-4">
-            <div class="flex items-center justify-between border-b border-base-300 pb-2"><h3 class="font-black text-xl flex items-center gap-3"><span class="text-success">✅</span> Matched & Ready</h3><span class="badge badge-lg bg-success/10 border-success/30 text-success font-black rounded-xl">{{ matched_books|length }}</span></div>
+            <div class="flex items-center justify-between border-b border-base-300 pb-2"><h3 class="font-black text-xl flex items-center gap-3"><span class="text-success">&#x2705;</span> Matched & Ready</h3><span class="badge badge-lg bg-success/10 border-success/30 text-success font-black rounded-xl">{{ matched_books|length }}</span></div>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">{% for book in matched_books %}{{ book_card(book) }}{% endfor %}</div>
         </div>
     </div>

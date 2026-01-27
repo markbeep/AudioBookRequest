@@ -5,8 +5,8 @@
 {% endblock head %}
 
 {% block content %}
-<div class="w-screen flex flex-col items-center overflow-x-hidden">
-    <div class="w-full max-w-7xl p-6 sm:p-8 space-y-6">
+<div class="w-full">
+    <div class="space-y-6">
         
         <div class="flex items-center justify-between">
             <div>
@@ -14,14 +14,14 @@
                 <p class="text-sm opacity-60 mt-2">Organized by author and series</p>
             </div>
             <a href="{{ base_url }}/library" class="btn btn-ghost btn-sm rounded-lg">
-                ← Back
+                &larr; Back
             </a>
         </div>
 
         <!-- Authors List -->
         <div class="space-y-3">
             {% for author_name, author_books in authors %}
-                <div class="bg-base-100 rounded-lg border border-base-300 overflow-hidden">
+                <div class="app-card overflow-hidden">
                     <!-- Author Header -->
                     <div class="p-4 hover:bg-base-200/50 transition cursor-pointer" onclick="toggleAuthorExpanded('{{ author_name }}')">
                         <div class="flex items-center justify-between gap-4">
@@ -36,11 +36,11 @@
                                     {% endfor %}
                                 {% endfor %}
                                 <p class="text-sm opacity-60">
-                                    {{ unique_series_in_author|length }} series • {{ author_books|length }} books
+                                    {{ unique_series_in_author|length }} series &bull; {{ author_books|length }} books
                                 </p>
                             </div>
                             <button class="btn btn-ghost btn-sm btn-square transition-transform" data-author-toggle="{{ author_name }}">
-                                ▼
+                                &#x25BC;
                             </button>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
                                             <p class="text-xs opacity-60">{{ series_books|length }} books</p>
                                         </div>
                                         <button class="btn btn-ghost btn-xs btn-square transition-transform" data-series-toggle="{{ series_name }}">
-                                            ▼
+                                            &#x25BC;
                                         </button>
                                     </div>
                                 </div>
@@ -78,10 +78,10 @@
                                 {% for book in series_books %}
                                     <div class="hidden pl-4 py-2 border-b border-base-300/50 last:border-b-0 flex items-center justify-between hover:bg-base-200/20 transition" data-series-books="{{ series_name }}">
                                         <div class="flex items-center gap-3 flex-1">
-                                            <span class="badge badge-sm badge-success">✅</span>
+                                            <span class="badge badge-sm badge-success">&#x2705;</span>
                                             <div class="flex-1">
                                                 <p class="text-sm font-semibold">{{ book.title }}</p>
-                                                <p class="text-xs opacity-60">{{ book.runtime_length_hrs }}h • {{ book.release_date.year }}</p>
+                                                <p class="text-xs opacity-60">{{ book.runtime_length_hrs }}h &bull; {{ book.release_date.year }}</p>
                                             </div>
                                         </div>
                                     </div>

@@ -4,9 +4,15 @@
     <div hx-get="{{ base_url }}/wishlist/active-downloads" 
          hx-trigger="load, every 1s" 
          hx-swap="innerHTML">
-         <div class="flex flex-col items-center justify-center p-20 gap-4">
-            <span class="loading loading-spinner loading-lg text-primary"></span>
-            <span class="text-sm font-mono opacity-50">Loading active downloads...</span>
+         <div class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 animate-pulse">
+            {% for _ in range(10) %}
+            <div class="app-card p-3 space-y-3">
+                <div class="aspect-square w-full bg-base-300/70 app-media"></div>
+                <div class="h-3 w-3/4 rounded-full bg-base-300/60"></div>
+                <div class="h-2 w-1/2 rounded-full bg-base-300/50"></div>
+                <div class="h-2 w-2/3 rounded-full bg-base-300/40"></div>
+            </div>
+            {% endfor %}
          </div>
     </div>
 </div>
