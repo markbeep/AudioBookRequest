@@ -170,7 +170,8 @@
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <div class="absolute bottom-2 right-2 flex gap-1 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
                  <button hx-get="{{ base_url }}/library/book/{{ book.asin }}" hx-target="#book-details-modal-container" class="btn btn-xs btn-primary btn-square rounded-lg shadow-lg">{% include "icons/info-circle.html" %}</button>
-                 <button hx-post="{{ base_url }}/library/reorganize/{{ book.asin }}" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white">{% include "icons/pencil.html" %}</button>
+                 <button hx-get="{{ base_url }}/library/rematch/{{ book.asin }}" hx-target="#book-details-modal-container" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white" title="Rematch">{% include "icons/pencil.html" %}</button>
+                 <button hx-post="{{ base_url }}/library/bulk/reprocess" hx-vals='{"asins": ["{{ book.asin }}"]}' hx-target="#toast-block" hx-swap="innerHTML" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white" title="Refresh Metadata">{% include "icons/refresh.html" %}</button>
             </div>
         </div>
         <div class="p-3 flex-1 flex flex-col gap-0.5 text-left">

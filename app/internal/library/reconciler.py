@@ -88,7 +88,16 @@ class LibraryReconciler(LibraryScanner):
                     
                     if asin:
                         item.status = ImportItemStatus.matched
-                        item.match_score = 1.0
+                        book = session.get(Audiobook, asin)
+                        title_candidates, author_candidates = (
+                            self._build_match_candidates(item)
+                        )
+                        if book and self._is_exact_title_author_match(
+                            title_candidates, author_candidates, book
+                        ):
+                            item.match_score = 1.0
+                        else:
+                            item.match_score = 0.95
                         session.add(item)
                         session.commit()
                     else:
@@ -112,7 +121,16 @@ class LibraryReconciler(LibraryScanner):
                     if item.match_asin:
                         item.status = ImportItemStatus.matched
                         if not item.match_score:
-                            item.match_score = 1.0
+                            book = session.get(Audiobook, item.match_asin)
+                            title_candidates, author_candidates = (
+                                self._build_match_candidates(item)
+                            )
+                            if book and self._is_exact_title_author_match(
+                                title_candidates, author_candidates, book
+                            ):
+                                item.match_score = 1.0
+                            else:
+                                item.match_score = 0.95
                     else:
                         item.status = ImportItemStatus.missing
                 session.add_all(pending_items)

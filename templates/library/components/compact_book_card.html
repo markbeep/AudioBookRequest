@@ -23,8 +23,11 @@
                 <span class="size-3">{% include "icons/info-circle.html" %}</span>
              </button>
              {% if book.downloaded %}
-             <button hx-post="{{ base_url }}/library/bulk/reprocess" hx-vals='{"asins": ["{{ book.asin }}"]}' hx-target="#toast-block" hx-swap="innerHTML" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white flex items-center justify-center">
+             <button hx-get="{{ base_url }}/library/rematch/{{ book.asin }}" hx-target="#book-details-modal-container" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white flex items-center justify-center" title="Rematch">
                 <span class="size-3">{% include "icons/pencil.html" %}</span>
+             </button>
+             <button hx-post="{{ base_url }}/library/bulk/reprocess" hx-vals='{"asins": ["{{ book.asin }}"]}' hx-target="#toast-block" hx-swap="innerHTML" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white flex items-center justify-center" title="Refresh Metadata">
+                <span class="size-3">{% include "icons/refresh.html" %}</span>
              </button>
              {% endif %}
         </div>

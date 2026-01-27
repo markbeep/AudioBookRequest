@@ -13,6 +13,7 @@ from app.internal.models import (
     ImportSessionStatus,
     ImportItemStatus,
     Audiobook,
+    AudiobookRequest,
 )
 from app.internal.library.scanner import LibraryScanner
 from app.internal.library.service import refresh_book_metadata
@@ -913,6 +914,118 @@ async def search_for_match(
     )
 
 
+@router.get("/rematch/{asin}")
+async def rematch_modal(
+    asin: str,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+):
+    """
+    Returns the modal for rematching a library book to a new ASIN.
+    """
+    book = session.get(Audiobook, asin)
+    if not book:
+        return HTMLResponse("")
+    return template_response(
+        "library/rematch_modals.html",
+        request,
+        user,
+        {"book": book},
+        block_name="rematch_modal",
+    )
+
+
+@router.get("/rematch/search")
+async def rematch_search(
+    q: str,
+    asin: str,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    client_session: Annotated[ClientSession, Depends(get_connection)],
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+):
+    """
+    Searches Audible for a replacement match for a library book.
+    """
+    from app.internal.book_search import list_audible_books
+
+    results = await list_audible_books(session, client_session, q, num_results=5)
+    wrapped = [{"book": b} for b in results]
+    return template_response(
+        "library/rematch_modals.html",
+        request,
+        user,
+        {"results": wrapped, "asin": asin},
+        block_name="rematch_results",
+    )
+
+
+@router.post("/rematch/{old_asin}/{new_asin}")
+async def rematch_apply(
+    old_asin: str,
+    new_asin: str,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    client_session: Annotated[ClientSession, Depends(get_connection)],
+    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+):
+    """
+    Remap an existing library book to a new ASIN and merge request records.
+    """
+    if old_asin == new_asin:
+        return HTMLResponse("<script>toast('Already matched to this ASIN.', 'info');</script>")
+
+    old_book = session.get(Audiobook, old_asin)
+    if not old_book:
+        return HTMLResponse("<script>toast('Original book not found.', 'error');</script>")
+
+    from app.internal.book_search import get_book_by_asin, store_new_books
+
+    fetched = await get_book_by_asin(client_session, new_asin)
+    if not fetched:
+        return HTMLResponse("<script>toast('Could not fetch metadata for that ASIN.', 'error');</script>")
+
+    new_book = store_new_books(session, [fetched])[0]
+    if old_book.downloaded and not new_book.downloaded:
+        new_book.downloaded = True
+        session.add(new_book)
+        session.commit()
+
+    # Update requests
+    old_requests = session.exec(
+        select(AudiobookRequest).where(AudiobookRequest.asin == old_asin)
+    ).all()
+    for req in old_requests:
+        existing = session.exec(
+            select(AudiobookRequest).where(
+                AudiobookRequest.asin == new_asin,
+                AudiobookRequest.user_username == req.user_username,
+            )
+        ).first()
+        if existing:
+            session.delete(req)
+        else:
+            req.asin = new_asin
+            session.add(req)
+
+    # Update any import items pointing at the old ASIN
+    rematch_items = session.exec(
+        select(LibraryImportItem).where(LibraryImportItem.match_asin == old_asin)
+    ).all()
+    for item in rematch_items:
+        item.match_asin = new_asin
+        session.add(item)
+
+    # Remove the old audiobook entry once references are updated
+    session.delete(old_book)
+    session.commit()
+
+    return HTMLResponse(
+        "<script>toast('Book rematched successfully.', 'success'); window.location.reload();</script>"
+    )
+
+
 @router.post("/import/match/{item_id}/{asin}")
 async def update_match(
     item_id: uuid.UUID,
@@ -928,13 +1041,23 @@ async def update_match(
     books_map = {}
     if item:
         item.match_asin = asin
-        item.match_score = 1.0  # 100% score for manual match
         item.status = ImportItemStatus.matched
         session.add(item)
         session.commit()
         session.refresh(item)
 
         book = session.get(Audiobook, asin)
+        scanner = LibraryScanner(item.session_id)
+        title_candidates, author_candidates = scanner._build_match_candidates(item)
+        if book and scanner._is_exact_title_author_match(
+            title_candidates, author_candidates, book
+        ):
+            item.match_score = 1.0
+        else:
+            item.match_score = 0.95
+        session.add(item)
+        session.commit()
+        session.refresh(item)
         if book:
             books_map = {book.asin: book}
 

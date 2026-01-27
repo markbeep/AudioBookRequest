@@ -114,7 +114,16 @@ class LibraryScanner:
                     if item.match_asin:
                         item.status = ImportItemStatus.matched
                         if not item.match_score:
-                            item.match_score = 1.0
+                            book = session.get(Audiobook, item.match_asin)
+                            title_candidates, author_candidates = (
+                                self._build_match_candidates(item)
+                            )
+                            if book and self._is_exact_title_author_match(
+                                title_candidates, author_candidates, book
+                            ):
+                                item.match_score = 1.0
+                            else:
+                                item.match_score = 0.95
                     else:
                         item.status = ImportItemStatus.missing
                 session.add_all(pending_items)
@@ -487,33 +496,9 @@ class LibraryScanner:
         )
         return match.group(1).upper() if match else None
 
-    async def _auto_match(
-        self,
-        item: LibraryImportItem,
-        session: Session,
-        client_session: ClientSession,
-        language: Optional[str] = None,
-    ):
-        # 1. Fast path: Direct ASIN hit
-        path_asin = self._extract_asin(item.source_path)
-        if path_asin:
-            from app.internal.book_search import get_book_by_asin
-
-            try:
-                book = await get_book_by_asin(client_session, path_asin)
-                if book:
-                    item.match_asin, item.match_score, item.status = (
-                        book.asin,
-                        1.0,
-                        ImportItemStatus.matched,
-                    )
-                    session.add(item)
-                    session.commit()
-                    return
-            except Exception as e:
-                logger.warning("ASIN hunt failed", asin=path_asin, error=str(e))
-
-        # 2. Scour search queries
+    def _build_match_candidates(
+        self, item: LibraryImportItem
+    ) -> Tuple[list[str], list[str]]:
         folder_clean = self._clean_string(
             os.path.basename(os.path.dirname(item.source_path.split("|")[0]))
         )
@@ -542,6 +527,88 @@ class LibraryScanner:
             ]
         )
 
+        return title_candidates, author_candidates
+
+    def _expand_author_candidates(self, author_candidates: list[str]) -> list[str]:
+        expanded: list[str] = []
+        for author in author_candidates:
+            if not author:
+                continue
+            parts = re.split(r"\s*(?:,|&| and )\s*", author, flags=re.IGNORECASE)
+            expanded.extend([p.strip() for p in parts if p.strip()])
+        return self._dedupe_candidates(expanded)
+
+    def _is_exact_title_author_match(
+        self,
+        title_candidates: list[str],
+        author_candidates: list[str],
+        book: Audiobook,
+    ) -> bool:
+        if not book or not book.title or not book.authors:
+            return False
+
+        normalized_titles = set()
+        normalized_titles.add(self._normalize_text(book.title))
+        subtitle = getattr(book, "subtitle", None)
+        if subtitle:
+            normalized_titles.add(self._normalize_text(f"{book.title} {subtitle}"))
+
+        title_match = False
+        for title in title_candidates:
+            if not title:
+                continue
+            if self._normalize_text(title) in normalized_titles:
+                title_match = True
+                break
+        if not title_match:
+            return False
+
+        normalized_authors = {
+            self._normalize_text(author)
+            for author in (book.authors or [])
+            if author
+        }
+        if not normalized_authors:
+            return False
+
+        for author in self._expand_author_candidates(author_candidates):
+            if self._normalize_text(author) in normalized_authors:
+                return True
+        return False
+
+    async def _auto_match(
+        self,
+        item: LibraryImportItem,
+        session: Session,
+        client_session: ClientSession,
+        language: Optional[str] = None,
+    ):
+        title_candidates, author_candidates = self._build_match_candidates(item)
+
+        # 1. Fast path: Direct ASIN hit
+        path_asin = self._extract_asin(item.source_path)
+        if path_asin:
+            from app.internal.book_search import get_book_by_asin
+
+            try:
+                book = await get_book_by_asin(client_session, path_asin)
+                if book:
+                    exact_match = self._is_exact_title_author_match(
+                        title_candidates, author_candidates, book
+                    )
+                    match_score = 1.0 if exact_match else 0.98
+                    item.match_asin, item.match_score, item.status = (
+                        book.asin,
+                        match_score,
+                        ImportItemStatus.matched,
+                    )
+                    session.add(item)
+                    session.commit()
+                    return
+            except Exception as e:
+                logger.warning("ASIN hunt failed", asin=path_asin, error=str(e))
+
+        # 2. Scour search queries
         search_queries = []
         search_queries.extend(title_candidates)
         if author_candidates and title_candidates:
@@ -716,9 +783,17 @@ class LibraryScanner:
                 logger.debug("Hunt failed", query=query_str, error=str(e))
 
         if best_match and best_score > 60:
+            exact_match = self._is_exact_title_author_match(
+                title_candidates, author_candidates, best_match
+            )
+            match_score = best_score / 100.0
+            if exact_match:
+                match_score = 1.0
+            else:
+                match_score = min(match_score, 0.99)
             item.match_asin, item.match_score, item.status = (
                 best_match.asin,
-                best_score / 100.0,
+                match_score,
                 ImportItemStatus.matched,
             )
         else:

@@ -1,68 +1,60 @@
-{% block fix_match_modal %}
-<dialog id="fix_match_modal" class="modal modal-open modal-middle">
+{% block rematch_modal %}
+<dialog id="rematch-modal" class="modal modal-open modal-middle">
   <div class="modal-box max-w-2xl bg-base-100 border border-base-300 shadow-2xl p-0 overflow-hidden">
-    <!-- Header -->
     <div class="bg-base-200 p-4 border-b border-base-300 flex justify-between items-center">
         <div>
-            <h3 class="font-black text-lg uppercase tracking-tight">Fix Match</h3>
-            <p class="text-[10px] font-mono opacity-50 truncate max-w-md">{{ item.source_path }}</p>
+            <h3 class="font-black text-lg uppercase tracking-tight">Rematch Book</h3>
+            <p class="text-[10px] font-mono opacity-50 truncate max-w-md">{{ book.title }}{% if book.authors %} - {{ book.authors|join(", ") }}{% endif %}</p>
         </div>
-        <button class="btn btn-sm btn-circle btn-ghost" onclick="document.getElementById('fix_match_modal').remove()">&times;</button>
+        <button class="btn btn-sm btn-circle btn-ghost" onclick="document.getElementById('rematch-modal').remove()">&times;</button>
     </div>
-    
-    <!-- Search Bar -->
+
     <div class="p-4 bg-base-100 border-b border-base-200">
         <div class="form-control w-full">
             <div class="join w-full shadow-inner">
-                <input type="text" name="q" placeholder="Search title, author, series..." 
+                <input type="text" name="q" placeholder="Search title, author, series..."
                        class="input input-bordered join-item w-full focus:input-primary font-medium"
-                       value="{{ item.detected_title }} {{ item.detected_author }}"
-                       hx-get="/library/import/search?item_id={{ item.id }}&view={{ view }}"
+                       value="{{ book.title }} {{ book.authors|join(', ') if book.authors else '' }}"
+                       hx-get="/library/rematch/search?asin={{ book.asin }}"
                        hx-trigger="keyup changed delay:500ms, load"
-                       hx-target="#search-results-list" />
+                       hx-target="#rematch-search-results" />
                 <button class="btn btn-primary join-item px-6">Search</button>
             </div>
         </div>
     </div>
 
-    <!-- Results List -->
-    <div id="search-results-list" class="max-h-[50vh] overflow-y-auto p-2 min-h-[300px] bg-base-100/50">
+    <div id="rematch-search-results" class="max-h-[50vh] overflow-y-auto p-2 min-h-[300px] bg-base-100/50">
         <div class="flex flex-col items-center justify-center p-20 opacity-20">
             <span class="loading loading-spinner loading-lg text-primary"></span>
             <span class="text-xs mt-2 font-bold uppercase tracking-widest">Searching Audible...</span>
         </div>
     </div>
 
-    <!-- Footer -->
     <div class="p-3 bg-base-200 border-t border-base-300 flex justify-end">
-        <button class="btn btn-sm btn-ghost font-bold" onclick="document.getElementById('fix_match_modal').remove()">Cancel</button>
+        <button class="btn btn-sm btn-ghost font-bold" onclick="document.getElementById('rematch-modal').remove()">Cancel</button>
     </div>
   </div>
   <form method="dialog" class="modal-backdrop bg-black/40 backdrop-blur-[2px]">
-    <button onclick="document.getElementById('fix_match_modal').remove()">close</button>
+    <button onclick="document.getElementById('rematch-modal').remove()">close</button>
   </form>
 </dialog>
-{% endblock fix_match_modal %}
+{% endblock rematch_modal %}
 
-{% block search_results %}
+{% block rematch_results %}
 <div class="flex flex-col gap-1.5">
     {% for result in results %}
     {% set book = result.book %}
     <div class="app-card flex items-center gap-4 p-3 hover:border-primary/40 hover:bg-base-200/50 transition-all group">
-        <!-- Compact Thumbnail -->
         <div class="size-16 shrink-0 rounded-lg overflow-hidden shadow-sm border border-base-300 bg-base-300">
             {% if book.cover_image %}
             <img src="{{ book.cover_image }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
             {% else %}
             <div class="w-full h-full flex items-center justify-center opacity-20">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                </svg>
+                {% include "icons/photo-off.html" %}
             </div>
             {% endif %}
         </div>
-        
-        <!-- Details -->
+
         <div class="flex flex-col flex-grow min-w-0">
             <h4 class="font-black text-sm text-primary truncate leading-tight mb-0.5" title="{{ book.title }}">{{ book.title }}</h4>
             <p class="text-[11px] opacity-70 truncate mb-1" title="{{ book.authors|join(', ') }}">{{ book.authors|join(', ') }}</p>
@@ -74,22 +66,20 @@
             </div>
         </div>
 
-        <!-- Action -->
         <div class="shrink-0 pl-2">
             <button class="btn btn-sm btn-primary shadow-md px-4 group-hover:scale-105 transition-transform"
-                    hx-post="/library/import/match/{{ item_id }}/{{ book.asin }}?view={{ view }}"
-                    hx-target="#row-{{ item_id }}"
-                    hx-swap="outerHTML"
-                    hx-on::after-request="document.getElementById('fix_match_modal').remove()">
+                    hx-post="/library/rematch/{{ asin }}/{{ book.asin }}"
+                    hx-target="#book-details-modal-container"
+                    hx-swap="innerHTML">
                 Select
             </button>
         </div>
     </div>
     {% else %}
     <div class="flex flex-col items-center justify-center p-12 opacity-40 gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-8 w-8" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        {% include "icons/info-circle.html" %}
         <p class="font-bold text-sm uppercase tracking-widest">No books found</p>
     </div>
     {% endfor %}
 </div>
-{% endblock search_results %}
+{% endblock rematch_results %}
