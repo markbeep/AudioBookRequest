@@ -35,6 +35,7 @@ class DynamicSessionMiddleware:
         return await self.session_middleware(scope, receive, send)
 
     def update_secret(self, secret_key: str):
+        self.secret_key = secret_key
         self.session_middleware = SessionMiddleware(
             self.app,
             secret_key,
@@ -43,6 +44,7 @@ class DynamicSessionMiddleware:
         )
 
     def update_max_age(self, max_age: Second):
+        self.expiry = max_age
         self.session_middleware = SessionMiddleware(
             self.app,
             self.secret_key,
@@ -58,7 +60,8 @@ class DynamicMiddlewareLinker:
     the options to take effect immediately instead of having to restart the server
     """
 
-    middlewares: list[DynamicSessionMiddleware] = []
+    def __init__(self) -> None:
+        self.middlewares: list[DynamicSessionMiddleware] = []
 
     def add_middleware(self, middleware: DynamicSessionMiddleware):
         self.middlewares.append(middleware)

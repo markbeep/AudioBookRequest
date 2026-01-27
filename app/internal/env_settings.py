@@ -1,6 +1,6 @@
 import pathlib
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.internal.auth.login_types import LoginTypeEnum
@@ -43,6 +43,13 @@ class ApplicationSettings(BaseModel):
 
     init_root_username: str = ""
     init_root_password: str = ""
+
+    @field_validator("version")
+    @classmethod
+    def normalize_version(cls, value: str) -> str:
+        if not value or not str(value).strip():
+            return "local"
+        return str(value).strip()
 
     def get_force_login_type(self) -> LoginTypeEnum | None:
         if self.force_login_type.strip():

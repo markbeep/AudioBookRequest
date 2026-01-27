@@ -25,7 +25,8 @@ from app.util.log import logger
 
 def _headers(session: Session) -> dict[str, str]:
     token = abs_config.get_api_token(session)
-    assert token is not None
+    if not token:
+        raise ValueError("Audiobookshelf API token is not configured")
     return {"Authorization": f"Bearer {token}", "User-Agent": USER_AGENT}
 
 

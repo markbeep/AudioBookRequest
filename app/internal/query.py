@@ -1,4 +1,4 @@
-from contextlib import contextmanager
+import asyncio
 from typing import Literal
 
 import aiohttp
@@ -15,20 +15,24 @@ from app.internal.ranking.download_ranking import rank_sources
 from app.util.db import get_session
 from app.util.log import logger
 
-querying: set[str] = set()
+_query_locks: dict[str, asyncio.Lock] = {}
 settings = Settings()
 
 
-@contextmanager
-def manage_queried(asin: str):
-    querying.add(asin)
+def _get_query_lock(asin: str) -> asyncio.Lock:
+    lock = _query_locks.get(asin)
+    if lock is None:
+        lock = asyncio.Lock()
+        _query_locks[asin] = lock
+    return lock
+
+
+async def _try_acquire(lock: asyncio.Lock) -> bool:
     try:
-        yield
-    finally:
-        try:
-            querying.remove(asin)
-        except KeyError:
-            pass
+        await asyncio.wait_for(lock.acquire(), timeout=0.001)
+        return True
+    except TimeoutError:
+        return False
 
 
 class QueryResult(pydantic.BaseModel):
@@ -55,14 +59,11 @@ async def query_sources(
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    if asin in querying:
-        return QueryResult(
-            sources=None,
-            book=book,
-            state="querying",
-        )
+    lock = _get_query_lock(asin)
+    if not await _try_acquire(lock):
+        return QueryResult(sources=None, book=book, state="querying")
 
-    with manage_queried(asin):
+    try:
         prowlarr_config.raise_if_invalid(session)
 
         sources = await query_prowlarr(
@@ -122,6 +123,8 @@ async def query_sources(
             book=book,
             state="ok",
         )
+    finally:
+        lock.release()
 
 
 async def background_start_query(asin: str, requester: User, auto_download: bool):

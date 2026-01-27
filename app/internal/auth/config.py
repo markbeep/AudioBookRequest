@@ -30,7 +30,9 @@ class AuthConfig(StringConfigCache[AuthConfigKey]):
         self.set(session, "login_type", login_Type.value)
 
     def reset_auth_secret(self, session: Session):
-        auth_secret = base64.encodebytes(secrets.token_bytes(64)).decode("utf-8")
+        auth_secret = (
+            base64.urlsafe_b64encode(secrets.token_bytes(64)).decode("utf-8").strip()
+        )
         middleware_linker.update_secret(auth_secret)
         self.set(session, "auth_secret", auth_secret)
 
@@ -38,7 +40,9 @@ class AuthConfig(StringConfigCache[AuthConfigKey]):
         auth_secret = self.get(session, "auth_secret")
         if auth_secret:
             return auth_secret
-        auth_secret = base64.encodebytes(secrets.token_bytes(64)).decode("utf-8")
+        auth_secret = (
+            base64.urlsafe_b64encode(secrets.token_bytes(64)).decode("utf-8").strip()
+        )
         self.set(session, "auth_secret", auth_secret)
         return auth_secret
 

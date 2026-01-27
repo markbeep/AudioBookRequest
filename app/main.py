@@ -60,8 +60,6 @@ app.include_router(library.router, include_in_schema=False)
 # api router under /api
 app.include_router(api.router)
 
-user_exists = False
-
 
 @app.exception_handler(RequiresLoginException)
 async def redirect_to_login(request: Request, exc: RequiresLoginException):
@@ -118,10 +116,8 @@ async def redirect_to_init(
     """
     Initial redirect if no user exists. We force the user to create a new login
     """
-    global user_exists
     if (
-        not user_exists
-        and request.url.path != "/init"
+        request.url.path != "/init"
         and not request.url.path.startswith("/static")
         and request.method == "GET"
     ):
@@ -129,9 +125,10 @@ async def redirect_to_init(
             user_count = session.exec(select(func.count()).select_from(User)).one()
             if user_count == 0:
                 return BaseUrlRedirectResponse("/init")
-            else:
-                user_exists = True
-    elif user_exists and request.url.path.startswith("/init"):
-        return BaseUrlRedirectResponse("/")
+    elif request.url.path.startswith("/init"):
+        with next(get_session()) as session:
+            user_count = session.exec(select(func.count()).select_from(User)).one()
+            if user_count != 0:
+                return BaseUrlRedirectResponse("/")
     response = await call_next(request)
     return response

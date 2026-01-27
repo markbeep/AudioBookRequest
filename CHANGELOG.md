@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Bug Fixes
+
+* avoid startup crashes when required config values are missing
+* guard Prowlarr/ABS lookups with explicit validation instead of asserts
+* default qBittorrent port when unset to prevent invalid base URLs
+* add timeouts and directory creation for debug JS fetch
+* harden JS string escaping and handle missing changelog file
+* reduce duplicate Prowlarr queries by serializing per-ASIN lookups
+
 ## [1.9.0](https://github.com/markbeep/AudioBookRequest/compare/v1.8.0...v1.9.0) (2026-01-24)
 
 

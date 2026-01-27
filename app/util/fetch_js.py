@@ -16,17 +16,18 @@ files = {
 
 def fetch_scripts(debug: bool) -> None:
     root = Path("static")
+    root.mkdir(parents=True, exist_ok=True)
 
     if debug:
         if all((root / file_name).exists() for file_name in files.keys()):
             return
 
         for file_name, url in files.items():
-            response = requests.get(url)
-            if not response.ok:
-                raise Exception(
-                    f"Failed to fetch {file_name} from {url}. Status code: {response.status_code}"
-                )
+            try:
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+            except requests.RequestException as e:
+                raise Exception(f"Failed to fetch {file_name} from {url}: {e}") from e
             with open(root / file_name, "w") as f:
                 f.write(response.text)
 

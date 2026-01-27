@@ -1,6 +1,7 @@
 # pyright: reportUnknownMemberType=false
 
 import html
+from functools import lru_cache
 from jinja2_htmlmin import minify_loader
 from jinja2 import Environment, FileSystemLoader
 from typing import Any, Mapping, overload
@@ -31,7 +32,8 @@ def _zfill(val: str | int | float, num: int) -> str:
 
 
 def _to_js_string(val: str | int | float) -> str:
-    return html.escape(f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'")
+    escaped = str(val).replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
+    return html.escape("'" + escaped + "'")
 
 
 def _basename(path: str) -> str:
@@ -46,31 +48,28 @@ def _basename(path: str) -> str:
     return os.path.basename(path)
 
 
-def _asin_to_cover(asin: str) -> str:
+@lru_cache(maxsize=2048)
+def _get_book(asin: str):
     from app.util.db import get_session
     from app.internal.models import Audiobook
 
     with next(get_session()) as session:
-        book = session.get(Audiobook, asin)
-        return book.cover_image if book else ""
+        return session.get(Audiobook, asin)
+
+
+def _asin_to_cover(asin: str) -> str:
+    book = _get_book(asin)
+    return book.cover_image if book else ""
 
 
 def _asin_to_title(asin: str) -> str:
-    from app.util.db import get_session
-    from app.internal.models import Audiobook
-
-    with next(get_session()) as session:
-        book = session.get(Audiobook, asin)
-        return book.title if book else "Unknown"
+    book = _get_book(asin)
+    return book.title if book else "Unknown"
 
 
 def _asin_to_author(asin: str) -> str:
-    from app.util.db import get_session
-    from app.internal.models import Audiobook
-
-    with next(get_session()) as session:
-        book = session.get(Audiobook, asin)
-        return ", ".join(book.authors) if book and book.authors else "Unknown"
+    book = _get_book(asin)
+    return ", ".join(book.authors) if book and book.authors else "Unknown"
 
 
 templates.env.filters["zfill"] = _zfill
@@ -87,9 +86,14 @@ templates.env.globals["json_regexp"] = (
 )
 templates.env.globals["base_url"] = Settings().app.base_url.rstrip("/")
 
-with open("CHANGELOG.md", "r") as file:
-    changelog_content = file.read()
-templates.env.globals["changelog"] = markdown.markdown(changelog_content)
+try:
+    with open("CHANGELOG.md", "r") as file:
+        changelog_content = file.read()
+except FileNotFoundError:
+    changelog_content = ""
+templates.env.globals["changelog"] = (
+    markdown.markdown(changelog_content) if changelog_content else ""
+)
 
 
 @overload

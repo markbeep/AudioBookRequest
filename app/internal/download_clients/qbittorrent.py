@@ -18,7 +18,7 @@ class QbittorrentClient:
 
         # Use provided values or fall back to config
         host = host or download_client_config.get_qbit_host(session) or "localhost"
-        port = port or download_client_config.get_qbit_port(session)
+        port = port or download_client_config.get_qbit_port(session) or 8080
         self.username = (
             username
             if username is not None

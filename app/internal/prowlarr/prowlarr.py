@@ -225,7 +225,9 @@ async def query_prowlarr(
 
     base_url = prowlarr_config.get_base_url(session)
     api_key = prowlarr_config.get_api_key(session)
-    assert base_url is not None and api_key is not None
+    if not base_url or not api_key:
+        logger.error("Prowlarr configuration missing base_url or api_key")
+        return []
     source_ttl = prowlarr_config.get_source_ttl(session)
 
     if only_return_if_cached:
