@@ -32,6 +32,9 @@ async def read_download_client(
             "qbit_pass": download_client_config.get_qbit_pass(session),
             "qbit_category": download_client_config.get_qbit_category(session),
             "qbit_save_path": download_client_config.get_qbit_save_path(session),
+            "qbit_complete_action": download_client_config.get_qbit_complete_action(
+                session
+            ),
         },
     )
 
@@ -88,12 +91,14 @@ async def update_qbit_settings(
     request: Request,
     category: Annotated[str, Form()],
     save_path: Annotated[Optional[str], Form()] = None,
+    complete_action: Annotated[str, Form()] = "copy",
     session: Session = Depends(get_session),
     admin_user: DetailedUser = Security(ABRAuth(GroupEnum.admin)),
 ):
     download_client_config.set_qbit_category(session, category)
     if save_path is not None:
         download_client_config.set_qbit_save_path(session, save_path)
+    download_client_config.set_qbit_complete_action(session, complete_action)
 
     return template_response(
         "settings_page/download_client.html",
@@ -109,6 +114,9 @@ async def update_qbit_settings(
             "qbit_pass": download_client_config.get_qbit_pass(session),
             "qbit_category": category,
             "qbit_save_path": save_path,
+            "qbit_complete_action": download_client_config.get_qbit_complete_action(
+                session
+            ),
         },
         block_name="settings_form",
     )

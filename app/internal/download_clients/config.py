@@ -10,6 +10,7 @@ DownloadClientConfigKey = Literal[
     "qbit_category",
     "qbit_save_path",
     "qbit_enabled",
+    "qbit_complete_action",
 ]
 
 
@@ -55,6 +56,12 @@ class DownloadClientConfig(StringConfigCache[DownloadClientConfigKey]):
 
     def set_qbit_enabled(self, session: Session, enabled: bool):
         self.set_bool(session, "qbit_enabled", enabled)
+
+    def get_qbit_complete_action(self, session: Session) -> str:
+        return self.get(session, "qbit_complete_action", "copy") or "copy"
+
+    def set_qbit_complete_action(self, session: Session, action: str):
+        self.set(session, "qbit_complete_action", action)
 
 
 download_client_config = DownloadClientConfig()

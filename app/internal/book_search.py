@@ -1,6 +1,7 @@
 import asyncio
 import time
 import json
+import re
 from datetime import datetime
 from typing import Any, Literal, TypedDict, Union, cast
 from urllib.parse import urlencode
@@ -46,6 +47,31 @@ audible_regions: dict[audible_region_type, str] = {
     "es": ".es",
     "br": ".com.br",
 }
+
+_SERIES_INDEX_RE = re.compile(
+    r"(?:#\s*|(?:Book|Bk\.?|Vol\.?|Volume)\s*)(\d+(?:\.\d+)?)",
+    re.IGNORECASE,
+)
+
+
+def _normalize_series(series_list: list[str] | None) -> tuple[list[str], str | None]:
+    if not series_list:
+        return [], None
+    raw = next((s for s in series_list if s and s.strip()), "")
+    if not raw:
+        return [], None
+    name = raw.strip()
+    index: str | None = None
+    if " #" in name:
+        base, idx = name.split(" #", 1)
+        name = base.strip()
+        index = idx.strip() or None
+    else:
+        match = _SERIES_INDEX_RE.search(name)
+        if match:
+            index = match.group(1)
+            name = name[: match.start()].strip(" -,:")
+    return ([name] if name else []), index
 
 
 def clear_old_book_caches(session: Session):
@@ -135,15 +161,20 @@ async def _get_audnexus_book(
                 if name:
                     parsed_genres.append(name)
 
+    series_list, series_index = _normalize_series(
+        [s["name"] for s in audnexus_response.series]
+        if audnexus_response.series
+        else []
+    )
+
     return Audiobook(
         asin=audnexus_response.asin,
         title=audnexus_response.title,
         subtitle=audnexus_response.subtitle,
         authors=[author["name"] for author in audnexus_response.authors],
         narrators=[narrator["name"] for narrator in audnexus_response.narrators],
-        series=[s["name"] for s in audnexus_response.series]
-        if audnexus_response.series
-        else [],
+        series=series_list,
+        series_index=series_index,
         genres=parsed_genres,
         publisher=audnexus_response.publisher,
         description=audnexus_response.description,
@@ -215,15 +246,20 @@ async def _get_audimeta_book(
                 if name:
                     parsed_genres.append(name)
 
+    series_list, series_index = _normalize_series(
+        [s["name"] for s in audimeta_response.series]
+        if audimeta_response.series
+        else []
+    )
+
     return Audiobook(
         asin=audimeta_response.asin,
         title=audimeta_response.title,
         subtitle=audimeta_response.subtitle,
         authors=[author["name"] for author in audimeta_response.authors],
         narrators=[narrator["name"] for narrator in audimeta_response.narrators],
-        series=[s["name"] for s in audimeta_response.series]
-        if audimeta_response.series
-        else [],
+        series=series_list,
+        series_index=series_index,
         genres=parsed_genres,
         publisher=audimeta_response.publisher,
         description=audimeta_response.description,
@@ -520,6 +556,10 @@ def store_new_books(session: Session, books: list[Audiobook]) -> list[Audiobook]
 
     merged_books = []
     for book in books:
+        series_list, series_index = _normalize_series(book.series)
+        book.series = series_list
+        book.series_index = series_index
+
         # Check if book exists first to preserve downloaded status
         existing = session.get(Audiobook, book.asin)
         if existing:

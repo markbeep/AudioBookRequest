@@ -74,7 +74,11 @@ async def process_completed_download(
     os.makedirs(dest_path, exist_ok=True)
 
     # 2. Organize files
-    use_hardlinks = media_management_config.get_use_hardlinks(session)
+    from app.internal.download_clients.config import download_client_config
+
+    complete_action = download_client_config.get_qbit_complete_action(session)
+    use_hardlinks = complete_action == "hardlink"
+    delete_source = delete_source or complete_action == "move"
     file_pattern = media_management_config.get_file_pattern(session)
     logger.info(
         "Processor: Organizing and renaming files",
@@ -119,6 +123,46 @@ async def process_completed_download(
             p for p in source_paths if os.path.exists(p) and not os.path.isdir(p)
         ]
 
+    mam_result = None
+    if book_request.mam_id:
+        try:
+            from app.internal.indexers.mam import (
+                fetch_mam_book_details,
+                MamIndexer,
+                ValuedMamConfigurations,
+                SessionContainer,
+            )
+            from app.internal.indexers.configuration import create_valued_configuration
+            from app.internal.book_search import _normalize_series
+            import aiohttp
+
+            async with aiohttp.ClientSession() as client_session:
+                config_obj = await MamIndexer.get_configurations(
+                    SessionContainer(session=session, client_session=client_session)
+                )
+                valued = create_valued_configuration(config_obj, session)
+                mam_config = ValuedMamConfigurations(
+                    mam_session_id=str(getattr(valued, "mam_session_id") or "")
+                )
+                mam_result = await fetch_mam_book_details(
+                    container=SessionContainer(
+                        session=session, client_session=client_session
+                    ),
+                    configurations=mam_config,
+                    mam_id=book_request.mam_id,
+                )
+
+            if mam_result and not book.series_index:
+                mam_series, mam_index = _normalize_series(mam_result.series)
+                if mam_index:
+                    book.series_index = mam_index
+                if not book.series and mam_series:
+                    book.series = mam_series
+                session.add(book)
+                session.commit()
+        except Exception:
+            pass
+
     # Copy and Rename
     padding = 3 if len(audio_files_to_process) >= 100 else 2
     total_files = len(audio_files_to_process)
@@ -151,36 +195,6 @@ async def process_completed_download(
     )
     session.add(book_request)
     session.commit()
-
-    mam_result = None
-    if book_request.mam_id:
-        try:
-            from app.internal.indexers.mam import (
-                fetch_mam_book_details,
-                MamIndexer,
-                ValuedMamConfigurations,
-                SessionContainer,
-            )
-            from app.internal.indexers.configuration import create_valued_configuration
-            import aiohttp
-
-            async with aiohttp.ClientSession() as client_session:
-                config_obj = await MamIndexer.get_configurations(
-                    SessionContainer(session=session, client_session=client_session)
-                )
-                valued = create_valued_configuration(config_obj, session)
-                mam_config = ValuedMamConfigurations(
-                    mam_session_id=str(getattr(valued, "mam_session_id") or "")
-                )
-                mam_result = await fetch_mam_book_details(
-                    container=SessionContainer(
-                        session=session, client_session=client_session
-                    ),
-                    configurations=mam_config,
-                    mam_id=book_request.mam_id,
-                )
-        except Exception:
-            pass
 
     await generate_abs_metadata(book, dest_path, mam_result)
     await generate_opf_metadata(session, book, dest_path, mam_result)

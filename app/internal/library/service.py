@@ -19,6 +19,16 @@ def sanitize_filename(s: str) -> str:
     s = re.sub(r'[\\/*?:">|<]', "", s).strip()
     return s or "Unknown"
 
+
+def _get_series_parts(book: Audiobook) -> tuple[str | None, str | None]:
+    series_name = book.series[0] if book.series else None
+    series_index = book.series_index
+    if series_name and not series_index and " #" in series_name:
+        base, idx = series_name.split(" #", 1)
+        series_name = base.strip()
+        series_index = idx.strip() or None
+    return series_name, series_index
+
 def get_book_folder_path(session: Session, book: Audiobook) -> Optional[str]:
     """
     Calculates the relative path for a book based on current patterns.
@@ -29,8 +39,11 @@ def get_book_folder_path(session: Session, book: Audiobook) -> Optional[str]:
 
     pattern = media_management_config.get_folder_pattern(session)
     author = book.authors[0] if book.authors else "Unknown"
-    series = book.series[0] if book.series else None
+    series, series_index = _get_series_parts(book)
     year = book.release_date.year if book.release_date else "Unknown"
+    series_display = (
+        f"{series} #{series_index}" if series and series_index else series
+    )
 
     try:
         folder_rel_path = pattern.format(
@@ -38,8 +51,8 @@ def get_book_folder_path(session: Session, book: Audiobook) -> Optional[str]:
             title=sanitize_filename(book.title),
             year=year,
             asin=book.asin,
-            series=sanitize_filename(series) if series else "No Series",
-            series_index=book.series[0] if book.series else "",
+            series=sanitize_filename(series_display) if series_display else "No Series",
+            series_index=series_index or "",
         )
     except Exception as e:
         logger.warning("Pattern formatting failed, using default", error=str(e))
@@ -51,7 +64,9 @@ def get_book_folder_path(session: Session, book: Audiobook) -> Optional[str]:
         and "{series}" not in pattern
     ):
         folder_rel_path = os.path.join(
-            sanitize_filename(author), sanitize_filename(series), sanitize_filename(book.title)
+            sanitize_filename(author),
+            sanitize_filename(series_display),
+            sanitize_filename(book.title),
         )
 
     return folder_rel_path.strip().lstrip(os.path.sep)
@@ -61,8 +76,11 @@ def generate_audiobook_filename(
     book: Audiobook, file_pattern: str, part_str: str, ext: str
 ) -> str:
     author = book.authors[0] if book.authors else "Unknown"
-    series = book.series[0] if book.series else None
+    series, series_index = _get_series_parts(book)
     year = book.release_date.year if book.release_date else "Unknown"
+    series_display = (
+        f"{series} #{series_index}" if series and series_index else series
+    )
 
     try:
         new_filename = file_pattern.format(
@@ -70,8 +88,8 @@ def generate_audiobook_filename(
             title=sanitize_filename(book.title),
             year=year,
             asin=book.asin,
-            series=sanitize_filename(series) if series else "No Series",
-            series_index=book.series[0] if book.series else "",
+            series=sanitize_filename(series_display) if series_display else "No Series",
+            series_index=series_index or "",
             part=part_str,
         ).strip()
         new_filename = re.sub(r"[\\s\\-\\._]+$", "", new_filename)

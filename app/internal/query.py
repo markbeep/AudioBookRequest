@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 from app.internal.env_settings import Settings
 from app.internal.models import Audiobook, AudiobookRequest, ProwlarrSource, User
 from app.internal.prowlarr.prowlarr import query_prowlarr, start_download
-from app.internal.prowlarr.util import prowlarr_config
+from app.internal.prowlarr.util import ProwlarrMisconfigured, prowlarr_config
 from app.internal.ranking.download_ranking import rank_sources
 from app.util.db import get_session
 from app.util.log import logger
@@ -64,7 +64,10 @@ async def query_sources(
         return QueryResult(sources=None, book=book, state="querying")
 
     try:
-        prowlarr_config.raise_if_invalid(session)
+        try:
+            prowlarr_config.raise_if_invalid(session)
+        except ProwlarrMisconfigured as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
 
         sources = await query_prowlarr(
             session,

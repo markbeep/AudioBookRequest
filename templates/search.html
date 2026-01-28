@@ -6,7 +6,7 @@
 {% block body %}
   <div class="app-shell app-shell-compact">
     <div class="app-content app-stack">
-      <div class="flex w-full justify-between items-center gap-4">
+      <div class="flex w-full flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 class="text-4xl font-bold text-left">Search</h1>
           <p class="text-sm opacity-70 mt-1">Find audiobooks from Audible or add manually</p>
@@ -14,14 +14,14 @@
         <a preload
            href="{{ base_url }}/search/manual"
            title="Manually add request"
-           class="btn btn-primary btn-sm rounded-lg gap-2 flex items-center justify-center whitespace-nowrap">
+           class="btn btn-primary btn-sm rounded-lg gap-2 flex items-center justify-center whitespace-nowrap w-full sm:w-auto">
           Manual Add
           {% include "icons/plus.html" %}
         </a>
       </div>
 
       <div class="flex flex-col gap-6 justify-start items-center w-full">
-        <form class="flex items-center w-full max-w-3xl gap-2" onsubmit="onSearch();">
+        <form class="flex flex-col sm:flex-row items-stretch sm:items-center w-full max-w-3xl gap-2" onsubmit="onSearch();">
           <input name="q"
                  class="input focus:z-10 flex-1"
                  placeholder="Search by title, author, or narrator..."
@@ -39,13 +39,13 @@
               {% for suggestion in (suggestions or [])[:3] %}<option value="{{ suggestion }}"></option>{% endfor %}
             </datalist>
           {% endblock search_suggestions %}
-          <select class="select select-sm focus:z-10 max-w-24" name="region">
+          <select class="select select-sm focus:z-10 w-full sm:w-auto sm:max-w-24" name="region">
             {% for region in regions.keys() %}
               <option value="{{ region }}"
                       {% if region.__eq__(selected_region) %}selected="selected"{% endif %}>{{ region }}</option>
             {% endfor %}
           </select>
-          <button id="search" class="btn btn-primary btn-sm" type="submit">
+          <button id="search" class="btn btn-primary btn-sm w-full sm:w-auto" type="submit">
             <span id="search-text">Search</span>
             <span id="search-spinner" class="loading hidden"></span>
           </button>

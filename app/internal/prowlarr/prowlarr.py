@@ -82,29 +82,24 @@ async def start_download(
     info_hash = None  # Initialize info_hash
 
     if prowlarr_source.magnet_url:
+        import re
+
+        match = re.search(
+            r"xt=urn:btih:([a-zA-Z0-9]+)", prowlarr_source.magnet_url, re.IGNORECASE
+        )
+        if match:
+            info_hash = match.group(1).lower()
+        else:
+            logger.warning(
+                "Could not extract hash from magnet link",
+                magnet=prowlarr_source.magnet_url,
+            )
+
         success = await client.add_torrent(
             prowlarr_source.magnet_url,
             is_magnet=True,
             tags=[f"asin:{audiobook_request.asin}"],
         )
-        if success:
-            import re
-
-            # Extract hash from magnet link
-            match = re.search(
-                r"xt=urn:btih:([a-zA-Z0-9]+)", prowlarr_source.magnet_url, re.IGNORECASE
-            )
-            if match:
-                info_hash = match.group(1).lower()
-            else:
-                # Fallback or error logging?
-                # If we can't extract hash, we might not be able to track it.
-                # But it was added to client.
-                logger.warning(
-                    "Could not extract hash from magnet link",
-                    magnet=prowlarr_source.magnet_url,
-                )
-                info_hash = None
     elif prowlarr_source.download_url:
         # We need to fetch the torrent file content
         fetch_headers = {"User-Agent": USER_AGENT}
@@ -131,13 +126,18 @@ async def start_download(
         ) as r:
             if r.ok:
                 content = await r.read()
+                try:
+                    tor = Torrent.read_stream(content)
+                    info_hash = tor.infohash
+                except (MetainfoError, ReadError, BdecodeError) as e:
+                    logger.warning(
+                        "Error reading torrent info hash from content",
+                        url=prowlarr_source.download_url,
+                        error=str(e),
+                    )
                 success = await client.add_torrent(
                     content, is_magnet=False, tags=[f"asin:{audiobook_request.asin}"]
                 )
-                if success:
-                    info_hash = await _get_torrent_info_hash(
-                        client_session, prowlarr_source.download_url
-                    )
             else:
                 logger.error(
                     "Failed to fetch torrent file for direct qBit download",
@@ -150,6 +150,28 @@ async def start_download(
             guid=guid,
         )
         return False
+
+    if not success and info_hash:
+        existing = await client.get_torrents(category=None)
+        match = next(
+            (t for t in existing if t.get("hash", "").lower() == info_hash), None
+        )
+        if match:
+            await client.add_torrent_tags(match.get("hash"), [f"asin:{audiobook_request.asin}"])
+            audiobook_request.torrent_hash = match.get("hash")
+            audiobook_request.download_state = match.get("state", "queued")
+            audiobook_request.download_progress = match.get("progress", 0.0)
+            audiobook_request.processing_status = "download_initiated"
+            session.add(audiobook_request)
+            session.commit()
+            log_request_event(
+                session,
+                audiobook_request.asin,
+                audiobook_request.user_username,
+                "Torrent already in client; tracking existing download.",
+                commit=True,
+            )
+            return True
 
     if success:
         logger.debug("Download successfully started via direct qBittorrent")

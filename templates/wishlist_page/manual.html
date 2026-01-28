@@ -44,29 +44,31 @@
               <td>{{ book.additional_info }}</td>
               <td>{{ book.user_username }}</td>
               <td>
-                <button title="Remove"
-                        class="btn btn-square btn-ghost text-error"
-                        {% if not user.is_admin() %}disabled{% endif %}
-                        hx-delete="{{ base_url }}/wishlist/manual/{{ book.id }}"
-                        hx-swap="outerHTML"
-                        hx-target="#book-table-body"
-                        hx-confirm="Are you sure you want to remove this manual request?"
-                        hx-disabled-elt="this">{% include "icons/trash.html" %}</button>
-                {% if book.downloaded %}
-                  <button class="btn btn-square btn-ghost bg-success text-neutral/20"
-                          disabled
-                          title="Set as downloaded">{% include "icons/checkmark.html" %}</button>
-                {% else %}
-                  <button class="btn btn-square"
-                          title="Set as downloaded"
+                <div class="flex flex-wrap gap-2">
+                  <button title="Remove"
+                          class="btn btn-square btn-ghost text-error"
                           {% if not user.is_admin() %}disabled{% endif %}
-                          hx-patch="{{ base_url }}/wishlist/manual/{{ book.id }}"
+                          hx-delete="{{ base_url }}/wishlist/manual/{{ book.id }}"
                           hx-swap="outerHTML"
                           hx-target="#book-table-body"
-                          hx-disabled-elt="this">{% include "icons/checkmark.html" %}</button>
-                {% endif %}
-                <a class="btn btn-square" href="{{ base_url }}/search/manual?id={{ book.id }}"
-                   title="Edit">{% include "icons/pencil.html" %}</a>
+                          hx-confirm="Are you sure you want to remove this manual request?"
+                          hx-disabled-elt="this">{% include "icons/trash.html" %}</button>
+                  {% if book.downloaded %}
+                    <button class="btn btn-square btn-ghost bg-success text-neutral/20"
+                            disabled
+                            title="Set as downloaded">{% include "icons/checkmark.html" %}</button>
+                  {% else %}
+                    <button class="btn btn-square"
+                            title="Set as downloaded"
+                            {% if not user.is_admin() %}disabled{% endif %}
+                            hx-patch="{{ base_url }}/wishlist/manual/{{ book.id }}"
+                            hx-swap="outerHTML"
+                            hx-target="#book-table-body"
+                            hx-disabled-elt="this">{% include "icons/checkmark.html" %}</button>
+                  {% endif %}
+                  <a class="btn btn-square" href="{{ base_url }}/search/manual?id={{ book.id }}"
+                     title="Edit">{% include "icons/pencil.html" %}</a>
+                </div>
               </td>
             </tr>
           {% endfor %}

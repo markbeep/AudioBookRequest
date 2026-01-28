@@ -55,16 +55,32 @@
 
             <!-- Series & Genres -->
             <div class="space-y-4">
-                {% if book.series %}
                 <div class="space-y-2">
                     <p class="text-[10px] font-black uppercase tracking-widest opacity-40">Series</p>
+                    {% if book.series %}
                     <div class="flex flex-wrap gap-2">
-                        {% for s in book.series %}
-                        <span class="px-4 py-2 bg-primary/10 text-primary rounded-xl font-black text-[11px] uppercase tracking-wider border border-primary/20">{{ s }}</span>
-                        {% endfor %}
+                        {% set series_name = book.series[0] %}
+                        {% set series_label = series_name ~ (' #' ~ book.series_index if book.series_index) %}
+                        <span class="px-4 py-2 bg-primary/10 text-primary rounded-xl font-black text-[11px] uppercase tracking-wider border border-primary/20">{{ series_label }}</span>
                     </div>
+                    {% else %}
+                    <p class="text-[10px] opacity-50">No series set.</p>
+                    {% endif %}
+                    <form class="flex flex-col sm:flex-row gap-2 pt-2"
+                          hx-post="{{ base_url }}/library/book/{{ book.asin }}/series"
+                          hx-target="#book-details-modal"
+                          hx-swap="outerHTML">
+                        <input name="series_name"
+                               class="input input-bordered input-sm flex-1"
+                               placeholder="Series name"
+                               value="{{ book.series[0] if book.series else '' }}" />
+                        <input name="series_index"
+                               class="input input-bordered input-sm w-full sm:w-28"
+                               placeholder="#"
+                               value="{{ book.series_index or '' }}" />
+                        <button class="btn btn-sm btn-primary w-full sm:w-auto">Save</button>
+                    </form>
                 </div>
-                {% endif %}
 
                 {% if book.genres %}
                 <div class="space-y-2">

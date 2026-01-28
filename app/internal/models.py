@@ -71,6 +71,7 @@ class Audiobook(BaseSQLModel, table=True):
     authors: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     narrators: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     series: list[str] = Field(default_factory=list, sa_column=Column(JSON))
+    series_index: str | None = None
     genres: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     publisher: str | None = None
     description: str | None = None

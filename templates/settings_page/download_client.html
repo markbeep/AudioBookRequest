@@ -7,10 +7,10 @@
     <h2 class="text-lg">Download Client (qBittorrent)</h2>
     
     <div class="form-control">
-        <label class="label cursor-pointer">
+        <label class="label cursor-pointer flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <span class="label-text text-lg font-bold">Enable qBittorrent Integration</span>
             <input hx-put="{{ base_url }}/settings/download-client/enabled" type="checkbox"
-                name="enabled" class="toggle toggle-primary" {% if qbit_enabled %}checked{% endif %}
+                name="enabled" class="toggle toggle-primary sm:ml-auto self-start sm:self-auto" {% if qbit_enabled %}checked{% endif %}
                 hx-trigger="change" hx-swap="none" />
         </label>
         <p class="text-xs opacity-60">When enabled, downloads will be sent to qBittorrent and monitored for completion.</p>
@@ -71,6 +71,16 @@
             <label for="qbit-save-path">Save Path (Optional)</label>
             <input id="qbit-save-path" name="save_path" type="text" value="{{ qbit_save_path or '' }}" class="input w-full" placeholder="/downloads/audiobooks" />
             <p class="text-xs opacity-60">Override the default save path in qBittorrent.</p>
+        </div>
+
+        <div class="flex flex-col w-full">
+            <label for="qbit-complete-action">When download completes</label>
+            <select id="qbit-complete-action" name="complete_action" class="select w-full">
+                <option value="copy" {% if qbit_complete_action == "copy" %}selected{% endif %}>Copy to library</option>
+                <option value="hardlink" {% if qbit_complete_action == "hardlink" %}selected{% endif %}>Hardlink to library</option>
+                <option value="move" {% if qbit_complete_action == "move" %}selected{% endif %}>Move to library</option>
+            </select>
+            <p class="text-xs opacity-60">Controls what happens after a torrent finishes.</p>
         </div>
 
         <button class="btn btn-primary mt-2">Update Settings</button>

@@ -59,7 +59,7 @@ async def check_qbittorrent(session: Session):
     client = QbittorrentClient(session)
     category = download_client_config.get_qbit_category(session)
 
-    # Get all torrents to accurately reflect current download states
+    # Get torrents in the configured category first for efficiency
     all_torrents = await client.get_torrents(category=category)
     torrents_by_hash = {t.get("hash"): t for t in all_torrents}
 
@@ -76,6 +76,16 @@ async def check_qbittorrent(session: Session):
     ).all()
 
     any_processed = False
+    missing_hashes = [
+        req.torrent_hash
+        for req in requests_to_monitor
+        if req.torrent_hash and req.torrent_hash not in torrents_by_hash
+    ]
+    if missing_hashes:
+        # Category might have changed; fall back to all torrents once.
+        all_torrents = await client.get_torrents(category=None)
+        torrents_by_hash = {t.get("hash"): t for t in all_torrents}
+
     for req in requests_to_monitor:
         asin = req.asin
         current_torrent = None
@@ -103,6 +113,10 @@ async def check_qbittorrent(session: Session):
                     break
 
         if current_torrent:
+            tags = current_torrent.get("tags", "")
+            if f"asin:{asin}" not in tags:
+                # Ignore untagged torrents (e.g., existing seeding in category)
+                continue
             # Update download status from qBittorrent, scaled to 90% of total process
             torrent_progress = current_torrent.get("progress", 0.0)
             req.download_progress = torrent_progress * 0.9

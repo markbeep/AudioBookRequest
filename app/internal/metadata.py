@@ -10,6 +10,17 @@ from app.internal.models import Audiobook
 from app.internal.indexers.mam_models import _Result
 
 
+def _get_series_info(series_list: list[str] | None, series_index: str | None) -> tuple[str | None, str | None]:
+    if not series_list:
+        return None, series_index
+    series_name = series_list[0]
+    if series_name and not series_index and " #" in series_name:
+        base, idx = series_name.split(" #", 1)
+        series_name = base.strip()
+        series_index = idx.strip() or None
+    return series_name, series_index
+
+
 async def generate_abs_metadata(
     book: Audiobook, dest_path: str, mam_result: Optional[_Result] = None
 ):
@@ -102,20 +113,17 @@ def generate_opf_basic(book: Audiobook) -> str:
         SubElement(metadata, "dc:description").text = book.subtitle
 
     # Series
-    if book.series:
-        for s_info in book.series:
-            if " #" in s_info:
-                name, idx = s_info.split(" #", 1)
-                SubElement(
-                    metadata, "meta", {"name": "calibre:series", "content": name}
-                )
-                SubElement(
-                    metadata, "meta", {"name": "calibre:series_index", "content": idx}
-                )
-            else:
-                SubElement(
-                    metadata, "meta", {"name": "calibre:series", "content": s_info}
-                )
+    series_name, series_index = _get_series_info(book.series, book.series_index)
+    if series_name:
+        SubElement(
+            metadata, "meta", {"name": "calibre:series", "content": series_name}
+        )
+        if series_index:
+            SubElement(
+                metadata,
+                "meta",
+                {"name": "calibre:series_index", "content": series_index},
+            )
 
     if book.release_date:
         SubElement(metadata, "dc:date").text = book.release_date.isoformat().split("T")[
@@ -210,20 +218,17 @@ def generate_opf_for_mam(result: _Result) -> str:
             SubElement(metadata, "dc:subject").text = tag.strip()
 
     # Series and indexing
-    if result.series:
-        for s_info in result.series:
-            if " #" in s_info:
-                name, idx = s_info.split(" #", 1)
-                SubElement(
-                    metadata, "meta", {"name": "calibre:series", "content": name}
-                )
-                SubElement(
-                    metadata, "meta", {"name": "calibre:series_index", "content": idx}
-                )
-            else:
-                SubElement(
-                    metadata, "meta", {"name": "calibre:series", "content": s_info}
-                )
+    series_name, series_index = _get_series_info(result.series, None)
+    if series_name:
+        SubElement(
+            metadata, "meta", {"name": "calibre:series", "content": series_name}
+        )
+        if series_index:
+            SubElement(
+                metadata,
+                "meta",
+                {"name": "calibre:series_index", "content": series_index},
+            )
 
     SubElement(metadata, "meta", {"name": "calibre:rating", "content": "10"})
 
