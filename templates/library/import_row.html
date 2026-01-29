@@ -35,39 +35,40 @@
         <span class="text-[10px] opacity-40">-</span>
         {% endif %}
     </td>
-    <td class="py-3 align-top">
-        <div class="flex flex-wrap gap-2 sm:justify-end">
+    <td class="py-3 align-top w-[140px] min-w-[120px]">
+        <div class="flex flex-col gap-2 md:flex-row md:flex-wrap md:justify-end">
             {% if status_value != 'imported' and status_value != 'pending' %}
                 {% if status_value == 'matched' %}
                 <form hx-post="/library/import/item/execute/{{ item.id }}?view={{ view }}" 
                       hx-target="#row-{{ item.id }}" 
                       hx-swap="outerHTML" 
-                      hx-on::before-request="this.querySelector('button').classList.add('loading'); this.querySelector('button').innerText = '...';">      
+                      hx-on::before-request="this.querySelector('button').classList.add('loading'); this.querySelector('button').innerText = '...';"
+                      class="w-full md:w-auto">     
                     <input type="hidden" name="import_mode" id="import-mode-hidden-{{ item.id }}" value="copy" />
-                    <button type="submit" class="btn btn-xs btn-success font-black uppercase tracking-tighter">
+                    <button type="submit" class="btn btn-xs btn-success font-black uppercase tracking-tighter w-full md:w-auto">
                         Import
                     </button>
                 </form>
                 {% endif %}
-                <button class="btn btn-xs btn-outline font-bold"
+                <button class="btn btn-xs btn-outline font-bold w-full md:w-auto"
                         hx-get="/library/import/fix-match/{{ item.id }}?view={{ view }}"
-                        hx-target="#import-modals-container">
+                        hx-target="#book-details-modal-container">
                     Match
                 </button>
             {% elif status_value == 'pending' %}
-                <button class="btn btn-xs btn-ghost cursor-wait flex items-center gap-2" disabled>
+                <button class="btn btn-xs btn-ghost cursor-wait flex items-center gap-2 w-full md:w-auto" disabled>
                     <span class="loading loading-spinner loading-xs text-primary"></span>
                     <span class="font-black text-[9px] uppercase opacity-60">Importing</span>
                 </button>
             {% elif status_value == 'error' %}
-                <button class="btn btn-xs btn-error font-black uppercase tracking-tighter"
+                <button class="btn btn-xs btn-error font-black uppercase tracking-tighter w-full md:w-auto"
                         hx-get="/library/import/fix-match/{{ item.id }}?view={{ view }}"
-                        hx-target="#import-modals-container"
+                        hx-target="#book-details-modal-container"
                         title="{{ item.error_msg }}">
                     Error
                 </button>
             {% else %}
-                <button class="btn btn-xs btn-ghost opacity-50 cursor-default no-animation bg-success/10 text-success border border-success/20" disabled>
+                <button class="btn btn-xs btn-ghost opacity-50 cursor-default no-animation bg-success/10 text-success border border-success/20 w-full md:w-auto" disabled>
                     <span class="font-black uppercase tracking-tighter">Imported</span>
                 </button>
             {% endif %}

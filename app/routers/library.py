@@ -1,5 +1,4 @@
 import uuid
-import asyncio
 from datetime import datetime
 from typing import Annotated
 from fastapi import APIRouter, Depends, Request, Form, BackgroundTasks, Security
@@ -688,40 +687,6 @@ async def book_details(
     )
 
 
-@router.post("/book/{asin}/series")
-async def update_book_series(
-    asin: str,
-    request: Request,
-    session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
-    series_name: Annotated[str | None, Form()] = None,
-    series_index: Annotated[str | None, Form()] = None,
-):
-    """
-    Manually update series name/index for a book.
-    """
-    book = session.get(Audiobook, asin)
-    if not book:
-        return HTMLResponse("<p>Book not found</p>", status_code=404)
-
-    clean_name = (series_name or "").strip()
-    clean_index = (series_index or "").strip() or None
-
-    if clean_name:
-        book.series = [clean_name]
-        book.series_index = clean_index
-    else:
-        book.series = []
-        book.series_index = None
-
-    session.add(book)
-    session.commit()
-
-    return template_response(
-        "library/book_detail_panel.html", request, user, {"book": book}
-    )
-
-
 @router.get("/api/stats")
 async def get_library_stats(
     session: Annotated[Session, Depends(get_session)],
@@ -935,12 +900,9 @@ async def search_for_match(
     """
     Searches for a book to match manually.
     """
-    from app.internal.book_search import get_region_from_settings, list_audible_books
+    from app.internal.book_search import list_audible_books
 
-    region = get_region_from_settings(user)
-    books = await list_audible_books(
-        session, client_session, q, num_results=5, audible_region=region
-    )
+    books = await list_audible_books(session, client_session, q, num_results=5)
     # Wrap in dict for template compatibility: result.book
     results = [{"book": b} for b in books]
     return template_response(
@@ -986,12 +948,9 @@ async def rematch_search(
     """
     Searches Audible for a replacement match for a library book.
     """
-    from app.internal.book_search import get_region_from_settings, list_audible_books
+    from app.internal.book_search import list_audible_books
 
-    region = get_region_from_settings(user)
-    results = await list_audible_books(
-        session, client_session, q, num_results=5, audible_region=region
-    )
+    results = await list_audible_books(session, client_session, q, num_results=5)
     wrapped = [{"book": b} for b in results]
     return template_response(
         "library/rematch_modals.html",
@@ -1007,7 +966,6 @@ async def rematch_apply(
     old_asin: str,
     new_asin: str,
     request: Request,
-    background_tasks: BackgroundTasks,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
@@ -1022,17 +980,7 @@ async def rematch_apply(
     if not old_book:
         return HTMLResponse("<script>toast('Original book not found.', 'error');</script>")
 
-    from app.internal.media_management.config import media_management_config
-
-    lib_root = media_management_config.get_library_path(session)
-    current_path = (
-        LibraryScanner.find_book_path_by_asin(lib_root, old_asin) if lib_root else None
-    )
-
     from app.internal.book_search import get_book_by_asin, store_new_books
-    from app.internal.processing.processor import reorganize_existing_book
-    from app.internal.audiobookshelf.client import background_abs_trigger_scan
-    from app.internal.audiobookshelf.config import abs_config
 
     fetched = await get_book_by_asin(client_session, new_asin)
     if not fetched:
@@ -1072,17 +1020,6 @@ async def rematch_apply(
     # Remove the old audiobook entry once references are updated
     session.delete(old_book)
     session.commit()
-
-    if current_path and new_book.downloaded:
-        async def task():
-            with next(get_session()) as bg_session:
-                book = bg_session.get(Audiobook, new_asin)
-                if book:
-                    await reorganize_existing_book(bg_session, book, current_path)
-                if abs_config.is_valid(bg_session):
-                    await background_abs_trigger_scan()
-
-        background_tasks.add_task(task)
 
     return HTMLResponse(
         "<script>toast('Book rematched successfully.', 'success'); window.location.reload();</script>"
@@ -1158,8 +1095,8 @@ async def execute_item_import(
     session.add(item)
     session.commit()
 
-    asyncio.create_task(
-        run_single_importer_task(item_id, import_mode == "move", user.username)
+    background_tasks.add_task(
+        run_single_importer_task, item_id, import_mode == "move", user.username
     )
 
     view = get_import_view(request)
@@ -1273,8 +1210,8 @@ async def execute_import(
     session.add(import_session)
     session.commit()
 
-    asyncio.create_task(
-        run_importer_task(session_id, import_mode == "move", user.username)
+    background_tasks.add_task(
+        run_importer_task, session_id, import_mode == "move", user.username
     )
 
     # Pre-fetch for the response

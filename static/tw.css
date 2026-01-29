@@ -21,6 +21,12 @@
     --app-radius-sm: 18px;
     --app-shadow: 0 24px 60px -40px rgba(15, 23, 42, 0.45);
     --app-shadow-soft: 0 14px 36px -28px rgba(15, 23, 42, 0.45);
+    --app-font-size: clamp(14px, 0.5vw + 12px, 18px);
+    --app-space-xs: clamp(0.5rem, 0.4rem + 0.4vw, 0.75rem);
+    --app-space-sm: clamp(0.75rem, 0.6rem + 0.6vw, 1rem);
+    --app-space-md: clamp(1rem, 0.85rem + 0.9vw, 1.6rem);
+    --app-space-lg: clamp(1.25rem, 0.95rem + 1.2vw, 2rem);
+    --app-space-xl: clamp(1.5rem, 1.1rem + 1.5vw, 2.5rem);
   }
 
   :root[data-theme="nord"] {
@@ -59,6 +65,7 @@
 
   html {
     scroll-behavior: smooth;
+    font-size: var(--app-font-size);
   }
 
   body {
@@ -104,7 +111,10 @@
   }
 
   .app-shell {
-    @apply w-full min-h-screen flex flex-col items-center gap-8 px-5 sm:px-8 py-8;
+    @apply w-full min-h-screen flex flex-col items-center;
+    gap: var(--app-space-xl);
+    padding-inline: var(--app-space-lg);
+    padding-block: var(--app-space-xl);
     animation: app-fade 0.6s ease-out both;
   }
 
@@ -113,7 +123,9 @@
   }
 
   .app-shell-compact {
-    @apply pt-4 pb-6 gap-6 sm:pt-6 sm:pb-8;
+    padding-top: var(--app-space-md);
+    padding-bottom: var(--app-space-lg);
+    gap: var(--app-space-md);
   }
 
   .app-content {
@@ -121,7 +133,8 @@
   }
 
   .app-stack {
-    @apply flex flex-col gap-6;
+    @apply flex flex-col;
+    gap: var(--app-space-md);
   }
 
   .app-card {
@@ -144,7 +157,7 @@
   }
 
   .app-panel {
-    @apply p-5 sm:p-6;
+    padding: var(--app-space-md);
   }
 
   .app-nav {
@@ -158,7 +171,8 @@
   }
 
   .app-nav-inner {
-    @apply w-full max-w-7xl mx-auto px-5 sm:px-8;
+    @apply w-full max-w-7xl mx-auto;
+    padding-inline: var(--app-space-lg);
   }
 
   .app-stagger > * {
@@ -230,6 +244,9 @@
 
   .btn {
     @apply font-semibold;
+    --btn-p: clamp(0.7rem, 0.6rem + 0.4vw, 1.1rem);
+    --size: clamp(2.2rem, 1.9rem + 0.8vw, 3rem);
+    --fontsize: clamp(0.82rem, 0.78rem + 0.2vw, 1rem);
     transition: transform 0.12s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
   }
 
@@ -267,6 +284,24 @@
     border-color: var(--app-accent);
     color: var(--app-accent);
     box-shadow: 0 12px 24px -20px var(--app-glow);
+  }
+
+  .btn-lg {
+    --btn-p: clamp(0.9rem, 0.8rem + 0.5vw, 1.4rem);
+    --size: clamp(2.6rem, 2.3rem + 0.9vw, 3.4rem);
+    --fontsize: clamp(0.95rem, 0.9rem + 0.3vw, 1.15rem);
+  }
+
+  .btn-sm {
+    --btn-p: clamp(0.55rem, 0.5rem + 0.3vw, 0.9rem);
+    --size: clamp(1.9rem, 1.7rem + 0.6vw, 2.4rem);
+    --fontsize: clamp(0.72rem, 0.68rem + 0.2vw, 0.9rem);
+  }
+
+  .btn-xs {
+    --btn-p: clamp(0.4rem, 0.35rem + 0.2vw, 0.7rem);
+    --size: clamp(1.6rem, 1.45rem + 0.5vw, 2rem);
+    --fontsize: clamp(0.68rem, 0.64rem + 0.2vw, 0.82rem);
   }
 
   .tab {
@@ -471,4 +506,93 @@
 
 .htmx-request.btn {
   @apply pointer-events-none opacity-50;
+}
+
+@layer utilities {
+  .aspect-\[2\/3\] {
+    aspect-ratio: 2 / 3;
+  }
+  .backdrop-blur-\[1px\] {
+    --tw-backdrop-blur: blur(1px);
+    -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+    backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+  }
+  .backdrop-blur-\[2px\] {
+    --tw-backdrop-blur: blur(2px);
+    -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+    backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+  }
+  .border-\[6px\] {
+    border-width: 6px;
+  }
+  .btn-\[10px\] {
+    font-size: 10px;
+  }
+  .max-h-\[280px\] {
+    max-height: 280px;
+  }
+  .max-h-\[50vh\] {
+    max-height: 50vh;
+  }
+  .max-h-\[70vh\] {
+    max-height: 70vh;
+  }
+  .max-w-\[220px\] {
+    max-width: 220px;
+  }
+  .max-w-\[260px\] {
+    max-width: 260px;
+  }
+  .min-h-\[300px\] {
+    min-height: 300px;
+  }
+  .min-w-\[120px\] {
+    min-width: 120px;
+  }
+  .min-w-\[140px\] {
+    min-width: 140px;
+  }
+  .w-\[140px\] {
+    width: 140px;
+  }
+  .z-\[35\] {
+    z-index: 35;
+  }
+  .z-\[45\] {
+    z-index: 45;
+  }
+  .z-\[50\] {
+    z-index: 50;
+  }
+  .z-\[60\] {
+    z-index: 60;
+  }
+  .modal-middle {
+    place-items: center;
+  }
+  .modal-middle .modal-box {
+    height: auto;
+    width: calc(11/12 * 100%);
+    max-width: 32rem;
+    max-height: calc(100vh - 5em);
+    translate: 0 2%;
+    scale: 98%;
+    --modal-tl: var(--radius-box);
+    --modal-tr: var(--radius-box);
+    --modal-bl: var(--radius-box);
+    --modal-br: var(--radius-box);
+  }
+  dialog.modal {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100svh;
+    margin: 0;
+  }
+  .md\:min-w-\[760px\] {
+    @media (width >= 48rem) {
+      min-width: 760px;
+    }
+  }
 }

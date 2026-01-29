@@ -88,15 +88,11 @@
                   {{ book.title }}
                 </a>
                 <p class="text-[9px] opacity-60 line-clamp-1 font-medium">{{ book.authors|join(", ") if book.authors else "Unknown" }}</p>
-                {% if book.series %}
-                {% set series_label = book.series[0] ~ (' #' ~ book.series_index if book.series_index) %}
-                <p class="text-[9px] opacity-50 line-clamp-1 font-medium">{{ series_label }}</p>
-                {% endif %}
               </div>
 
               <!-- Action Buttons (Compact Square) -->
-              <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 pt-1 mt-1 border-t border-base-300">
-                <div class="flex flex-wrap gap-0.5">
+              <div class="flex justify-between items-center pt-1 mt-1 border-t border-base-300">
+                <div class="flex gap-0.5">
                     <a preload
                        title="View Details"
                        href="{{ base_url }}/book/{{ book.asin }}"
@@ -144,7 +140,7 @@
                 </div>
                 
                 {% if not book.downloaded %}
-                <button class="btn btn-xs btn-ghost btn-square text-success h-7 w-7 flex items-center justify-center self-end sm:self-auto"
+                <button class="btn btn-xs btn-ghost btn-square text-success h-7 w-7 flex items-center justify-center"
                         title="Mark as Downloaded"
                         hx-patch="{{ base_url }}/wishlist/downloaded/{{ book.asin }}"
                         {% if not user.is_admin() %}disabled{% endif %}

@@ -1,5 +1,5 @@
 {% block fix_match_modal %}
-<dialog id="fix_match_modal" class="modal modal-open modal-middle" open>
+<dialog id="fix_match_modal" class="modal modal-middle">
   <div class="modal-box max-w-2xl bg-base-100 border border-base-300 shadow-2xl p-0 overflow-hidden">
     <!-- Header -->
     <div class="bg-base-200 p-4 border-b border-base-300 flex justify-between items-center">
@@ -42,6 +42,17 @@
     <button onclick="document.getElementById('fix_match_modal').remove()">close</button>
   </form>
 </dialog>
+<script>
+  (() => {
+    const modal = document.getElementById("fix_match_modal");
+    if (!modal || modal.open) return;
+    try {
+      modal.showModal();
+    } catch (error) {
+      modal.setAttribute("open", "");
+    }
+  })();
+</script>
 {% endblock fix_match_modal %}
 
 {% block search_results %}

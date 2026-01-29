@@ -1,5 +1,5 @@
 {% block rematch_modal %}
-<dialog id="rematch-modal" class="modal modal-open modal-middle">
+<dialog id="rematch-modal" class="modal modal-middle">
   <div class="modal-box max-w-2xl bg-base-100 border border-base-300 shadow-2xl p-0 overflow-hidden">
     <div class="bg-base-200 p-4 border-b border-base-300 flex justify-between items-center">
         <div>
@@ -38,6 +38,17 @@
     <button onclick="document.getElementById('rematch-modal').remove()">close</button>
   </form>
 </dialog>
+<script>
+  (() => {
+    const modal = document.getElementById("rematch-modal");
+    if (!modal || modal.open) return;
+    try {
+      modal.showModal();
+    } catch (error) {
+      modal.setAttribute("open", "");
+    }
+  })();
+</script>
 {% endblock rematch_modal %}
 
 {% block rematch_results %}

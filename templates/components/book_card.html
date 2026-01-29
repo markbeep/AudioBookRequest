@@ -48,13 +48,6 @@
         </div>
         {% endif %}
 
-        {% if book.series %}
-        {% set series_label = book.series[0] ~ (' #' ~ book.series_index if book.series_index) %}
-        <div class="text-xs opacity-60 line-clamp-1" title="{{ series_label }}">
-            {{ series_label }}
-        </div>
-        {% endif %}
-
         <div class="text-xs opacity-70 line-clamp-1" title="Authors: {{ book.authors | join(', ') }}">
             {% for author in book.authors[:1] %}
             <a href="{{ base_url }}/search?q={{ author }}" title="Search for {{ author }}" class="hover:underline">

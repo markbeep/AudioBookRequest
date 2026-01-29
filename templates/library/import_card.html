@@ -58,23 +58,23 @@
         <p class="text-[8px] font-mono opacity-40 truncate" title="{{ item.source_path|basename }}">{{ item.source_path|basename }}</p>
     </div>
 
-    <div class="flex gap-1 pt-1 border-t border-base-300/50">
+    <div class="flex flex-col gap-1 pt-1 border-t border-base-300/50 md:flex-row">
         {% if status_value != 'imported' and status_value != 'pending' %}
             {% if status_value == 'matched' %}
             <form hx-post="/library/import/item/execute/{{ item.id }}?view={{ view }}" 
                   hx-target="#row-{{ item.id }}" 
                   hx-swap="outerHTML" 
                   hx-on::before-request="this.querySelector('button').classList.add('loading'); this.querySelector('button').innerText = '...';"
-                  class="flex-grow">      
+                  class="w-full md:flex-1">     
                 <input type="hidden" name="import_mode" id="import-mode-hidden-{{ item.id }}" value="copy" />
                 <button type="submit" class="btn btn-[10px] btn-success h-7 min-h-0 w-full rounded-lg font-black uppercase tracking-tighter shadow-sm">
                     Import
                 </button>
             </form>
             {% endif %}
-            <button class="btn btn-[10px] btn-outline h-7 min-h-0 flex-grow rounded-lg font-bold shadow-sm"
+            <button class="btn btn-[10px] btn-outline h-7 min-h-0 w-full md:flex-1 rounded-lg font-bold shadow-sm"
                     hx-get="/library/import/fix-match/{{ item.id }}?view={{ view }}"
-                    hx-target="#import-modals-container">
+                    hx-target="#book-details-modal-container">
                 Match
             </button>
         {% elif status_value == 'pending' %}
@@ -82,10 +82,10 @@
                 <span class="loading loading-spinner loading-xs text-primary"></span>
                 <span class="font-black text-[9px] uppercase opacity-60">Importing</span>
             </button>
-        {% elif status_value == 'error' %}
+            {% elif status_value == 'error' %}
             <button class="btn btn-[10px] btn-error h-7 min-h-0 w-full rounded-lg font-black uppercase tracking-tighter shadow-sm"
                     hx-get="/library/import/fix-match/{{ item.id }}?view={{ view }}"
-                    hx-target="#import-modals-container"
+                    hx-target="#book-details-modal-container"
                     title="{{ item.error_msg }}">
                 Error
             </button>
