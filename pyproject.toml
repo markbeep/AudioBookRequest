@@ -5,29 +5,29 @@ requires-python = ">= 3.14"
 readme = "README.md"
 dependencies = [
     "aiohttp>=3.13.3",
-    "alembic>=1.18.0",
+    "alembic>=1.18.3",
     "apscheduler>=3.11.2",
     "argon2-cffi>=25.1.0",
     "argon2-cffi-bindings>=25.1.0",
-    "cryptography>=46.0.3",
+    "cryptography>=46.0.4",
     "fastapi[standard]>=0.128.0",
     "itsdangerous>=2.2.0",
     "jinja2>=3.1.6",
     "jinja2-fragments>=1.11.0",
     "jinja2-htmlmin>=1.0.1",
-    "markdown>=3.10",
+    "markdown>=3.10.1",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.5",
     "pydantic-core>=2.41.5",
     "pydantic-settings>=2.12.0",
     "pyjwt>=2.10.1",
-    "python-multipart>=0.0.21",
+    "python-multipart>=0.0.22",
     "rapidfuzz>=3.14.3",
     "requests>=2.32.5",
     "sqlmodel>=0.0.31",
     "structlog>=25.5.0",
     "terminaltables>=3.1.10",
-    "torf>=4.3.0",
+    "torf>=4.3.1",
     "torrent-parser>=0.4.1",
     "typer>=0.21.1",
     "urllib3>=2.6.3",
@@ -52,4 +52,4 @@ reportUnusedCallResult = false
 allowedUntypedLibraries = ["apscheduler", "torrent_parser"]
 
 [dependency-groups]
-dev = ["basedpyright>=1.37.1", "djlint>=1.36.4", "ruff>=0.14.11"]
+dev = ["basedpyright>=1.37.2", "djlint>=1.36.4", "ruff>=0.14.14"]
