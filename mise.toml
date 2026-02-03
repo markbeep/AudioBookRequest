@@ -4,3 +4,7 @@ just = "latest"
 node = "25"
 sqlite = "latest"
 uv = "latest"
+watchexec = "latest"
+
+[tasks.build]
+run = "just build"

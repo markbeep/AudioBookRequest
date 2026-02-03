@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from typing import Awaitable, Callable
 from urllib.parse import quote_plus, urlencode
 
@@ -18,15 +20,12 @@ from app.internal.auth.session_middleware import (
 from app.internal.book_search import clear_old_book_caches
 from app.internal.env_settings import Settings
 from app.internal.models import User
-from app.routers import api, auth, recommendations, root, search, settings, wishlist
+from app.routers import api
 from app.util.db import get_session
-from app.util.fetch_js import fetch_scripts
+from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse
 from app.util.templates import templates
 from app.util.toast import ToastException
-
-# intialize js dependencies or throw an error if not in debug mode
-fetch_scripts(Settings().app.debug)
 
 with next(get_session()) as session:
     auth_secret = auth_config.get_auth_secret(session)
@@ -47,13 +46,6 @@ app = FastAPI(
     redirect_slashes=False,
 )
 
-app.include_router(auth.router, include_in_schema=False)
-app.include_router(recommendations.router, include_in_schema=False)
-app.include_router(root.router, include_in_schema=False)
-app.include_router(search.router, include_in_schema=False)
-app.include_router(settings.router, include_in_schema=False)
-app.include_router(wishlist.router, include_in_schema=False)
-# api router under /api
 app.include_router(api.router)
 
 user_exists = False
@@ -130,3 +122,52 @@ async def redirect_to_init(
         return BaseUrlRedirectResponse("/")
     response = await call_next(request)
     return response
+
+
+@app.get("{file_path:path}")
+async def astro_files(file_path: str):
+    # -----------------------------------------
+    # | Prevent directory traversal.          |
+    # | Frontend directory HAS to be          |
+    # | made absolute before comparing.       |
+    # -----------------------------------------
+    frontend_path = Path(Settings().internal.frontend_dir).absolute()
+    requested_path = frontend_path / file_path.lstrip("/")
+    shared_path = os.path.commonprefix(
+        [frontend_path, os.path.realpath(requested_path)]
+    )
+    if shared_path != str(frontend_path):
+        logger.warning(
+            "Directory traversal attempt detected", requested_path=requested_path
+        )
+        raise HTTPException(status_code=404, detail="Not found")
+    # -----------------------------------------
+
+    requested_file = frontend_path / requested_path
+    if not requested_file.exists() or not requested_file.is_file():
+        requested_file /= "index.html"
+        if not requested_file.exists() or not requested_file.is_file():
+            raise HTTPException(status_code=404, detail="Not Found")
+
+    # Determine media type based on file extension
+    extension = requested_file.suffix.lower()
+    media_types = {
+        ".html": "text/html",
+        ".css": "text/css",
+        ".js": "application/javascript",
+        ".json": "application/json",
+        ".xml": "application/xml",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+        ".ico": "image/x-icon",
+        ".woff": "font/woff",
+        ".woff2": "font/woff2",
+        ".ttf": "font/ttf",
+        ".eot": "application/vnd.ms-fontobject",
+        ".otf": "font/otf",
+    }
+    media_type = media_types.get(extension, "application/octet-stream")
+    return StreamingResponse(requested_file.open("rb"), media_type=media_type)

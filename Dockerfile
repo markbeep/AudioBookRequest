@@ -5,14 +5,14 @@ WORKDIR /app
 RUN apk add --no-cache curl build-base && \
     ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
-        TAILWIND_ARCH="x64"; \
+    TAILWIND_ARCH="x64"; \
     elif [ "$ARCH" = "aarch64" ]; then \
-        TAILWIND_ARCH="arm64"; \
+    TAILWIND_ARCH="arm64"; \
     else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
+    echo "Unsupported architecture: $ARCH" && exit 1; \
     fi && \
     curl -L "https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.18/tailwindcss-linux-${TAILWIND_ARCH}-musl" \
-         -o /bin/tailwindcss && \
+    -o /bin/tailwindcss && \
     chmod +x /bin/tailwindcss
 
 RUN mkdir -p static && \
@@ -28,8 +28,6 @@ FROM astral/uv:python3.14-alpine AS python-deps
 WORKDIR /app
 COPY uv.lock pyproject.toml ./
 RUN uv sync --frozen --no-cache --no-dev
-COPY app/util/fetch_js.py app/util/fetch_js.py
-RUN mkdir -p static && /app/.venv/bin/python app/util/fetch_js.py
 
 # ---- Final ----
 FROM python:3.14-alpine AS final

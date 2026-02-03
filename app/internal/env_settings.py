@@ -50,6 +50,10 @@ class ApplicationSettings(BaseModel):
         return None
 
 
+class InternalSettings(BaseModel):
+    frontend_dir: str = "/frontend/dist"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(  # pyright: ignore[reportUnannotatedClassAttribute]
         env_prefix="ABR_",
@@ -60,6 +64,7 @@ class Settings(BaseSettings):
 
     db: DBSettings = DBSettings()
     app: ApplicationSettings = ApplicationSettings()
+    internal: InternalSettings = InternalSettings()
 
     def get_sqlite_path(self):
         if self.db.sqlite_path.startswith("/"):

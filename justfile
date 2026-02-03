@@ -9,13 +9,16 @@ migrate:
     uv run alembic upgrade heads
 
 create_revision *MESSAGE:
-    uv run alembic revision --autogenerate -m "{{MESSAGE}}"
+    uv run alembic revision --autogenerate -m "{{ MESSAGE }}"
 
 dev: migrate
     uv run fastapi dev
 
 build:
-    sh -c "cd frontend && npm run build"
+    sh -c "(cd frontend && npm run build)"
+
+watch:
+    mise watch build -w frontend
 
 install_daisy:
     curl -sLo static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs
