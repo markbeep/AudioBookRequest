@@ -1,0 +1,179 @@
+---
+interface Props {
+    canLogout?: boolean;
+    version?: string;
+    showNavbar?: boolean;
+}
+
+const { canLogout, version = "local", showNavbar = true } = Astro.props;
+
+import "../styles/tw.css";
+import DoorExit from "../components/icons/DoorExit.astro";
+import SunIcon from "../components/icons/Sun.astro";
+import MoonIcon from "../components/icons/Moon.astro";
+import SearchIcon from "../components/icons/Search.astro";
+import GiftIcon from "../components/icons/Gift.astro";
+import GiftSolidIcon from "../components/icons/GiftSolid.astro";
+import SettingsIcon from "../components/icons/Settings.astro";
+---
+
+<!doctype html>
+<html lang="en" data-theme="garden">
+    <head>
+        <meta charset="UTF-8" />
+        <title>AudioBookRequest</title>
+        <meta
+            name="description"
+            content="AudioBookRequest - Your platform for managing audiobook requests."
+        />
+        <meta
+            name="keywords"
+            content="audiobooks, requests, wishlist, search, settings"
+        />
+
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href={`/static/apple-touch-icon.png?v=${version}`}
+        />
+        <link
+            rel="icon"
+            sizes="any"
+            type="image/svg+xml"
+            href={`/static/favicon.svg?v=${version}`}
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href={`/static/favicon-32x32.png?v=${version}`}
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href={`/static/favicon-16x16.png?v=${version}`}
+        />
+        <link rel="manifest" href={`/static/site.webmanifest?v=${version}`} />
+    </head>
+
+    <body class="w-screen min-h-screen overflow-x-hidden">
+        {
+            showNavbar && (
+                <header class="shadow-lg">
+                    <nav class="navbar">
+                        <div class="flex-1">
+                            <a
+                                href="/"
+                                class="btn btn-ghost text-lg hidden sm:inline-flex"
+                            >
+                                AudioBookRequest
+                            </a>
+                            <a href="/" class="btn btn-ghost text-lg sm:hidden">
+                                ABR
+                            </a>
+                            <a
+                                href="/search"
+                                class="btn btn-ghost btn-square"
+                                title="Search"
+                            >
+                                <SearchIcon />
+                            </a>
+                            <a
+                                href="/wishlist"
+                                class="btn btn-ghost btn-square group relative"
+                                title="Wishlist"
+                            >
+                                <span class="opacity-0 group-hover:opacity-100 absolute left-2 top-2 transition-opacity duration-500">
+                                    <GiftSolidIcon />
+                                </span>
+                                <span class="opacity-100 group-hover:opacity-0 absolute left-2 top-2 transition-opacity duration-500">
+                                    <GiftIcon />
+                                </span>
+                            </a>
+                        </div>
+                        <div class="flex-none flex pr-4">
+                            <button class="theme-toggler btn btn-ghost btn-square light-dark-toggle">
+                                <span class="theme-dark svg-dark">
+                                    <MoonIcon />
+                                </span>
+                                <span class="theme-light svg-light">
+                                    <SunIcon />
+                                </span>
+                            </button>
+
+                            {canLogout && (
+                                <button
+                                    hx-post="/auth/logout"
+                                    class="button btn-ghost btn-square"
+                                    title="Logout"
+                                >
+                                    <DoorExit />
+                                </button>
+                            )}
+                            <a
+                                href="/settings/account"
+                                class="btn btn-ghost btn-square group"
+                                title="Settings"
+                            >
+                                <span class="group-hover:rotate-90 transition-all duration-500 ease-in-out">
+                                    <SettingsIcon />
+                                </span>
+                            </a>
+                        </div>
+                    </nav>
+                </header>
+            )
+        }
+
+        <slot />
+    </body>
+</html>
+
+<script>
+    const setTheme = (theme: string | null = null) => {
+        if (!theme) {
+            theme = localStorage.getItem("theme");
+            if (!theme) {
+                theme = window.matchMedia("(prefers-color-scheme: dark)")
+                    .matches
+                    ? "night"
+                    : "nord";
+            }
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+        if (theme === "night") {
+            for (const elem of document.getElementsByClassName(
+                "light-dark-toggle",
+            )) {
+                elem.classList.add("DARKCLASS");
+                document.documentElement.classList.add("dark");
+            }
+        } else {
+            for (const elem of document.getElementsByClassName(
+                "light-dark-toggle",
+            )) {
+                elem.classList.remove("DARKCLASS");
+                document.documentElement.classList.remove("dark");
+            }
+        }
+    };
+    const toggleTheme = () => {
+        const theme = document.documentElement.getAttribute("data-theme");
+
+        const newTheme = theme === "nord" ? "night" : "nord";
+        setTheme(newTheme);
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        setTheme();
+    });
+
+    document.querySelectorAll(".theme-toggler").forEach((button) => {
+        button.addEventListener("click", () => {
+            toggleTheme();
+        });
+    });
+</script>
