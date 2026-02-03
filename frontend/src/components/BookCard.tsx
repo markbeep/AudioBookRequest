@@ -1,11 +1,18 @@
 import { useState } from "preact/hooks";
-import type { BookCardProps } from "@/types/book";
 import {
   CheckmarkIcon,
   DownloadIcon,
   PhotoOffIcon,
   PlusIcon,
 } from "@/components/icons/preact";
+import type { AudiobookSearchResult } from "@/client";
+
+export interface BookCardProps {
+  book: AudiobookSearchResult;
+  baseUrl: string;
+  autoStartDownload?: boolean;
+  userCanDownload?: boolean;
+}
 
 export default function BookCard({
   book,

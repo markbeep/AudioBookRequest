@@ -1,37 +1,37 @@
+import { searchSuggestionsApiSearchSuggestionsGet } from "@/client";
+import { regions, type Region } from "@/types/region";
 import { useState } from "preact/hooks";
 
 export interface SearchInputProps {
   searchTerm?: string;
-  regions: string[];
-  initialRegion: string;
+  initialRegion?: Region;
 }
 
 export default function SearchInput({
   searchTerm,
-  regions,
   initialRegion,
 }: SearchInputProps) {
   const [search, setSearch] = useState(searchTerm || "");
-  const [suggestions, setSuggestions] = useState([]);
-  const [selectedRegion, setSelectedRegion] = useState(initialRegion);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<Region>(
+    initialRegion ?? "us",
+  );
 
   const onInput = async (e: Event) => {
     const target = e.target as HTMLInputElement;
     const value = target.value;
     setSearch(value);
 
-    let url = `/api/search/suggestions?q=${encodeURIComponent(value)}`;
-    if (selectedRegion) {
-      url += `&region=${encodeURIComponent(selectedRegion)}`;
-    }
+    const { data: suggestions, error } =
+      await searchSuggestionsApiSearchSuggestionsGet({
+        query: { q: value, region: selectedRegion },
+      });
 
-    const response = await fetch(url);
-    if (response.ok) {
-      const data = await response.json();
-      setSuggestions(data.suggestions || []);
-    } else {
-      console.debug("Failed to fetch suggestions", response);
+    setSuggestions(suggestions || []);
+    if (error) {
+      console.debug("Failed to fetch suggestions", error);
       setSuggestions([]);
+      return;
     }
   };
 
@@ -50,7 +50,7 @@ export default function SearchInput({
         onInput={onInput}
       />
       <datalist id="search-suggestions">
-        {suggestions.slice(3).map((v) => (
+        {suggestions.slice(0, 3).map((v) => (
           <option value={v}></option>
         ))}
       </datalist>

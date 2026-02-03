@@ -3,13 +3,16 @@ import PlusIcon from "@/components/icons/Plus.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import SearchInput from "@/components/SearchInput";
 import BookCard from "@/components/BookCard";
-import type { Book } from "@/types/book";
+import { regions, type Region } from "@/types/region";
+import type { AudiobookSearchResult } from "@/client";
 
 const searchTerm = Astro.url.searchParams.get("q") || "";
-const region = Astro.url.searchParams.get("region") || "us";
+let region = Astro.url.searchParams.get("region") || "us";
+if (!regions.includes(region as Region)) region = "us";
+
 const page = parseInt(Astro.url.searchParams.get("page") || "0");
 
-const results: Book[] = [];
+const results: AudiobookSearchResult[] = [];
 const autoStartDownload = false;
 const canDownload = false;
 ---
@@ -34,7 +37,6 @@ const canDownload = false;
             <SearchInput
                 searchTerm={searchTerm}
                 initialRegion={region}
-                regions={["us", "de"]}
                 client:load
             />
 

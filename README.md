@@ -206,27 +206,6 @@ uv run fastapi dev
 
 Website can be visited at http://localhost:8000.
 
-2. Tailwind is used in combination with [DaisyUI](https://daisyui.com). Download the source files using the following commands:
-
-```sh
-just install_daisy
-# or manually
-curl -sLo static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs
-curl -sLo static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
-```
-
-3. Start Tailwindcss watcher. Required for any CSS styling.
-
-```sh
-just tailwind # or simply 'just tw'
-
-tailwindcss -i static/tw.css -o static/globals.css --watch
-# Alternatively npx can be used to run tailwindcss
-npx @tailwindcss/cli@4 -i static/tw.css -o static/globals.css --watch
-```
-
-**NOTE**: Website has to be visited at http://localhost:3000 instead.
-
 ## Docker Compose
 
 The docker compose can also be used to run the app locally:
