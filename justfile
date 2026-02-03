@@ -14,6 +14,9 @@ create_revision *MESSAGE:
 dev: migrate
     uv run fastapi dev
 
+build:
+    sh -c "cd frontend && npm run build"
+
 install_daisy:
     curl -sLo static/daisyui.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.mjs
     curl -sLo static/daisyui-theme.mjs https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.mjs
