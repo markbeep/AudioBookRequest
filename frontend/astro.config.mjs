@@ -1,10 +1,11 @@
 // @ts-check
-import path from "path";
-import { defineConfig, envField } from "astro/config";
-import tailwindcss from "@tailwindcss/vite";
-import preact from "@astrojs/preact";
-
 import node from "@astrojs/node";
+import preact from "@astrojs/preact";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig, envField } from "astro/config";
+import path from "path";
+
+import compressor from "astro-compressor";
 
 let port = 8000;
 try {
@@ -33,7 +34,7 @@ export default defineConfig({
     },
   },
 
-  integrations: [preact()],
+  integrations: [preact(), compressor()],
 
   env: {
     schema: {
@@ -49,6 +50,6 @@ export default defineConfig({
   server: { port, host: true },
 
   adapter: node({
-    mode: "standalone"
-  })
+    mode: "standalone",
+  }),
 });
