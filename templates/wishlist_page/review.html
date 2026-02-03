@@ -20,10 +20,10 @@
     </div>
     {% endif %}
 
-    <form method="post" class="app-card app-panel space-y-6">
+    <form method="post" class="app-card app-panel space-y-6" id="review-form">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
-          <div class="aspect-square rounded-xl overflow-hidden border border-base-300 bg-base-300">
+          <div class="aspect-square rounded-xl overflow-hidden border border-base-300 bg-base-300 app-media">
             {% if book.cover_image %}
             <img src="{{ book.cover_image }}" alt="{{ book.title }}" class="w-full h-full object-cover" />
             {% else %}
@@ -59,10 +59,40 @@
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-3 justify-end">
-        <button name="action" value="save" class="btn btn-outline">Save</button>
-        <button name="action" value="import" class="btn btn-primary">Save &amp; Import</button>
+        <button name="action" value="save" class="btn btn-outline flex items-center gap-2 action-btn">
+          <span>Save</span>
+          <span class="loading loading-spinner loading-xs hidden"></span>
+        </button>
+        <button name="action" value="import" class="btn btn-primary flex items-center gap-2 action-btn">
+          <span>Save &amp; Import</span>
+          <span class="loading loading-spinner loading-xs hidden"></span>
+        </button>
       </div>
     </form>
   </div>
 </div>
+<script>
+  (() => {
+    const form = document.getElementById("review-form");
+    if (!form) return;
+    const actionButtons = form.querySelectorAll(".action-btn");
+    actionButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        actionButtons.forEach((b) => (b.dataset.clicked = "false"));
+        btn.dataset.clicked = "true";
+      });
+    });
+    form.addEventListener("submit", () => {
+      const target = Array.from(actionButtons).find((b) => b.dataset.clicked === "true") || actionButtons[0];
+      actionButtons.forEach((b) => {
+        b.disabled = true;
+        b.classList.add("btn-disabled");
+      });
+      if (target) {
+        const spinner = target.querySelector(".loading");
+        if (spinner) spinner.classList.remove("hidden");
+      }
+    });
+  })();
+</script>
 {% endblock body %}

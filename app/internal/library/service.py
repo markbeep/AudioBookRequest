@@ -103,25 +103,28 @@ def generate_audiobook_filename(
 
 async def refresh_book_metadata(
     session: Session, asin: str, client_session: ClientSession
-):
+) -> bool:
     """
     Refreshes metadata for a single book from the internet and updates DB/files.
+    Returns True when on-disk metadata was regenerated (downloaded book).
     """
     # 1. Fetch from internet
     new_book_data = await get_book_by_asin(client_session, asin)
     if not new_book_data:
         logger.warning("Metadata refresh failed: Book not found on Audible", asin=asin)
-        return
+        return False
 
     # 2. Update DB
     store_new_books(session, [new_book_data])
+
+    metadata_updated = False
 
     # 3. Update files on disk if it's already downloaded
     book = session.get(Audiobook, asin)
     if book and book.downloaded:
         lib_root = media_management_config.get_library_path(session)
         folder_rel_path = get_book_folder_path(session, book)
-        
+
         if lib_root and folder_rel_path:
             dest_path = os.path.join(lib_root, folder_rel_path)
 
@@ -129,6 +132,46 @@ async def refresh_book_metadata(
                 logger.info("Refreshing metadata files on disk", path=dest_path)
                 await generate_abs_metadata(book, dest_path)
                 await generate_opf_metadata(session, book, dest_path)
+                metadata_updated = True
+
+    return metadata_updated
+
+
+async def update_downloaded_book_metadata(
+    session: Session, book: Audiobook, current_path: str | None = None
+) -> bool:
+    """
+    Rewrite on-disk metadata for a downloaded book if its files exist locally.
+    """
+    if not book.downloaded:
+        return False
+
+    lib_root = media_management_config.get_library_path(session)
+    if not lib_root:
+        return False
+
+    dest_path = None
+
+    # Prefer an explicit path if provided and exists
+    if current_path and os.path.exists(current_path):
+        dest_path = current_path
+    else:
+        # Try to locate the book by existing metadata first
+        dest_path = LibraryScanner.find_book_path_by_asin(lib_root, book.asin)
+
+    if not dest_path:
+        folder_rel_path = get_book_folder_path(session, book)
+        if folder_rel_path:
+            candidate = os.path.join(lib_root, folder_rel_path)
+            if os.path.exists(candidate):
+                dest_path = candidate
+
+    if not dest_path:
+        return False
+
+    await generate_abs_metadata(book, dest_path)
+    await generate_opf_metadata(session, book, dest_path)
+    return True
 
 
 def library_contains_asin(session: Session, asin: str) -> bool:

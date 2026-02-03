@@ -47,6 +47,7 @@ from app.util.db import get_session
 from app.util.redirect import BaseUrlRedirectResponse
 from app.util.templates import template_response
 from app.util.toast import ToastException
+from app.internal.library.service import update_downloaded_book_metadata
 
 router = APIRouter(prefix="/wishlist")
 
@@ -634,6 +635,7 @@ async def review_metadata_submit(
     request: Request,
     asin: str,
     session: Annotated[Session, Depends(get_session)],
+    background_task: BackgroundTasks,
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     title: Annotated[str, Form()],
     subtitle: Annotated[str | None, Form()] = None,
@@ -672,6 +674,11 @@ async def review_metadata_submit(
         commit=True,
     )
 
+    if book.downloaded:
+        await update_downloaded_book_metadata(session, book)
+        if abs_config.is_valid(session):
+            background_task.add_task(background_abs_trigger_scan)
+
     if action == "import":
         from app.internal.download_clients.qbittorrent import QbittorrentClient
         from app.internal.processing.processor import process_completed_download
@@ -704,6 +711,9 @@ async def review_metadata_submit(
         await process_completed_download(session, req, download_path)
         await client.add_torrent_tags(matching_torrent.get("hash"), ["processed"])
         await client.delete_torrent(matching_torrent.get("hash"), delete_files=False)
+
+        if abs_config.is_valid(session):
+            background_task.add_task(background_abs_trigger_scan)
 
         return BaseUrlRedirectResponse("/wishlist/downloading")
 

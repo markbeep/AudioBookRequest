@@ -98,7 +98,7 @@
         background-color: rgba(0,0,0,0.6);
         backdrop-filter: blur(4px);
         border: 2px solid white;
-        transition: all 0.2s;
+        transition: all 0.15s;
     }
     .radio-checkbox:checked {
         background-color: #3b82f6 !important;
@@ -158,7 +158,7 @@
     </div>
 
     {% macro book_card(book) %}
-    <div class="app-card overflow-hidden transition-all flex flex-col group relative cursor-pointer select-none" 
+    <div class="app-card overflow-hidden transition-all duration-150 flex flex-col group relative cursor-pointer select-none" 
          data-book-grid-card data-book-search="{{ book.title }} {{ book.authors|join(' ') }} {{ book.series|join(' ') }}"
          onclick="toggleCardSelection(event, '{{ book.asin }}')">
         <div class="absolute top-2 left-2 z-[45]">
@@ -166,16 +166,16 @@
         </div>
         <div class="selection-indicator hidden absolute inset-0 bg-primary/20 z-[35] pointer-events-none border-[6px] border-primary rounded-xl"></div>
         <div class="aspect-square bg-base-300 relative overflow-hidden">
-            {% if book.cover_image %}<img src="{{ book.cover_image }}" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500">{% endif %}
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="absolute bottom-2 right-2 flex gap-1 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+            {% if book.cover_image %}<img src="{{ book.cover_image }}" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-150">{% endif %}
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-150"></div>
+            <div class="absolute bottom-2 right-2 flex gap-1 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-150">
                  <button hx-get="{{ base_url }}/library/book/{{ book.asin }}" hx-target="#book-details-modal-container" class="btn btn-xs btn-primary btn-square rounded-lg shadow-lg">{% include "icons/info-circle.html" %}</button>
                  <button hx-get="{{ base_url }}/library/rematch/modal/{{ book.asin }}" hx-target="#book-details-modal-container" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white" title="Rematch">{% include "icons/pencil.html" %}</button>
                  <button hx-post="{{ base_url }}/library/bulk/reprocess" hx-vals='{"asins": ["{{ book.asin }}"]}' hx-target="#toast-block" hx-swap="innerHTML" class="btn btn-xs btn-ghost btn-square bg-base-100/20 backdrop-blur-md rounded-lg shadow-lg text-white" title="Refresh Metadata">{% include "icons/refresh.html" %}</button>
             </div>
         </div>
         <div class="p-3 flex-1 flex flex-col gap-0.5 text-left">
-            <button hx-get="{{ base_url }}/library/book/{{ book.asin }}" hx-target="#book-details-modal-container" class="text-[11px] font-black truncate hover:text-primary leading-tight">{{ book.title }}</button>
+            <button hx-get="{{ base_url }}/library/book/{{ book.asin }}" hx-target="#book-details-modal-container" class="text-[11px] font-black truncate hover:text-primary leading-tight focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60">{{ book.title }}</button>
             <p class="text-[9px] font-bold opacity-40 truncate">{{ book.authors|join(', ') }}</p>
             <div class="mt-auto pt-2 flex items-center justify-between border-t border-base-200">
                 <span class="text-[8px] font-black opacity-30 uppercase tracking-tighter">{{ book.runtime_length_hrs }}h &bull; {{ book.release_date.year if book.release_date else 'N/A' }}</span>
@@ -193,7 +193,7 @@
                     <div class="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black text-lg">{{ author_name[0] }}</div>
                     <div><h3 class="font-black text-base">{{ author_name }}</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">{{ author_books|length }} Books</p></div>
                 </div>
-                <button class="btn btn-ghost btn-xs btn-square rounded-lg transition-transform" data-toggle-icon="author-{{ loop.index }}">{% include "icons/chevron-down.html" %}</button>
+                <button class="btn btn-ghost btn-xs btn-square rounded-lg transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60" data-toggle-icon="author-{{ loop.index }}">{% include "icons/chevron-down.html" %}</button>
             </div>
             <div id="author-{{ loop.index }}" class="p-4 pt-0"><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">{% for book in author_books|sort(attribute='title') %}{{ book_card(book) }}{% endfor %}</div></div>
         </div>
@@ -208,7 +208,7 @@
                     <div class="size-10 rounded-xl bg-success/10 flex items-center justify-center text-success font-black text-lg">{{ s.name[0] }}</div>
                     <div><h3 class="font-black text-base">{{ s.name }}</h3><p class="text-[10px] font-bold opacity-40 uppercase tracking-widest">{{ s.book_count }} Books &bull; {{ s.duration|int }}h</p></div>
                 </div>
-                <button class="btn btn-ghost btn-xs btn-square rounded-lg transition-transform" data-toggle-icon="series-{{ loop.index }}">{% include "icons/chevron-down.html" %}</button>
+                <button class="btn btn-ghost btn-xs btn-square rounded-lg transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60" data-toggle-icon="series-{{ loop.index }}">{% include "icons/chevron-down.html" %}</button>
             </div>
             <div id="series-{{ loop.index }}" class="p-4 pt-0"><div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">{% for book in s.books|sort(attribute='title') %}{{ book_card(book) }}{% endfor %}</div></div>
         </div>

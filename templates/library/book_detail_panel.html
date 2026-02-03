@@ -92,13 +92,16 @@
             <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-base-300">
                 <button hx-post="{{ base_url }}/library/bulk/reprocess" 
                         hx-vals='{"asins": ["{{ book.asin }}"]}' 
-                        class="btn btn-outline flex-1 rounded-2xl font-black uppercase text-[11px] tracking-widest h-14"
-                        hx-target="body" hx-swap="none">
+                        class="btn btn-outline flex-1 rounded-2xl font-black uppercase text-[11px] tracking-widest h-14 inline-flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60"
+                        hx-target="body" hx-swap="none"
+                        hx-disabled-elt="this"
+                        hx-indicator="this .reprocess-indicator">
                     Refresh Metadata
+                    <span class="loading loading-spinner loading-xs htmx-indicator reprocess-indicator" style="display: none;"></span>
                 </button>
                 
                 <div class="dropdown dropdown-top flex-1">
-                    <button tabindex="0" role="button" class="btn btn-error btn-outline w-full rounded-2xl font-black uppercase text-[11px] tracking-widest h-14">Delete Book</button>
+                    <button tabindex="0" role="button" class="btn btn-error btn-outline w-full rounded-2xl font-black uppercase text-[11px] tracking-widest h-14 focus-visible:outline focus-visible:outline-2 focus-visible:outline-error/60">Delete Book</button>
                     <div tabindex="0" class="dropdown-content z-[50] menu p-6 shadow-2xl bg-base-100 text-base-content rounded-2xl w-full border border-base-300 mb-4">
                         <h3 class="font-black mb-2 text-sm uppercase tracking-widest">Confirm Delete</h3>
                         <p class="text-xs opacity-60 mb-4">Are you sure you want to remove this book?</p>
@@ -109,7 +112,12 @@
                         <button hx-post="{{ base_url }}/library/bulk/delete" 
                                 hx-vals='{"asins": ["{{ book.asin }}"]}' 
                                 hx-include="closest .dropdown-content input[name='delete_files']"
-                                class="btn btn-error btn-sm w-full rounded-xl font-black uppercase text-[10px] tracking-wider" hx-target="body" hx-swap="none">Confirm</button>
+                                class="btn btn-error btn-sm w-full rounded-xl font-black uppercase text-[10px] tracking-wider focus-visible:outline focus-visible:outline-2 focus-visible:outline-error/60"
+                                hx-target="body" hx-swap="none"
+                                hx-disabled-elt="this"
+                                hx-indicator="this .delete-indicator">Confirm
+                                <span class="loading loading-spinner loading-xs htmx-indicator delete-indicator" style="display: none;"></span>
+                        </button>
                     </div>
                 </div>
             </div>

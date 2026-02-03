@@ -64,18 +64,23 @@
             <form hx-post="/library/import/item/execute/{{ item.id }}?view={{ view }}" 
                   hx-target="#row-{{ item.id }}" 
                   hx-swap="outerHTML" 
-                  hx-on::before-request="this.querySelector('button').classList.add('loading'); this.querySelector('button').innerText = '...';"
+                  hx-disabled-elt="this button"
+                  hx-indicator="this .import-indicator"
                   class="w-full md:flex-1">     
                 <input type="hidden" name="import_mode" id="import-mode-hidden-{{ item.id }}" value="copy" />
-                <button type="submit" class="btn btn-[10px] btn-success h-7 min-h-0 w-full rounded-lg font-black uppercase tracking-tighter shadow-sm">
-                    Import
+                <button type="submit" class="btn btn-[10px] btn-success h-7 min-h-0 w-full rounded-lg font-black uppercase tracking-tighter shadow-sm inline-flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60">
+                    <span>Import</span>
+                    <span class="loading loading-spinner loading-xs htmx-indicator import-indicator" style="display: none;"></span>
                 </button>
             </form>
             {% endif %}
-            <button class="btn btn-[10px] btn-outline h-7 min-h-0 w-full md:flex-1 rounded-lg font-bold shadow-sm"
+            <button class="btn btn-[10px] btn-outline h-7 min-h-0 w-full md:flex-1 rounded-lg font-bold shadow-sm inline-flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/60"
                     hx-get="/library/import/fix-match/{{ item.id }}?view={{ view }}"
-                    hx-target="#book-details-modal-container">
-                Match
+                    hx-target="#book-details-modal-container"
+                    hx-disabled-elt="this"
+                    hx-indicator="this .fix-match-indicator">
+                <span>Match</span>
+                <span class="loading loading-spinner loading-xs htmx-indicator fix-match-indicator" style="display: none;"></span>
             </button>
         {% elif status_value == 'pending' %}
             <button class="btn btn-[10px] btn-ghost h-7 min-h-0 w-full rounded-lg bg-base-300/50 cursor-wait flex items-center gap-2 px-2" disabled>

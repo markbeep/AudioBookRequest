@@ -7,6 +7,11 @@ from sqlmodel import Session, select
 from app.util.db import get_session
 from app.util.templates import template_response
 from app.internal.auth.authentication import ABRAuth, DetailedUser, GroupEnum
+from app.internal.audiobookshelf.client import (
+    abs_trigger_scan,
+    background_abs_trigger_scan,
+)
+from app.internal.audiobookshelf.config import abs_config
 from app.internal.models import (
     LibraryImportSession,
     LibraryImportItem,
@@ -16,7 +21,11 @@ from app.internal.models import (
     AudiobookRequest,
 )
 from app.internal.library.scanner import LibraryScanner
-from app.internal.library.service import refresh_book_metadata
+from app.internal.library.service import (
+    refresh_book_metadata,
+    update_downloaded_book_metadata,
+)
+from app.internal.media_management.config import media_management_config
 from app.util.connection import get_connection
 from aiohttp import ClientSession
 from app.util.log import logger
@@ -27,6 +36,31 @@ router = APIRouter(prefix="/library", tags=["Library"])
 def get_import_view(request: Request) -> str:
     view = request.query_params.get("view", "table")
     return "grid" if view == "grid" else "table"
+
+
+async def _trigger_abs_rescan_if_configured(
+    session: Session, client_session: ClientSession
+) -> bool:
+    """
+    Fire an Audiobookshelf scan if credentials are configured.
+    """
+    if not (
+        abs_config.get_base_url(session)
+        and abs_config.get_api_token(session)
+        and abs_config.get_library_id(session)
+    ):
+        return False
+
+    try:
+        success = await abs_trigger_scan(session, client_session)
+        if not success:
+            logger.debug("ABS: library scan trigger returned false after metadata refresh")
+        return success
+    except Exception as e:
+        logger.warning(
+            "ABS: failed to trigger scan after metadata refresh", error=str(e)
+        )
+        return False
 
 
 @router.post("/bulk/delete")
@@ -83,12 +117,18 @@ async def bulk_reprocess(
 
         async with aiohttp.ClientSession() as client_session:
             with next(get_session()) as bg_session:
+                refreshed_any = False
                 for asin in asins:
                     try:
-                        await refresh_book_metadata(bg_session, asin, client_session)
+                        updated = await refresh_book_metadata(
+                            bg_session, asin, client_session
+                        )
+                        refreshed_any = refreshed_any or updated
                     except Exception as e:
                         logger.error(f"Bulk refresh failed for {asin}", error=str(e))
                 bg_session.commit()
+                if refreshed_any:
+                    await _trigger_abs_rescan_if_configured(bg_session, client_session)
 
     background_tasks.add_task(task)
     return HTMLResponse(
@@ -968,6 +1008,7 @@ async def rematch_apply(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
+    background_tasks: BackgroundTasks,
     user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
     """
@@ -986,11 +1027,16 @@ async def rematch_apply(
     if not fetched:
         return HTMLResponse("<script>toast('Could not fetch metadata for that ASIN.', 'error');</script>")
 
+    existing_path = None
+    if old_book.downloaded:
+        lib_root = media_management_config.get_library_path(session)
+        if lib_root:
+            existing_path = LibraryScanner.find_book_path_by_asin(lib_root, old_asin)
+
     new_book = store_new_books(session, [fetched])[0]
     if old_book.downloaded and not new_book.downloaded:
         new_book.downloaded = True
         session.add(new_book)
-        session.commit()
 
     # Update requests
     old_requests = session.exec(
@@ -1017,9 +1063,39 @@ async def rematch_apply(
         item.match_asin = new_asin
         session.add(item)
 
+    metadata_updated = False
+    if old_book.downloaded:
+        if existing_path:
+            try:
+                from app.internal.processing.processor import reorganize_existing_book
+
+                await reorganize_existing_book(
+                    session, new_book, current_path=existing_path
+                )
+                metadata_updated = True
+            except Exception as e:
+                logger.warning(
+                    "Rematch: Failed to reorganize files after rematch", error=str(e)
+                )
+
+        if not metadata_updated:
+            try:
+                await update_downloaded_book_metadata(
+                    session, new_book, current_path=existing_path
+                )
+                metadata_updated = True
+            except Exception as inner:
+                logger.warning(
+                    "Rematch: Failed to rewrite metadata after rematch",
+                    error=str(inner),
+                )
+
     # Remove the old audiobook entry once references are updated
     session.delete(old_book)
     session.commit()
+
+    if abs_config.is_valid(session):
+        background_tasks.add_task(background_abs_trigger_scan)
 
     return HTMLResponse(
         "<script>toast('Book rematched successfully.', 'success'); window.location.reload();</script>"
