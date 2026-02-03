@@ -27,6 +27,7 @@ from app.internal.auth.authentication import (
     RequiresLoginException,
     authenticate_user,
     create_user,
+    raise_for_invalid_password,
 )
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
@@ -38,7 +39,18 @@ from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse
 from app.util.templates import templates
 
-router = APIRouter(prefix="/auth", include_in_schema=False)
+router = APIRouter(prefix="/auth")
+
+
+class _LoginTypeResponse(BaseModel):
+    login_type: LoginTypeEnum
+
+
+@router.get("/type", response_model=_LoginTypeResponse)
+def get_login_type(
+    session: Annotated[Session, Depends(get_session)],
+):
+    return _LoginTypeResponse(login_type=auth_config.get_login_type(session))
 
 
 @router.get("/login")
@@ -125,6 +137,28 @@ async def logout(
     return Response(
         status_code=status.HTTP_204_NO_CONTENT, headers={"HX-Redirect": "/login"}
     )
+
+
+@router.post("/init")
+def create_init(
+    login_type: Annotated[LoginTypeEnum, Form()],
+    username: Annotated[str, Form()],
+    password: Annotated[str, Form()],
+    session: Annotated[Session, Depends(get_session)],
+):
+    if username.strip() == "":
+        return HTTPException(
+            status_code=400, detail="Username cannot be empty or whitespace only"
+        )
+
+    raise_for_invalid_password(session, password)
+
+    user = create_user(username, password, GroupEnum.admin, root=True)
+    session.add(user)
+    auth_config.set_login_type(session, login_type)
+    session.commit()
+
+    return Response(status_code=201)
 
 
 @router.post("/token")

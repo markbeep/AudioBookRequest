@@ -43,6 +43,11 @@ export default defineConfig({
         access: "public",
         default: 42456,
       }),
+      ABR_APP__FORCE_LOGIN_TYPE: envField.string({
+        context: "client",
+        access: "public",
+        optional: true,
+      }),
     },
   },
 

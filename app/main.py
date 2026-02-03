@@ -88,6 +88,9 @@ async def redirect_to_init(
         not user_exists
         and request.url.path != "/init"
         and not request.url.path.startswith("/static")
+        and not request.url.path.startswith("/api")
+        and not request.url.path.startswith("/openapi.json")
+        and not request.url.path.startswith("/docs")
         and request.method == "GET"
     ):
         with next(get_session()) as session:

@@ -24,7 +24,7 @@ class AuthConfig(StringConfigCache[AuthConfigKey]):
         login_type = self.get(session, "login_type")
         if login_type:
             return LoginTypeEnum(login_type)
-        return LoginTypeEnum.basic
+        return LoginTypeEnum.not_set
 
     def set_login_type(self, session: Session, login_Type: LoginTypeEnum):
         self.set(session, "login_type", login_Type.value)

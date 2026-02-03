@@ -1,3 +1,6 @@
+import { createInitApiAuthInitPost, type LoginTypeEnum } from "@/client";
+import { client } from "@/lib/client";
+
 export async function signOut() {
   await fetch("/api/auth/signout", {
     method: "POST",
@@ -9,9 +12,39 @@ export async function signOut() {
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   });
 
-  window.location.href = "/api/auth/login";
+  signIn();
 }
 
-export async function signIn() {
-  window.location.href = "/api/auth/login";
+export function signIn() {
+  const currentPath = window.location.pathname + window.location.search;
+  const redirectUrl = encodeURIComponent(currentPath);
+  window.location.href = `/api/auth/login?redirect=${redirectUrl}`;
+}
+
+/**
+ * Initializes the root user on the backend. Only possible if the instance hasn't
+ * been initialized yet.
+ *
+ * @returns the error as a string if there is one, null otherwise.
+ */
+export async function initRootUser({
+  loginType,
+  username,
+  password,
+}: {
+  loginType: LoginTypeEnum;
+  username: string;
+  password: string;
+}): Promise<string | null> {
+  const { error } = await createInitApiAuthInitPost({
+    client,
+    body: {
+      login_type: loginType,
+      username,
+      password,
+    },
+  });
+  if (!error) return null;
+  const joinedError = error.detail?.join(",");
+  return joinedError ?? "Unknown error";
 }

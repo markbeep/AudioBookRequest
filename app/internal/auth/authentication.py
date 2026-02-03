@@ -37,15 +37,7 @@ class DetailedUser(User):
 def raise_for_invalid_password(
     session: Session,
     password: str,
-    confirm_password: str | None = None,
-    ignore_confirm: bool = False,
 ):
-    if not ignore_confirm and password != confirm_password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Passwords must be equal",
-        )
-
     min_password_length = auth_config.get_min_password_length(session)
     if not len(password) >= min_password_length:
         logger.warning(
@@ -211,6 +203,11 @@ class ABRAuth(SecurityBase):
         session: Annotated[Session, Depends(get_session)],
     ) -> DetailedUser:
         login_type = auth_config.get_login_type(session)
+        if login_type == LoginTypeEnum.not_set:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Authentication not configured",
+            )
 
         logger.debug(
             "Checking user authentication",
@@ -224,8 +221,13 @@ class ABRAuth(SecurityBase):
             standard_user = await self._get_none_auth(session)
         elif login_type == LoginTypeEnum.oidc:
             standard_user = await self._get_oidc_auth(request, session)
-        else:
+        elif login_type == LoginTypeEnum.basic:
             standard_user = await self._get_basic_auth(request, session)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Invalid authentication configuration",
+            )
 
         if not standard_user.is_above(self.lowest_allowed_group):
             logger.warning(

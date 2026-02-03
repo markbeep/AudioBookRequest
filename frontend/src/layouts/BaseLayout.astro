@@ -17,16 +17,9 @@ interface Props {
         description?: string;
         keywords?: string;
     };
-    requireAuth?: boolean;
 }
 
-const {
-    canLogout,
-    version = "local",
-    showNavbar = true,
-    head,
-    requireAuth = true,
-} = Astro.props;
+const { canLogout, version = "local", showNavbar = true, head } = Astro.props;
 ---
 
 <!doctype html>

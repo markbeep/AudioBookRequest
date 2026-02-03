@@ -1,6 +1,7 @@
+import { getLoginTypeApiAuthTypeGet } from "@/client";
 import { getUser } from "@/lib/auth";
 import { ABR_INTERNAL__API_PORT } from "astro:env/client";
-import { defineMiddleware, sequence } from "astro:middleware";
+import { defineMiddleware } from "astro:middleware";
 
 async function proxyRequest(request: Request, targetBaseUrl: string) {
   const url = new URL(request.url);
@@ -28,7 +29,7 @@ async function proxyRequest(request: Request, targetBaseUrl: string) {
 export const onRequest = defineMiddleware(async (context, next) => {
   const pathname = new URL(context.request.url).pathname;
 
-  // Handle auth (api/auth) and api on fastapi side
+  // Handle api on fastapi side
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/docs") ||
@@ -39,15 +40,30 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return proxyRequest(context.request, apiUrl);
   }
 
+  if (pathname.startsWith("/auth")) {
+    return next();
+  }
+
   const user = await getUser(context.request.headers);
   if (user) {
     context.locals.user = user;
     return next();
   }
 
-  if (pathname.startsWith("/auth")) {
-    return next();
+  // check if basic auth is enabled. Return error to get browser to use basic auth
+  const { data: loginType } = await getLoginTypeApiAuthTypeGet();
+  if (loginType?.login_type === "basic") {
+    return new Response("Invalid credentials", {
+      status: 401,
+      headers: { "WWW-Authenticate": "Basic" },
+    });
   }
 
+  const redirectUri = pathname.replace(/^\/+/, "");
+  if (redirectUri) {
+    return context.redirect(
+      `/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}`,
+    );
+  }
   return context.redirect("/auth/login");
 });
