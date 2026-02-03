@@ -41,7 +41,7 @@ export default defineConfig({
       ABR_INTERNAL__API_PORT: envField.number({
         context: "client",
         access: "public",
-        default: 8000,
+        default: 42456,
       }),
     },
   },

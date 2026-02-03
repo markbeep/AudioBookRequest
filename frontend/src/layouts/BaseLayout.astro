@@ -1,4 +1,13 @@
 ---
+import "@/styles/tw.css";
+import DoorExit from "@/components/icons/DoorExit.astro";
+import SunIcon from "@/components/icons/Sun.astro";
+import MoonIcon from "@/components/icons/Moon.astro";
+import SearchIcon from "@/components/icons/Search.astro";
+import GiftIcon from "@/components/icons/Gift.astro";
+import GiftSolidIcon from "@/components/icons/GiftSolid.astro";
+import SettingsIcon from "@/components/icons/Settings.astro";
+
 interface Props {
     canLogout?: boolean;
     version?: string;
@@ -8,18 +17,16 @@ interface Props {
         description?: string;
         keywords?: string;
     };
+    requireAuth?: boolean;
 }
 
-const { canLogout, version = "local", showNavbar = true, head } = Astro.props;
-
-import "@/styles/tw.css";
-import DoorExit from "@/components/icons/DoorExit.astro";
-import SunIcon from "@/components/icons/Sun.astro";
-import MoonIcon from "@/components/icons/Moon.astro";
-import SearchIcon from "@/components/icons/Search.astro";
-import GiftIcon from "@/components/icons/Gift.astro";
-import GiftSolidIcon from "@/components/icons/GiftSolid.astro";
-import SettingsIcon from "@/components/icons/Settings.astro";
+const {
+    canLogout,
+    version = "local",
+    showNavbar = true,
+    head,
+    requireAuth = true,
+} = Astro.props;
 ---
 
 <!doctype html>
