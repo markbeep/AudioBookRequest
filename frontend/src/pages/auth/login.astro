@@ -1,0 +1,96 @@
+---
+import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
+
+// TODO: fetch login type from backend. If its not oidc and backup flag is given, ignore it
+const backup = ["1", "true"].includes(
+    Astro.url.searchParams.get("backup")?.toLowerCase() ?? "0",
+);
+const redirectUri = Astro.url.searchParams.get("redirect_uri") ?? "/";
+---
+
+<NoAuthLayout head={{ title: "Login" }}>
+    <div class="h-screen w-full flex flex-col items-center justify-center">
+        <h1 class="text-4xl font-bold mb-8">AudioBookRequest</h1>
+        <form
+            id="login-form"
+            class="flex flex-col gap-2 w-80 sm:w-120 px-4 mb-2"
+            method="post"
+            action="/api/auth/token"
+        >
+            <input type="hidden" name="redirect_uri" value={redirectUri} />
+            {
+                backup ? (
+                    <>
+                        <h1 class="text-xl">Backup Login</h1>
+                        <p class="text-error">
+                            This instance has OIDC enabled. This login can only
+                            be used by the root admin.
+                        </p>
+                    </>
+                ) : (
+                    <h1 class="text-xl">Login</h1>
+                )
+            }
+            <label for="username">Username</label>
+            <input
+                id="username"
+                name="username"
+                type="text"
+                class="input w-full"
+                required
+            />
+            <label for="password">Password</label>
+            <input
+                id="password"
+                name="password"
+                type="password"
+                class="input w-full"
+                required
+            />
+            <button class="btn btn-primary" type="submit">Login</button>
+        </form>
+        <p id="error" class="text-error hidden h-0"></p>
+    </div>
+</NoAuthLayout>
+
+<script>
+    document
+        .getElementById("login-form")
+        ?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const form = e.target as HTMLFormElement;
+            const submitButton = form.querySelector(
+                'button[type="submit"]',
+            ) as HTMLButtonElement;
+            const errorMessage = document.getElementById(
+                "error",
+            ) as HTMLParagraphElement;
+            if (!form || !submitButton || !errorMessage) return;
+
+            errorMessage.innerText = "";
+            errorMessage.classList.add("hidden");
+            submitButton.disabled = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: form.method,
+                    body: new FormData(form),
+                });
+                if (!response.ok) {
+                    errorMessage.innerText =
+                        (await response.json())["detail"] ??
+                        response.statusText;
+                    errorMessage.classList.remove("hidden");
+                } else {
+                    window.location.href =
+                        response.headers.get("HX-Redirect") || "/";
+                }
+            } catch (error) {
+                errorMessage.innerText =
+                    "Unknown error occurred during login. Please try again.";
+                errorMessage.classList.remove("hidden");
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+</script>

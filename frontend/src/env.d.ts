@@ -6,6 +6,6 @@
 /// <reference types="@astrojs/image/client" />
 declare namespace App {
   interface Locals {
-    user: import("@/client").UserResponse | null;
+    user: import("@/client").UserResponse;
   }
 }

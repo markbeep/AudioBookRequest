@@ -16,6 +16,7 @@ from fastapi import (
     Security,
     status,
 )
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -36,9 +37,8 @@ from app.util.db import get_session
 from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse
 from app.util.templates import templates
-from app.util.toast import ToastException
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", include_in_schema=False)
 
 
 @router.get("/login")
@@ -136,16 +136,23 @@ def login_access_token(
 ):
     user = authenticate_user(session, form_data.username, form_data.password)
     if not user:
-        raise ToastException("Invalid login", "error")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
 
     # only admins can use the backup forms login
     login_type = auth_config.get_login_type(session)
     if login_type == LoginTypeEnum.oidc and not user.root:
-        raise ToastException("Not root admin", "error")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not root user",
+        )
 
     request.session["sub"] = form_data.username
     return Response(
-        status_code=status.HTTP_200_OK, headers={"HX-Redirect": redirect_uri}
+        status_code=status.HTTP_200_OK,
+        headers={"HX-Redirect": redirect_uri},
     )
 
 

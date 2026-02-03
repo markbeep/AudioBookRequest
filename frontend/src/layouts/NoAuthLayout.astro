@@ -1,0 +1,116 @@
+---
+import "@/styles/tw.css";
+
+interface Props {
+    version?: string;
+    head?: {
+        title?: string;
+        description?: string;
+        keywords?: string;
+    };
+}
+
+// TODO: get version from env
+const { version = "local", head } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="garden">
+    <head>
+        <meta charset="UTF-8" />
+        {
+            head?.title ? (
+                <title>{head.title}</title>
+            ) : (
+                <title>AudioBookRequest</title>
+            )
+        }
+
+        {
+            head?.description ? (
+                <meta name="description" content={head.description} />
+            ) : (
+                <meta
+                    name="description"
+                    content="AudioBookRequest - Your platform for managing audiobook requests."
+                />
+            )
+        }
+
+        {
+            head?.keywords ? (
+                <meta name="keywords" content={head.keywords} />
+            ) : (
+                <meta
+                    name="keywords"
+                    content="audiobooks, requests, wishlist, search, settings"
+                />
+            )
+        }
+
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href={`/apple-touch-icon.png?v=${version}`}
+        />
+        <link
+            rel="icon"
+            sizes="any"
+            type="image/svg+xml"
+            href={`/favicon.svg?v=${version}`}
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href={`/favicon-32x32.png?v=${version}`}
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href={`/favicon-16x16.png?v=${version}`}
+        />
+        <link rel="manifest" href={`/site.webmanifest?v=${version}`} />
+    </head>
+
+    <body class="w-screen min-h-screen overflow-x-hidden">
+        <slot />
+    </body>
+</html>
+
+<script>
+    const setTheme = (theme: string | null = null) => {
+        if (!theme) {
+            theme = localStorage.getItem("theme");
+            if (!theme) {
+                theme = window.matchMedia("(prefers-color-scheme: dark)")
+                    .matches
+                    ? "night"
+                    : "nord";
+            }
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+        if (theme === "night") {
+            for (const elem of document.getElementsByClassName(
+                "light-dark-toggle",
+            )) {
+                elem.classList.add("DARKCLASS");
+                document.documentElement.classList.add("dark");
+            }
+        } else {
+            for (const elem of document.getElementsByClassName(
+                "light-dark-toggle",
+            )) {
+                elem.classList.remove("DARKCLASS");
+                document.documentElement.classList.remove("dark");
+            }
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        setTheme();
+    });
+</script>

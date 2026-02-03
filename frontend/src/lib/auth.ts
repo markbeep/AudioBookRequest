@@ -12,7 +12,11 @@ export async function getUser(headers: Headers): Promise<UserResponse | null> {
     },
   });
   if (error) {
-    console.error("Error fetching user:", error);
+    if (error instanceof Error) {
+      console.error("Error fetching user:", error.message);
+    } else {
+      console.error("Unknown error fetching user:", error);
+    }
     return null;
   }
   return user ?? null;
