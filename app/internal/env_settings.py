@@ -53,6 +53,9 @@ class ApplicationSettings(BaseModel):
 class InternalSettings(BaseModel):
     frontend_dir: str = "/frontend/dist"
 
+    api_port: int = 42456
+    """Python server runs on a separate internal port"""
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(  # pyright: ignore[reportUnannotatedClassAttribute]

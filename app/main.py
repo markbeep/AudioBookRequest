@@ -124,50 +124,11 @@ async def redirect_to_init(
     return response
 
 
-@app.get("{file_path:path}")
-async def astro_files(file_path: str):
-    # -----------------------------------------
-    # | Prevent directory traversal.          |
-    # | Frontend directory HAS to be          |
-    # | made absolute before comparing.       |
-    # -----------------------------------------
-    frontend_path = Path(Settings().internal.frontend_dir).absolute()
-    requested_path = frontend_path / file_path.lstrip("/")
-    shared_path = os.path.commonprefix(
-        [frontend_path, os.path.realpath(requested_path)]
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "app.main:app",
+        host="127.0.0.1",
+        port=Settings().internal.api_port,
     )
-    if shared_path != str(frontend_path):
-        logger.warning(
-            "Directory traversal attempt detected", requested_path=requested_path
-        )
-        raise HTTPException(status_code=404, detail="Not found")
-    # -----------------------------------------
-
-    requested_file = frontend_path / requested_path
-    if not requested_file.exists() or not requested_file.is_file():
-        requested_file /= "index.html"
-        if not requested_file.exists() or not requested_file.is_file():
-            raise HTTPException(status_code=404, detail="Not Found")
-
-    # Determine media type based on file extension
-    extension = requested_file.suffix.lower()
-    media_types = {
-        ".html": "text/html",
-        ".css": "text/css",
-        ".js": "application/javascript",
-        ".json": "application/json",
-        ".xml": "application/xml",
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".gif": "image/gif",
-        ".svg": "image/svg+xml",
-        ".ico": "image/x-icon",
-        ".woff": "font/woff",
-        ".woff2": "font/woff2",
-        ".ttf": "font/ttf",
-        ".eot": "application/vnd.ms-fontobject",
-        ".otf": "font/otf",
-    }
-    media_type = media_types.get(extension, "application/octet-stream")
-    return StreamingResponse(requested_file.open("rb"), media_type=media_type)

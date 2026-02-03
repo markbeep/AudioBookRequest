@@ -3,12 +3,12 @@ import PlusIcon from "@/components/icons/Plus.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import SearchInput from "@/components/SearchInput";
 import BookCard from "@/components/BookCard";
-import { regions, type Region } from "@/types/region";
+import { isRegion, regions, type Region } from "@/types/region";
 import type { AudiobookSearchResult } from "@/client";
 
 const searchTerm = Astro.url.searchParams.get("q") || "";
-let region = Astro.url.searchParams.get("region") || "us";
-if (!regions.includes(region as Region)) region = "us";
+let region = (Astro.url.searchParams.get("region") || "us") as Region;
+if (!isRegion(region)) region = "us";
 
 const page = parseInt(Astro.url.searchParams.get("page") || "0");
 
@@ -33,7 +33,6 @@ const canDownload = false;
             </a>
         </div>
         <div class="flex flex-col gap-4 justify-start items-center">
-            <!-- TODO: add the remaining regions -->
             <SearchInput
                 searchTerm={searchTerm}
                 initialRegion={region}
