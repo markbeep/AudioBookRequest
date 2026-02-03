@@ -5,5 +5,8 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
+    "paths": {
+      "@/*": ["./src/*"],
+    },
   },
 }

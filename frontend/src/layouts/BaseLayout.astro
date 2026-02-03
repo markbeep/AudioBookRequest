@@ -3,59 +3,84 @@ interface Props {
     canLogout?: boolean;
     version?: string;
     showNavbar?: boolean;
+    head?: {
+        title?: string;
+        description?: string;
+        keywords?: string;
+    };
 }
 
-const { canLogout, version = "local", showNavbar = true } = Astro.props;
+const { canLogout, version = "local", showNavbar = true, head } = Astro.props;
 
-import "../styles/tw.css";
-import DoorExit from "../components/icons/DoorExit.astro";
-import SunIcon from "../components/icons/Sun.astro";
-import MoonIcon from "../components/icons/Moon.astro";
-import SearchIcon from "../components/icons/Search.astro";
-import GiftIcon from "../components/icons/Gift.astro";
-import GiftSolidIcon from "../components/icons/GiftSolid.astro";
-import SettingsIcon from "../components/icons/Settings.astro";
+import "@/styles/tw.css";
+import DoorExit from "@/components/icons/DoorExit.astro";
+import SunIcon from "@/components/icons/Sun.astro";
+import MoonIcon from "@/components/icons/Moon.astro";
+import SearchIcon from "@/components/icons/Search.astro";
+import GiftIcon from "@/components/icons/Gift.astro";
+import GiftSolidIcon from "@/components/icons/GiftSolid.astro";
+import SettingsIcon from "@/components/icons/Settings.astro";
 ---
 
 <!doctype html>
 <html lang="en" data-theme="garden">
     <head>
         <meta charset="UTF-8" />
-        <title>AudioBookRequest</title>
-        <meta
-            name="description"
-            content="AudioBookRequest - Your platform for managing audiobook requests."
-        />
-        <meta
-            name="keywords"
-            content="audiobooks, requests, wishlist, search, settings"
-        />
+        {
+            head?.title ? (
+                <title>{head.title}</title>
+            ) : (
+                <title>AudioBookRequest</title>
+            )
+        }
+
+        {
+            head?.description ? (
+                <meta name="description" content={head.description} />
+            ) : (
+                <meta
+                    name="description"
+                    content="AudioBookRequest - Your platform for managing audiobook requests."
+                />
+            )
+        }
+
+        {
+            head?.keywords ? (
+                <meta name="keywords" content={head.keywords} />
+            ) : (
+                <meta
+                    name="keywords"
+                    content="audiobooks, requests, wishlist, search, settings"
+                />
+            )
+        }
 
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
             rel="apple-touch-icon"
             sizes="180x180"
-            href={`/static/apple-touch-icon.png?v=${version}`}
+            href={`/apple-touch-icon.png?v=${version}`}
         />
         <link
             rel="icon"
             sizes="any"
             type="image/svg+xml"
-            href={`/static/favicon.svg?v=${version}`}
+            href={`/favicon.svg?v=${version}`}
         />
         <link
             rel="icon"
             type="image/png"
             sizes="32x32"
-            href={`/static/favicon-32x32.png?v=${version}`}
+            href={`/favicon-32x32.png?v=${version}`}
         />
         <link
             rel="icon"
             type="image/png"
             sizes="16x16"
-            href={`/static/favicon-16x16.png?v=${version}`}
+            href={`/favicon-16x16.png?v=${version}`}
         />
-        <link rel="manifest" href={`/static/site.webmanifest?v=${version}`} />
+        <link rel="manifest" href={`/site.webmanifest?v=${version}`} />
     </head>
 
     <body class="w-screen min-h-screen overflow-x-hidden">
