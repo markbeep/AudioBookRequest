@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.internal import book_search
-from app.internal.auth.authentication import APIKeyAuth, DetailedUser
+from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.book_search import (
     audible_region_type,
     audible_regions,
@@ -37,7 +37,7 @@ class AudiobookSearchResult(BaseModel):
 async def search_books(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     query: Annotated[str | None, Query(alias="q")] = None,
     num_results: int = 20,
     page: int = 0,
@@ -73,7 +73,7 @@ async def search_books(
 @router.get("/suggestions", response_model=list[str])
 async def search_suggestions(
     query: Annotated[str, Query(alias="q")],
-    _: Annotated[DetailedUser, Security(APIKeyAuth())],
+    _: Annotated[DetailedUser, Security(AnyAuth())],
     region: audible_region_type | None = None,
 ):
     if region is None:

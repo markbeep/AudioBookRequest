@@ -8,17 +8,18 @@ import pydantic
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from fastapi import Depends, HTTPException, Request, status
+from fastapi.openapi.models import SecurityBase as SecurityBaseModel
+from fastapi.openapi.models import SecuritySchemeType
 from fastapi.security import (
     HTTPBasic,
     HTTPBearer,
     OpenIdConnect,
 )
-from fastapi.openapi.models import SecurityBase as SecurityBaseModel, SecuritySchemeType
 from fastapi.security.base import SecurityBase
 from sqlmodel import Session, select
 
-from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.auth.config import auth_config
+from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.models import APIKey, GroupEnum, User
 from app.util.db import get_session
 from app.util.log import logger
@@ -337,3 +338,49 @@ class ABRAuth(SecurityBase):
             group=self.none_user.group,
         )
         return user
+
+
+@final
+class AnyAuth(SecurityBase):
+    """
+    Allows authentication using either a bearer-token or by
+    sending along a valid session-token in the cookies
+    """
+
+    def __init__(
+        self,
+        lowest_allowed_group: GroupEnum = GroupEnum.untrusted,
+        auto_error: bool = True,
+    ):
+        self.lowest_allowed_group = lowest_allowed_group
+        self.auto_error = auto_error
+        self.api_key_auth = APIKeyAuth(lowest_allowed_group, auto_error)
+        self.abr_auth = ABRAuth(lowest_allowed_group)
+        self.scheme_name = lowest_allowed_group.capitalize() + " Auth"
+        self.model = HTTPBearer(description="API Key or Session cookies").model
+
+    async def __call__(
+        self,
+        request: Request,
+        session: Annotated[Session, Depends(get_session)],
+    ) -> DetailedUser | None:
+        try:
+            user = await self.api_key_auth(request, session)
+            if user:
+                return user
+        except HTTPException:
+            pass
+
+        try:
+            user = await self.abr_auth(request, session)
+            if user:
+                return user
+        except RequiresLoginException:
+            pass
+
+        if self.auto_error:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+            )
+        return None
