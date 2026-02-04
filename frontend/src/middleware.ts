@@ -40,15 +40,25 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return proxyRequest(context.request, apiUrl);
   }
 
-  if (pathname.startsWith("/auth")) {
+  const { data: loginType } = await getLoginTypeApiAuthTypeGet();
+  context.locals.loginType = loginType?.login_type ?? null;
+
+  const user = await getUser(
+    context.request.headers,
+    loginType?.login_type === "none",
+  );
+  if (user) {
+    // user is already logged in, redirect to root
+    if (pathname.startsWith("/auth")) {
+      return context.redirect("/");
+    }
+
+    context.locals.user = user;
     return next();
   }
 
-  const user = await getUser(context.request.headers);
-  const { data: loginType } = await getLoginTypeApiAuthTypeGet();
-  if (user) {
-    context.locals.user = user;
-    context.locals.loginType = loginType?.login_type ?? null;
+  // user is not authenticated, allow to pass through auth endpoints without redirection
+  if (pathname.startsWith("/auth")) {
     return next();
   }
 

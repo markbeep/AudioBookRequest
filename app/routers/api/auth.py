@@ -16,7 +16,6 @@ from fastapi import (
     Security,
     status,
 )
-from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -36,7 +35,7 @@ from app.internal.models import GroupEnum, User
 from app.util.connection import USER_AGENT, get_connection
 from app.util.db import get_session
 from app.util.log import logger
-from app.util.redirect import BaseUrlRedirectResponse
+from app.util.redirect import BaseUrlRedirectResponse, ClientRedirectResponse
 from app.util.templates import templates
 
 router = APIRouter(prefix="/auth")
@@ -118,23 +117,19 @@ async def login(
     return BaseUrlRedirectResponse(f"{authorize_endpoint}?" + urlencode(params))
 
 
-class _LogoutResponse(BaseModel):
-    redirect: str | None
-
-
-@router.post("/logout", response_model=_LogoutResponse)
+@router.post("/logout", response_model=ClientRedirectResponse)
 async def logout(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     _: Annotated[DetailedUser, Security(ABRAuth())],
-) -> _LogoutResponse:
+) -> ClientRedirectResponse:
     request.session["sub"] = ""
     login_type = auth_config.get_login_type(session)
     if login_type == LoginTypeEnum.oidc:
         logout_url = oidc_config.get(session, "oidc_logout_url")
         if logout_url:
-            return _LogoutResponse(redirect=logout_url)
-    return _LogoutResponse(redirect=None)
+            return ClientRedirectResponse(redirect=logout_url)
+    return ClientRedirectResponse(redirect=None)
 
 
 @router.post("/init")
@@ -159,14 +154,18 @@ def create_init(
     return Response(status_code=201)
 
 
+class _LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 @router.post("/token")
 def login_access_token(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    redirect_uri: Annotated[str, Form()] = "/",
+    body: _LoginRequest,
 ):
-    user = authenticate_user(session, form_data.username, form_data.password)
+    user = authenticate_user(session, body.username, body.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -181,11 +180,8 @@ def login_access_token(
             detail="Not root user",
         )
 
-    request.session["sub"] = form_data.username
-    return Response(
-        status_code=status.HTTP_200_OK,
-        headers={"HX-Redirect": redirect_uri},
-    )
+    request.session["sub"] = body.username
+    return Response(status_code=status.HTTP_200_OK)
 
 
 class _AccessTokenBody(BaseModel):

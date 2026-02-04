@@ -1,11 +1,17 @@
 import { getCurrentUserApiUsersMeGet, type UserResponse } from "@/client";
 
-export async function getUser(headers: Headers): Promise<UserResponse | null> {
+export async function getUser(
+  headers: Headers,
+  noneAuth: boolean,
+): Promise<UserResponse | null> {
+  if (noneAuth) {
+    // if None authentication is selected, no headers are required
+    const { data: user } = await getCurrentUserApiUsersMeGet();
+    return user ?? null;
+  }
+
   const cookies = headers.get("cookie");
   const authorization = headers.get("authorization");
-  if (!cookies && !authorization) {
-    return null;
-  }
   let user: UserResponse | null = null;
   let error: unknown;
 

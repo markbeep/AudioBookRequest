@@ -1,21 +1,13 @@
 ---
 import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
-import { getLoginTypeApiAuthTypeGet } from "@/client";
-import { getUser } from "@/lib/auth";
-
-const { data: loginType, error } = await getLoginTypeApiAuthTypeGet();
-let errorMessage =
-    error instanceof Error ? error.message : JSON.stringify(error);
-if (errorMessage === "fetch failed") {
-    errorMessage = "Unable to connect to backend API";
-}
 
 let backup = ["1", "true"].includes(
     Astro.url.searchParams.get("backup")?.toLowerCase() ?? "0",
 );
 const redirectUri = Astro.url.searchParams.get("redirect_uri") ?? "/";
 
-switch (loginType?.login_type) {
+let error: string | null = null;
+switch (Astro.locals.loginType) {
     case "basic":
     case "none":
         return Astro.redirect(redirectUri);
@@ -32,6 +24,8 @@ switch (loginType?.login_type) {
     case "not_set":
         console.log("Login type not set, redirecting to init");
         return Astro.redirect("/auth/init");
+    default:
+        error = "Failed to access the backend API.";
 }
 ---
 
@@ -40,14 +34,12 @@ switch (loginType?.login_type) {
         <h1 class="text-4xl font-bold mb-8">AudioBookRequest</h1>
         {
             error ? (
-                <p class="text-error">Internal server issue: {errorMessage}</p>
+                <p class="text-error">Internal server issue: {error}</p>
             ) : (
                 <>
                     <form
                         id="login-form"
                         class="flex flex-col gap-2 w-80 sm:w-120 px-4 mb-2"
-                        method="post"
-                        action="/api/auth/token"
                     >
                         <input
                             type="hidden"
@@ -67,7 +59,6 @@ switch (loginType?.login_type) {
                         )}
                         <label for="username">Username</label>
                         <input
-                            id="username"
                             name="username"
                             type="text"
                             class="input w-full"
@@ -75,13 +66,16 @@ switch (loginType?.login_type) {
                         />
                         <label for="password">Password</label>
                         <input
-                            id="password"
                             name="password"
                             type="password"
                             class="input w-full"
                             required
                         />
-                        <button class="btn btn-primary" type="submit">
+                        <button
+                            id="login-submit"
+                            class="btn btn-primary"
+                            type="submit"
+                        >
                             Login
                         </button>
                     </form>
@@ -93,6 +87,9 @@ switch (loginType?.login_type) {
 </NoAuthLayout>
 
 <script>
+    import { loginAccessTokenApiAuthTokenPost } from "@/client";
+    import { client } from "@/lib/client";
+
     (() => {
         const form = document.getElementById(
             "login-form",
@@ -113,26 +110,52 @@ switch (loginType?.login_type) {
             error.classList.add("hidden");
             submit.disabled = true;
 
-            try {
-                const response = await fetch(form.action, {
-                    method: form.method,
-                    body: new FormData(form),
+            const username = form.elements.namedItem(
+                "username",
+            ) as HTMLInputElement | null;
+            const password = form.elements.namedItem(
+                "password",
+            ) as HTMLInputElement | null;
+            const redirectUri = form.elements.namedItem(
+                "redirect_uri",
+            ) as HTMLInputElement | null;
+
+            if (!username || !password || !redirectUri) {
+                console.error("Form element not found", {
+                    username,
+                    password,
                 });
-                if (!response.ok) {
-                    error.innerText =
-                        (await response.json())["detail"] ??
-                        response.statusText;
-                    error.classList.remove("hidden");
-                } else {
-                    window.location.href =
-                        response.headers.get("HX-Redirect") || "/";
-                }
-            } catch (err) {
+
                 error.innerText =
-                    "Unknown error occurred during login. Please try again.";
+                    "Internal error: Form element not found. This is an AudioBookRequest issue.";
                 error.classList.remove("hidden");
-            } finally {
                 submit.disabled = false;
+                return;
+            }
+
+            const { error: errorObj, request } =
+                await loginAccessTokenApiAuthTokenPost({
+                    client,
+                    body: {
+                        username: username.value,
+                        password: password.value,
+                    },
+                });
+
+            if (errorObj) {
+                const errorMessage =
+                    errorObj instanceof Error
+                        ? errorObj.message
+                        : JSON.stringify(error);
+                error.innerText = errorMessage;
+                error.classList.remove("hidden");
+                submit.disabled = false;
+            } else {
+                if (redirectUri.value) {
+                    window.location.href = redirectUri.value;
+                } else {
+                    window.location.href = "/";
+                }
             }
         });
     })();

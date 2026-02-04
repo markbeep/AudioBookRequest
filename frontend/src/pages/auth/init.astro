@@ -38,7 +38,11 @@ if (forcedLoginType === "oidc") {
         );
         forcedLoginType = null;
     } else {
-        error = await initRootUser("oidc", initUsername, initPassword);
+        error = await initRootUser({
+            loginType: "oidc",
+            username: initUsername,
+            password: initPassword,
+        });
         if (!error) {
             return Astro.redirect("/");
         }

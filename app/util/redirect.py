@@ -1,4 +1,5 @@
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 from starlette.datastructures import URL
 
 from app.internal.env_settings import Settings
@@ -21,3 +22,7 @@ class BaseUrlRedirectResponse(RedirectResponse):
             url=url,
             status_code=status_code,
         )
+
+
+class ClientRedirectResponse(BaseModel):
+    redirect: str | None
