@@ -118,25 +118,23 @@ async def login(
     return BaseUrlRedirectResponse(f"{authorize_endpoint}?" + urlencode(params))
 
 
-@router.post("/logout")
+class _LogoutResponse(BaseModel):
+    redirect: str | None
+
+
+@router.post("/logout", response_model=_LogoutResponse)
 async def logout(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     _: Annotated[DetailedUser, Security(ABRAuth())],
-):
+) -> _LogoutResponse:
     request.session["sub"] = ""
-
     login_type = auth_config.get_login_type(session)
     if login_type == LoginTypeEnum.oidc:
         logout_url = oidc_config.get(session, "oidc_logout_url")
         if logout_url:
-            return Response(
-                status_code=status.HTTP_204_NO_CONTENT,
-                headers={"HX-Redirect": logout_url},
-            )
-    return Response(
-        status_code=status.HTTP_204_NO_CONTENT, headers={"HX-Redirect": "/login"}
-    )
+            return _LogoutResponse(redirect=logout_url)
+    return _LogoutResponse(redirect=None)
 
 
 @router.post("/init")

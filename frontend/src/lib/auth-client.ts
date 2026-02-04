@@ -1,16 +1,24 @@
-import { createInitApiAuthInitPost, type LoginTypeEnum } from "@/client";
+import {
+  createInitApiAuthInitPost,
+  logoutApiAuthLogoutPost,
+  type LoginTypeEnum,
+} from "@/client";
 import { client } from "@/lib/client";
 
 export async function signOut() {
-  await fetch("/api/auth/signout", {
-    method: "POST",
-  });
+  const { data } = await logoutApiAuthLogoutPost({ client });
 
   // Clear all cookies
   document.cookie.split(";").forEach((cookie) => {
     const name = cookie.split("=")[0].trim();
+    if (name !== "session") return;
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   });
+
+  if (data?.redirect) {
+    window.location.href = data.redirect;
+    return;
+  }
 
   signIn();
 }
@@ -18,7 +26,7 @@ export async function signOut() {
 export function signIn() {
   const currentPath = window.location.pathname + window.location.search;
   const redirectUrl = encodeURIComponent(currentPath);
-  window.location.href = `/api/auth/login?redirect=${redirectUrl}`;
+  window.location.href = `/auth/login?redirect=${redirectUrl}`;
 }
 
 /**
