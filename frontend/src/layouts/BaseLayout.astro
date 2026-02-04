@@ -9,7 +9,6 @@ import GiftSolidIcon from "@/components/icons/GiftSolid.astro";
 import SettingsIcon from "@/components/icons/Settings.astro";
 
 interface Props {
-    canLogout?: boolean;
     version?: string;
     showNavbar?: boolean;
     head?: {
@@ -19,11 +18,14 @@ interface Props {
     };
 }
 
-const { canLogout, version = "local", showNavbar = true, head } = Astro.props;
+const { version = "local", showNavbar = true, head } = Astro.props;
+const theme = Astro.cookies.get("theme")?.value ?? "nord";
+const canLogout =
+    Astro.locals.loginType === "forms" || Astro.locals.loginType === "oidc";
 ---
 
 <!doctype html>
-<html lang="en" data-theme="garden">
+<html lang="en" data-theme={theme}>
     <head>
         <meta charset="UTF-8" />
         {
@@ -119,7 +121,12 @@ const { canLogout, version = "local", showNavbar = true, head } = Astro.props;
                             </a>
                         </div>
                         <div class="flex-none flex pr-4">
-                            <button class="theme-toggler btn btn-ghost btn-square light-dark-toggle">
+                            <button
+                                class={
+                                    "light-dark-toggle theme-toggler btn btn-ghost btn-square" +
+                                    (theme === "night" ? " DARKCLASS" : "")
+                                }
+                            >
                                 <span class="theme-dark svg-dark">
                                     <MoonIcon />
                                 </span>
@@ -130,8 +137,8 @@ const { canLogout, version = "local", showNavbar = true, head } = Astro.props;
 
                             {canLogout && (
                                 <button
-                                    hx-post="/auth/logout"
-                                    class="button btn-ghost btn-square"
+                                    id="logout-button"
+                                    class="btn btn-ghost btn-square"
                                     title="Logout"
                                 >
                                     <DoorExit />
@@ -151,12 +158,20 @@ const { canLogout, version = "local", showNavbar = true, head } = Astro.props;
                 </header>
             )
         }
-
         <slot />
     </body>
 </html>
 
 <script>
+    import { signOut } from "@/lib/auth-client";
+
+    // logout
+    document
+        .getElementById("logout-button")
+        ?.addEventListener("click", () => signOut());
+
+    // theme selector
+    const toggle = document.querySelector(".light-dark-toggle");
     const setTheme = (theme: string | null = null) => {
         if (!theme) {
             theme = localStorage.getItem("theme");
@@ -169,19 +184,14 @@ const { canLogout, version = "local", showNavbar = true, head } = Astro.props;
         }
         document.documentElement.setAttribute("data-theme", theme);
         localStorage.setItem("theme", theme);
-        if (theme === "night") {
-            for (const elem of document.getElementsByClassName(
-                "light-dark-toggle",
-            )) {
-                elem.classList.add("DARKCLASS");
-                document.documentElement.classList.add("dark");
-            }
-        } else {
-            for (const elem of document.getElementsByClassName(
-                "light-dark-toggle",
-            )) {
-                elem.classList.remove("DARKCLASS");
-                document.documentElement.classList.remove("dark");
+        document.cookie = `theme=${theme}; path=/; max-age=${
+            60 * 60 * 24 * 365
+        }`;
+        if (toggle) {
+            if (theme === "night") {
+                toggle.classList.add("DARKCLASS");
+            } else {
+                toggle.classList.remove("DARKCLASS");
             }
         }
     };

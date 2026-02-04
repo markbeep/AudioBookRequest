@@ -45,13 +45,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const user = await getUser(context.request.headers);
+  const { data: loginType } = await getLoginTypeApiAuthTypeGet();
   if (user) {
     context.locals.user = user;
+    context.locals.loginType = loginType?.login_type ?? null;
     return next();
   }
 
   // check if basic auth is enabled. Return error to get browser to use basic auth
-  const { data: loginType } = await getLoginTypeApiAuthTypeGet();
   if (loginType?.login_type === "basic") {
     return new Response("Invalid credentials", {
       status: 401,

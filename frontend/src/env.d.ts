@@ -7,5 +7,6 @@
 declare namespace App {
   interface Locals {
     user: import("@/client").UserResponse;
+    loginType: import("@/client").LoginTypeEnum | null;
   }
 }
