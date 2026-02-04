@@ -13,7 +13,7 @@ create_revision *MESSAGE:
     uv run alembic revision --autogenerate -m "{{ MESSAGE }}"
 
 fast-dev: migrate
-    uv run fastapi dev --port 42456
+    uv run fastapi dev
 
 fast-prod: migrate
     uv run -m app.main
@@ -44,4 +44,4 @@ watch:
 
 create_types:
     # requires python server to be running with docs enabled
-    npx @hey-api/openapi-ts -i http://localhost:42456/openapi.json -o frontend/src/client
+    npx @hey-api/openapi-ts -i http://localhost:8000/openapi.json -o frontend/src/client

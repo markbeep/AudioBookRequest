@@ -7,6 +7,7 @@ import SearchIcon from "@/components/icons/Search.astro";
 import GiftIcon from "@/components/icons/Gift.astro";
 import GiftSolidIcon from "@/components/icons/GiftSolid.astro";
 import SettingsIcon from "@/components/icons/Settings.astro";
+import { base } from "@/lib/base";
 
 interface Props {
     version?: string;
@@ -19,13 +20,10 @@ interface Props {
 }
 
 const { version = "local", showNavbar = true, head } = Astro.props;
-const theme = Astro.cookies.get("theme")?.value ?? "nord";
-const canLogout =
-    Astro.locals.loginType === "forms" || Astro.locals.loginType === "oidc";
 ---
 
 <!doctype html>
-<html lang="en" data-theme={theme}>
+<html lang="en" data-theme="nord">
     <head>
         <meta charset="UTF-8" />
         {
@@ -62,27 +60,27 @@ const canLogout =
         <link
             rel="apple-touch-icon"
             sizes="180x180"
-            href={`/apple-touch-icon.png?v=${version}`}
+            href={base(`/apple-touch-icon.png?v=${version}`)}
         />
         <link
             rel="icon"
             sizes="any"
             type="image/svg+xml"
-            href={`/favicon.svg?v=${version}`}
+            href={base(`/favicon.svg?v=${version}`)}
         />
         <link
             rel="icon"
             type="image/png"
             sizes="32x32"
-            href={`/favicon-32x32.png?v=${version}`}
+            href={base(`/favicon-32x32.png?v=${version}`)}
         />
         <link
             rel="icon"
             type="image/png"
             sizes="16x16"
-            href={`/favicon-16x16.png?v=${version}`}
+            href={base(`/favicon-16x16.png?v=${version}`)}
         />
-        <link rel="manifest" href={`/site.webmanifest?v=${version}`} />
+        <link rel="manifest" href={base(`/site.webmanifest?v=${version}`)} />
     </head>
 
     <body class="w-screen min-h-screen overflow-x-hidden">
@@ -121,12 +119,7 @@ const canLogout =
                             </a>
                         </div>
                         <div class="flex-none flex pr-4">
-                            <button
-                                class={
-                                    "light-dark-toggle theme-toggler btn btn-ghost btn-square" +
-                                    (theme === "night" ? " DARKCLASS" : "")
-                                }
-                            >
+                            <button class="light-dark-toggle theme-toggler btn btn-ghost btn-square">
                                 <span class="theme-dark svg-dark">
                                     <MoonIcon />
                                 </span>
@@ -135,15 +128,13 @@ const canLogout =
                                 </span>
                             </button>
 
-                            {canLogout && (
-                                <button
-                                    id="logout-button"
-                                    class="btn btn-ghost btn-square"
-                                    title="Logout"
-                                >
-                                    <DoorExit />
-                                </button>
-                            )}
+                            <button
+                                id="logout-button"
+                                class="btn btn-ghost btn-square hidden"
+                                title="Logout"
+                            >
+                                <DoorExit />
+                            </button>
                             <a
                                 href="/settings/account"
                                 class="btn btn-ghost btn-square group"
@@ -164,6 +155,24 @@ const canLogout =
 
 <script>
     import { signOut } from "@/lib/auth-client";
+    import { getLoginTypeApiAuthTypeGet } from "@/client";
+    import { client } from "@/lib/client";
+
+    // Check login type and show logout button if needed
+    (async () => {
+        const { data: loginTypeData } = await getLoginTypeApiAuthTypeGet({
+            client,
+        });
+        const loginType = loginTypeData?.login_type;
+        const canLogout = loginType === "forms" || loginType === "oidc";
+
+        if (canLogout) {
+            const logoutButton = document.getElementById("logout-button");
+            if (logoutButton) {
+                logoutButton.classList.remove("hidden");
+            }
+        }
+    })();
 
     // logout
     document

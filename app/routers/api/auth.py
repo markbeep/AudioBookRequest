@@ -16,7 +16,6 @@ from fastapi import (
     Security,
     status,
 )
-from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -38,7 +37,7 @@ from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse, ClientRedirectResponse
 from app.util.templates import templates
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 class _LoginTypeResponse(BaseModel):

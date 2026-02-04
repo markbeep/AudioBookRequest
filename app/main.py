@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 from typing import Awaitable, Callable
 from urllib.parse import quote_plus, urlencode
@@ -22,6 +23,7 @@ from app.internal.env_settings import Settings
 from app.internal.models import User
 from app.routers import api
 from app.util.db import get_session
+from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse
 
 with next(get_session()) as session:
@@ -86,8 +88,8 @@ async def redirect_to_init(
     global user_exists
     if (
         not user_exists
-        and request.url.path != "/init"
-        and not request.url.path.startswith("/static")
+        and not request.url.path.startswith("/auth")
+        and not request.url.path.startswith("/astro")
         and not request.url.path.startswith("/api")
         and not request.url.path.startswith("/openapi.json")
         and not request.url.path.startswith("/docs")
@@ -96,13 +98,76 @@ async def redirect_to_init(
         with next(get_session()) as session:
             user_count = session.exec(select(func.count()).select_from(User)).one()
             if user_count == 0:
-                return BaseUrlRedirectResponse("/init")
+                return BaseUrlRedirectResponse("/auth/init")
             else:
                 user_exists = True
-    elif user_exists and request.url.path.startswith("/init"):
+    elif user_exists and request.url.path.startswith("/auth/init"):
         return BaseUrlRedirectResponse("/")
     response = await call_next(request)
     return response
+
+
+@app.get("{file_path:path}", include_in_schema=False)
+async def astro_files(request: Request, file_path: str):
+    # -----------------------------------------
+    # | Prevent directory traversal.          |
+    # | Frontend directory HAS to be          |
+    # | made absolute before comparing.       |
+    # -----------------------------------------
+    frontend_path = Path(Settings().internal.frontend_dir).absolute()
+    requested_path = frontend_path / file_path.removeprefix("/astro").lstrip("/")
+    shared_path = os.path.commonprefix(
+        [frontend_path, os.path.realpath(requested_path)]
+    )
+    if shared_path != str(frontend_path):
+        logger.warning(
+            "Directory traversal attempt detected", requested_path=requested_path
+        )
+        raise HTTPException(status_code=404, detail="Not found")
+    # -----------------------------------------
+
+    requested_file = frontend_path / requested_path
+    if not requested_file.exists() or not requested_file.is_file():
+        requested_file /= "index.html"
+        if not requested_file.exists() or not requested_file.is_file():
+            raise HTTPException(status_code=404, detail="Not Found")
+
+    # Determine media type based on file extension
+    extension = requested_file.suffix.lower()
+    media_types = {
+        ".html": "text/html",
+        ".css": "text/css",
+        ".js": "application/javascript",
+        ".json": "application/json",
+        ".xml": "application/xml",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+        ".ico": "image/x-icon",
+        ".woff": "font/woff",
+        ".woff2": "font/woff2",
+        ".ttf": "font/ttf",
+        ".eot": "application/vnd.ms-fontobject",
+        ".otf": "font/otf",
+    }
+    media_type = media_types.get(extension, "application/octet-stream")
+
+    # if a theme is given in the cookies, we adjust the html file to use that theme
+    # to prevent any flickering on the client-side
+    if requested_file.suffix == ".html" and (theme := request.cookies.get("theme")):
+        with requested_file.open("r") as f:
+            file_content = f.read()
+            file_content = re.sub(
+                r'data-theme="\w+"', f'data-theme="{theme}"', file_content, count=1
+            )
+            return StreamingResponse(
+                iter([file_content.encode("utf-8")]), media_type=media_type
+            )
+
+    else:
+        return StreamingResponse(requested_file.open("rb"), media_type=media_type)
 
 
 if __name__ == "__main__":

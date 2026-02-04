@@ -1,176 +1,70 @@
 ---
-import { getLoginTypeApiAuthTypeGet } from "@/client";
 import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
-import { ABR_APP__FORCE_LOGIN_TYPE } from "astro:env/client";
-import { getSecret } from "astro:env/server";
-import { initRootUser } from "@/lib/auth-client";
-
-const { data: loginType } = await getLoginTypeApiAuthTypeGet();
-
-if (loginType?.login_type !== "not_set") {
-    return Astro.redirect("/");
-}
-
-let forcedLoginType: "oidc" | "basic" | "forms" | "none" | null = null;
-if (
-    ABR_APP__FORCE_LOGIN_TYPE === "oidc" ||
-    ABR_APP__FORCE_LOGIN_TYPE === "basic" ||
-    ABR_APP__FORCE_LOGIN_TYPE === "forms" ||
-    ABR_APP__FORCE_LOGIN_TYPE === "none"
-) {
-    forcedLoginType = ABR_APP__FORCE_LOGIN_TYPE;
-} else if (ABR_APP__FORCE_LOGIN_TYPE) {
-    console.warn(
-        `Invalid ABR_APP__FORCE_LOGIN_TYPE value: ${ABR_APP__FORCE_LOGIN_TYPE}. Ignoring it.`,
-    );
-}
-
-const initUsername = getSecret("ABR_APP__INIT_ROOT_USERNAME");
-const initPassword = getSecret("ABR_APP__INIT_ROOT_PASSWORD");
-
-// forced oidc login type is only possible if both init username and password are given
-let error: string | null = null;
-if (forcedLoginType === "oidc") {
-    if (!initUsername || !initPassword) {
-        console.warn(
-            "Forced OIDC login type is not possible without both ABR_APP__INIT_ROOT_USERNAME",
-            "and ABR_APP__INIT_ROOT_PASSWORD being set.",
-        );
-        forcedLoginType = null;
-    } else {
-        error = await initRootUser({
-            loginType: "oidc",
-            username: initUsername,
-            password: initPassword,
-        });
-        if (!error) {
-            return Astro.redirect("/");
-        }
-    }
-} else {
-    // for the other login types, init username and password are optional, but BOTH are required if given
-    if (initUsername && initPassword) {
-        console.warn(
-            "ABR_APP__FORCE_LOGIN_TYPE is NOT set, but",
-            "both ABR_APP__INIT_ROOT_USERNAME and ABR_APP__INIT_ROOT_PASSWORD are set.",
-            "Initializing ABR with 'forms' login.",
-        );
-        error = await initRootUser({
-            loginType: forcedLoginType ?? "forms",
-            username: initUsername,
-            password: initPassword,
-        });
-        if (!error) {
-            return Astro.redirect("/");
-        }
-    } else if (initUsername || initPassword) {
-        console.warn(
-            "Only one of ABR_APP__INIT_ROOT_USERNAME and ABR_APP__INIT_ROOT_PASSWORD is set.",
-            "Ignoring both as both are required.",
-        );
-    }
-}
 ---
 
 <NoAuthLayout head={{ title: "Initialize ABR" }}>
     <div class="h-screen w-full flex flex-col items-center justify-center">
-        {
-            error ? (
-                <p class="text-error">
-                    Internal server issue: {error}. Please try again or get
-                    support on Github or on the Discord.
-                </p>
-            ) : (
-                <>
-                    <form
-                        class="flex flex-col gap-2 w-80 sm:w-120 mb-2"
-                        id="init-form"
-                    >
-                        <p class="opacity-60">
-                            No user was found in the database. Please create a
-                            root admin user to get set up. OpenID Connect can be
-                            configured later.
-                        </p>
-                        <label for="login-type">Login Type</label>
-                        <select
-                            id="login-type"
-                            name="login_type"
-                            class="select w-full"
-                            disabled={!!forcedLoginType}
-                        >
-                            <option
-                                value="basic"
-                                selected={forcedLoginType === "basic"}
-                            >
-                                Basic Auth (Dialog)
-                            </option>
-                            <option
-                                value="forms"
-                                selected={
-                                    !forcedLoginType ||
-                                    forcedLoginType === "forms"
-                                }
-                            >
-                                Forms Login
-                            </option>
-                            ;
-                            <option
-                                value="none"
-                                selected={forcedLoginType === "none"}
-                            >
-                                None (Insecure)
-                            </option>
-                        </select>
-                        {forcedLoginType && (
-                            <p class="text-xs opacity-60">
-                                Login type is forced by the environment variable
-                                <code>ABR_APP__FORCE_LOGIN_TYPE</code>.
-                            </p>
-                        )}
+        <div id="loading" class="flex flex-col items-center gap-4">
+            <span class="loading loading-spinner loading-lg"></span>
+            <p>Loading...</p>
+        </div>
+        <div id="error-container" class="hidden">
+            <p id="error-message" class="text-error"></p>
+        </div>
+        <form class="hidden flex-col gap-2 w-80 sm:w-120 mb-2" id="init-form">
+            <p class="opacity-60">
+                No user was found in the database. Please create a root admin
+                user to get set up. OpenID Connect can be configured later.
+            </p>
+            <label for="login-type">Login Type</label>
+            <select id="login-type" name="login_type" class="select w-full">
+                <option value="basic">Basic Auth (Dialog)</option>
+                <option value="forms" selected>Forms Login</option>
+                <option value="none">None (Insecure)</option>
+            </select>
+            <p id="forced-login-notice" class="text-xs opacity-60 hidden">
+                Login type is forced by the environment variable
+                <code>ABR_APP__FORCE_LOGIN_TYPE</code>.
+            </p>
 
-                        <label for="username">Username</label>
-                        <input
-                            name="username"
-                            type="text"
-                            class="input w-full"
-                            minlength="1"
-                            required
-                        />
-                        <label for="password">Password</label>
-                        <input
-                            name="password"
-                            type="password"
-                            class="input w-full"
-                            required
-                        />
-                        <label for="confirm_password">Confirm password</label>
-                        <input
-                            name="confirm_password"
-                            type="password"
-                            class="input w-full"
-                            required
-                        />
+            <label for="username">Username</label>
+            <input
+                name="username"
+                type="text"
+                class="input w-full"
+                minlength="1"
+                required
+            />
+            <label for="password">Password</label>
+            <input
+                name="password"
+                type="password"
+                class="input w-full"
+                required
+            />
+            <label for="confirm_password">Confirm password</label>
+            <input
+                name="confirm_password"
+                type="password"
+                class="input w-full"
+                required
+            />
 
-                        <button
-                            id="init-submit"
-                            class="btn btn-primary"
-                            type="submit"
-                        >
-                            Create account
-                        </button>
-                    </form>
-                    <p id="form-error" class="text-error hidden h-0" />
-                </>
-            )
-        }
+            <button id="init-submit" class="btn btn-primary" type="submit">
+                Create account
+            </button>
+        </form>
+        <p id="form-error" class="text-error hidden h-0"></p>
     </div>
 </NoAuthLayout>
 
 <script>
     import type { LoginTypeEnum } from "@/client";
     import { initRootUser } from "@/lib/auth-client";
+    import { getLoginTypeApiAuthTypeGet } from "@/client";
+    import { client } from "@/lib/client";
 
-    (() => {
+    (async () => {
         const form = document.getElementById(
             "init-form",
         ) as HTMLFormElement | null;
@@ -178,10 +72,63 @@ if (forcedLoginType === "oidc") {
         const submit = document.getElementById(
             "init-submit",
         ) as HTMLButtonElement | null;
-        if (!form || !error || !submit) {
-            console.error("Element not found", { form, error, submit });
+        const loading = document.getElementById("loading");
+        const errorContainer = document.getElementById("error-container");
+        const errorMessage = document.getElementById("error-message");
+        const loginTypeSelect = document.getElementById(
+            "login-type",
+        ) as HTMLSelectElement | null;
+        const forcedLoginNotice = document.getElementById(
+            "forced-login-notice",
+        );
+
+        if (
+            !form ||
+            !error ||
+            !submit ||
+            !loading ||
+            !errorContainer ||
+            !errorMessage ||
+            !loginTypeSelect ||
+            !forcedLoginNotice
+        ) {
+            console.error("Element not found", {
+                form,
+                error,
+                submit,
+                loading,
+                errorContainer,
+                errorMessage,
+                loginTypeSelect,
+                forcedLoginNotice,
+            });
             return;
         }
+
+        // Check if init is needed
+        const { data: loginTypeData, error: loginTypeError } =
+            await getLoginTypeApiAuthTypeGet({ client });
+
+        if (loginTypeError) {
+            loading.classList.add("hidden");
+            errorContainer.classList.remove("hidden");
+            const detail = (loginTypeError as any)?.detail;
+            errorMessage.innerText =
+                "Failed to access the backend API: " +
+                (detail ? String(detail) : "Unknown error");
+            return;
+        }
+
+        // If login type is already set, redirect to home
+        if (loginTypeData?.login_type !== "not_set") {
+            window.location.href = "/";
+            return;
+        }
+
+        // Show the form
+        loading.classList.add("hidden");
+        form.classList.remove("hidden");
+        form.classList.add("flex");
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();

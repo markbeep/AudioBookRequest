@@ -1,96 +1,55 @@
 ---
 import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
-
-let backup = ["1", "true"].includes(
-    Astro.url.searchParams.get("backup")?.toLowerCase() ?? "0",
-);
-const redirectUri = Astro.url.searchParams.get("redirect_uri") ?? "/";
-
-let error: string | null = null;
-switch (Astro.locals.loginType) {
-    case "basic":
-    case "none":
-        return Astro.redirect(redirectUri);
-    case "forms":
-        backup = false;
-        break;
-    case "oidc":
-        if (!backup) {
-            return Astro.redirect(
-                `/auth/oidc/login?redirect_uri=${encodeURIComponent(redirectUri)}`,
-            );
-        }
-        break;
-    case "not_set":
-        console.log("Login type not set, redirecting to init");
-        return Astro.redirect("/auth/init");
-    default:
-        error = "Failed to access the backend API.";
-}
 ---
 
 <NoAuthLayout head={{ title: "Login" }}>
     <div class="h-screen w-full flex flex-col items-center justify-center">
         <h1 class="text-4xl font-bold mb-8">AudioBookRequest</h1>
-        {
-            error ? (
-                <p class="text-error">Internal server issue: {error}</p>
-            ) : (
-                <>
-                    <form
-                        id="login-form"
-                        class="flex flex-col gap-2 w-80 sm:w-120 px-4 mb-2"
-                    >
-                        <input
-                            type="hidden"
-                            name="redirect_uri"
-                            value={redirectUri}
-                        />
-                        {backup ? (
-                            <>
-                                <h1 class="text-xl">Backup Login</h1>
-                                <p class="text-error">
-                                    This instance has OIDC enabled. This login
-                                    can only be used by the root admin.
-                                </p>
-                            </>
-                        ) : (
-                            <h1 class="text-xl">Login</h1>
-                        )}
-                        <label for="username">Username</label>
-                        <input
-                            name="username"
-                            type="text"
-                            class="input w-full"
-                            required
-                        />
-                        <label for="password">Password</label>
-                        <input
-                            name="password"
-                            type="password"
-                            class="input w-full"
-                            required
-                        />
-                        <button
-                            id="login-submit"
-                            class="btn btn-primary"
-                            type="submit"
-                        >
-                            Login
-                        </button>
-                    </form>
-                    <p id="form-error" class="text-error hidden h-0" />
-                </>
-            )
-        }
+        <div id="loading" class="flex flex-col items-center gap-4">
+            <span class="loading loading-spinner loading-lg"></span>
+            <p>Loading...</p>
+        </div>
+        <div id="error-container" class="hidden">
+            <p id="error-message" class="text-error"></p>
+        </div>
+        <form
+            id="login-form"
+            class="hidden flex-col gap-2 w-80 sm:w-120 px-4 mb-2"
+        >
+            <input type="hidden" name="redirect_uri" id="redirect_uri" />
+            <div id="backup-notice" class="hidden">
+                <h1 class="text-xl">Backup Login</h1>
+                <p class="text-error">
+                    This instance has OIDC enabled. This login can only be used
+                    by the root admin.
+                </p>
+            </div>
+            <h1 id="login-title" class="text-xl">Login</h1>
+            <label for="username">Username</label>
+            <input name="username" type="text" class="input w-full" required />
+            <label for="password">Password</label>
+            <input
+                name="password"
+                type="password"
+                class="input w-full"
+                required
+            />
+            <button id="login-submit" class="btn btn-primary" type="submit">
+                Login
+            </button>
+        </form>
+        <p id="form-error" class="text-error hidden h-0"></p>
     </div>
 </NoAuthLayout>
 
 <script>
-    import { loginAccessTokenApiAuthTokenPost } from "@/client";
+    import {
+        loginAccessTokenApiAuthTokenPost,
+        getLoginTypeApiAuthTypeGet,
+    } from "@/client";
     import { client } from "@/lib/client";
 
-    (() => {
+    (async () => {
         const form = document.getElementById(
             "login-form",
         ) as HTMLFormElement | null;
@@ -98,11 +57,91 @@ switch (Astro.locals.loginType) {
         const submit = document.getElementById(
             "login-submit",
         ) as HTMLButtonElement | null;
-        if (!form || !error || !submit) {
-            console.error("Element not found", { form, error, submit });
+        const loading = document.getElementById("loading");
+        const errorContainer = document.getElementById("error-container");
+        const errorMessage = document.getElementById("error-message");
+        const backupNotice = document.getElementById("backup-notice");
+        const loginTitle = document.getElementById("login-title");
+        const redirectUriInput = document.getElementById(
+            "redirect_uri",
+        ) as HTMLInputElement | null;
+
+        if (
+            !form ||
+            !error ||
+            !submit ||
+            !loading ||
+            !errorContainer ||
+            !errorMessage ||
+            !backupNotice ||
+            !loginTitle ||
+            !redirectUriInput
+        ) {
+            console.error("Element not found", {
+                form,
+                error,
+                submit,
+                loading,
+                errorContainer,
+                errorMessage,
+                backupNotice,
+                loginTitle,
+                redirectUriInput,
+            });
             return;
         }
 
+        // Get URL parameters
+        const url = new URL(window.location.href);
+        const backup = ["1", "true"].includes(
+            url.searchParams.get("backup")?.toLowerCase() ?? "0",
+        );
+        const redirectUri = url.searchParams.get("redirect_uri") ?? "/";
+        redirectUriInput.value = redirectUri;
+
+        // Check login type
+        const { data: loginTypeData, error: loginTypeError } =
+            await getLoginTypeApiAuthTypeGet({ client });
+
+        if (loginTypeError) {
+            loading.classList.add("hidden");
+            errorContainer.classList.remove("hidden");
+            const detail = (loginTypeError as any)?.detail;
+            errorMessage.innerText =
+                "Failed to access the backend API: " +
+                (detail ? String(detail) : "Unknown error");
+            return;
+        }
+
+        const loginType = loginTypeData?.login_type;
+
+        // Handle different login types
+        if (loginType === "not_set") {
+            window.location.href = "/auth/init";
+            return;
+        }
+
+        if (loginType === "basic" || loginType === "none") {
+            window.location.href = redirectUri;
+            return;
+        }
+
+        if (loginType === "oidc" && !backup) {
+            window.location.href = `/auth/oidc/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
+            return;
+        }
+
+        // Show the form for forms login or backup OIDC login
+        loading.classList.add("hidden");
+        form.classList.remove("hidden");
+        form.classList.add("flex");
+
+        if (backup && loginType === "oidc") {
+            backupNotice.classList.remove("hidden");
+            loginTitle.classList.add("hidden");
+        }
+
+        // Handle form submission
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
@@ -116,11 +155,8 @@ switch (Astro.locals.loginType) {
             const password = form.elements.namedItem(
                 "password",
             ) as HTMLInputElement | null;
-            const redirectUri = form.elements.namedItem(
-                "redirect_uri",
-            ) as HTMLInputElement | null;
 
-            if (!username || !password || !redirectUri) {
+            if (!username || !password) {
                 console.error("Form element not found", {
                     username,
                     password,
@@ -133,29 +169,24 @@ switch (Astro.locals.loginType) {
                 return;
             }
 
-            const { error: errorObj, request } =
-                await loginAccessTokenApiAuthTokenPost({
-                    client,
-                    body: {
-                        username: username.value,
-                        password: password.value,
-                    },
-                });
+            const { error: errorObj } = await loginAccessTokenApiAuthTokenPost({
+                client,
+                body: {
+                    username: username.value,
+                    password: password.value,
+                },
+            });
 
             if (errorObj) {
                 const errorMessage =
                     errorObj instanceof Error
                         ? errorObj.message
-                        : JSON.stringify(error);
+                        : JSON.stringify(errorObj);
                 error.innerText = errorMessage;
                 error.classList.remove("hidden");
                 submit.disabled = false;
             } else {
-                if (redirectUri.value) {
-                    window.location.href = redirectUri.value;
-                } else {
-                    window.location.href = "/";
-                }
+                window.location.href = redirectUri;
             }
         });
     })();

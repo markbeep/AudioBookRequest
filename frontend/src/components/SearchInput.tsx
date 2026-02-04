@@ -1,6 +1,6 @@
 import { searchSuggestionsApiSearchSuggestionsGet } from "@/client";
-import { regions, type Region } from "@/types/region";
-import { useState } from "preact/hooks";
+import { regions, type Region, isRegion } from "@/types/region";
+import { useState, useEffect } from "preact/hooks";
 
 export interface SearchInputProps {
   searchTerm?: string;
@@ -16,6 +16,21 @@ export default function SearchInput({
   const [selectedRegion, setSelectedRegion] = useState<Region>(
     initialRegion ?? "us",
   );
+
+  // Read URL parameters on mount
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const urlSearchTerm = url.searchParams.get("q") || "";
+    const urlRegion = url.searchParams.get("region") || "us";
+
+    if (urlSearchTerm) {
+      setSearch(urlSearchTerm);
+    }
+
+    if (isRegion(urlRegion)) {
+      setSelectedRegion(urlRegion);
+    }
+  }, []);
 
   const onInput = async (e: Event) => {
     const target = e.target as HTMLInputElement;
