@@ -1,0 +1,13 @@
+---
+import SettingsLayout from "@/layouts/SettingsLayout.astro";
+import SettingsComponent from "@/components/Settings";
+---
+
+<SettingsLayout
+    head={{
+        title: "Settings",
+        description: "Manage your AudioBookRequest settings and preferences",
+    }}
+>
+    <SettingsComponent client:load />
+</SettingsLayout>

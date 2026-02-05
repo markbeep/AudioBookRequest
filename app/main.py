@@ -170,10 +170,8 @@ async def astro_files(
         user = await AnyAuth(auto_error=False)(request, session)
         relative_path = requested_path.relative_to(frontend_path)
         if not user:
-            if (
-                not relative_path.parts
-                and relative_path.parts[0] != "login"
-                and relative_path.parts[0] != "init"
+            if not relative_path.parts or (
+                relative_path.parts[0] != "login" and relative_path.parts[0] != "init"
             ):
                 return RedirectResponse("/login")
 
