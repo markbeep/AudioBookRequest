@@ -61,8 +61,7 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
 <script>
     import type { LoginTypeEnum } from "@/client";
     import { initRootUser } from "@/lib/auth-client";
-    import { getLoginTypeApiAuthTypeGet } from "@/client";
-    import { client } from "@/lib/client";
+    import { getLoginTypeAuthTypeGet } from "@/client";
 
     (async () => {
         const form = document.getElementById(
@@ -107,7 +106,7 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
 
         // Check if init is needed
         const { data: loginTypeData, error: loginTypeError } =
-            await getLoginTypeApiAuthTypeGet({ client });
+            await getLoginTypeAuthTypeGet();
 
         if (loginTypeError) {
             loading.classList.add("hidden");

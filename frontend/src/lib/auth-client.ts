@@ -1,12 +1,11 @@
 import {
-  createInitApiAuthInitPost,
-  logoutApiAuthLogoutPost,
+  createInitAuthInitPost,
+  logoutAuthLogoutPost,
   type LoginTypeEnum,
 } from "@/client";
-import { client } from "@/lib/client";
 
 export async function signOut() {
-  const { data } = await logoutApiAuthLogoutPost({ client });
+  const { data } = await logoutAuthLogoutPost();
 
   // Clear all cookies
   document.cookie.split(";").forEach((cookie) => {
@@ -44,8 +43,7 @@ export async function initRootUser({
   username: string;
   password: string;
 }): Promise<string | null> {
-  const { error } = await createInitApiAuthInitPost({
-    client,
+  const { error } = await createInitAuthInitPost({
     body: {
       login_type: loginType,
       username,

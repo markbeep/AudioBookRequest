@@ -21,7 +21,7 @@ from app.internal.auth.session_middleware import (
 from app.internal.book_search import clear_old_book_caches
 from app.internal.env_settings import Settings
 from app.internal.models import User
-from app.routers import api
+from app.routers import api, auth
 from app.util.db import get_session
 from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse
@@ -46,6 +46,7 @@ app = FastAPI(
 )
 
 app.include_router(api.router)
+app.include_router(auth.router)
 
 user_exists = False
 

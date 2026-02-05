@@ -16,6 +16,7 @@ from fastapi import (
     Security,
     status,
 )
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -72,15 +73,15 @@ async def login(
         pass
 
     if login_type != LoginTypeEnum.oidc or backup:
-        return templates.TemplateResponse(
-            "login.html",
-            {
-                "request": request,
-                "hide_navbar": True,
-                "redirect_uri": redirect_uri,
-                "backup": backup,
-            },
-        )
+        path = "/login"
+        params: dict[str, str] = {}
+        if backup:
+            params["backup"] = "true"
+        if redirect_uri != "/":
+            params["redirect_uri"] = redirect_uri
+        if params:
+            path += "?" + urlencode(params)
+        return RedirectResponse(path)
 
     authorize_endpoint = oidc_config.get(session, "oidc_authorize_endpoint")
     client_id = oidc_config.get(session, "oidc_client_id")

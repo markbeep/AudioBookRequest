@@ -155,14 +155,11 @@ const { version = "local", showNavbar = true, head } = Astro.props;
 
 <script>
     import { signOut } from "@/lib/auth-client";
-    import { getLoginTypeApiAuthTypeGet } from "@/client";
-    import { client } from "@/lib/client";
+    import { getLoginTypeAuthTypeGet } from "@/client";
 
     // Check login type and show logout button if needed
     (async () => {
-        const { data: loginTypeData } = await getLoginTypeApiAuthTypeGet({
-            client,
-        });
+        const { data: loginTypeData } = await getLoginTypeAuthTypeGet();
         const loginType = loginTypeData?.login_type;
         const canLogout = loginType === "forms" || loginType === "oidc";
 

@@ -16,7 +16,6 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
             id="login-form"
             class="hidden flex-col gap-2 w-80 sm:w-120 px-4 mb-2"
         >
-            <input type="hidden" name="redirect_uri" id="redirect_uri" />
             <div id="backup-notice" class="hidden">
                 <h1 class="text-xl">Backup Login</h1>
                 <p class="text-error">
@@ -44,28 +43,24 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
 
 <script>
     import {
-        loginAccessTokenApiAuthTokenPost,
-        getLoginTypeApiAuthTypeGet,
+        getLoginTypeAuthTypeGet,
+        loginAccessTokenAuthTokenPost,
     } from "@/client";
-    import { client } from "@/lib/client";
+
+    const form = document.getElementById(
+        "login-form",
+    ) as HTMLFormElement | null;
+    const error = document.getElementById("form-error");
+    const submit = document.getElementById(
+        "login-submit",
+    ) as HTMLButtonElement | null;
+    const loading = document.getElementById("loading");
+    const errorContainer = document.getElementById("error-container");
+    const errorMessage = document.getElementById("error-message");
+    const backupNotice = document.getElementById("backup-notice");
+    const loginTitle = document.getElementById("login-title");
 
     (async () => {
-        const form = document.getElementById(
-            "login-form",
-        ) as HTMLFormElement | null;
-        const error = document.getElementById("form-error");
-        const submit = document.getElementById(
-            "login-submit",
-        ) as HTMLButtonElement | null;
-        const loading = document.getElementById("loading");
-        const errorContainer = document.getElementById("error-container");
-        const errorMessage = document.getElementById("error-message");
-        const backupNotice = document.getElementById("backup-notice");
-        const loginTitle = document.getElementById("login-title");
-        const redirectUriInput = document.getElementById(
-            "redirect_uri",
-        ) as HTMLInputElement | null;
-
         if (
             !form ||
             !error ||
@@ -74,8 +69,7 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
             !errorContainer ||
             !errorMessage ||
             !backupNotice ||
-            !loginTitle ||
-            !redirectUriInput
+            !loginTitle
         ) {
             console.error("Element not found", {
                 form,
@@ -86,7 +80,6 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
                 errorMessage,
                 backupNotice,
                 loginTitle,
-                redirectUriInput,
             });
             return;
         }
@@ -97,11 +90,10 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
             url.searchParams.get("backup")?.toLowerCase() ?? "0",
         );
         const redirectUri = url.searchParams.get("redirect_uri") ?? "/";
-        redirectUriInput.value = redirectUri;
 
         // Check login type
         const { data: loginTypeData, error: loginTypeError } =
-            await getLoginTypeApiAuthTypeGet({ client });
+            await getLoginTypeAuthTypeGet();
 
         if (loginTypeError) {
             loading.classList.add("hidden");
@@ -117,7 +109,7 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
 
         // Handle different login types
         if (loginType === "not_set") {
-            window.location.href = "/auth/init";
+            window.location.href = "/init";
             return;
         }
 
@@ -127,7 +119,7 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
         }
 
         if (loginType === "oidc" && !backup) {
-            window.location.href = `/auth/oidc/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
+            window.location.href = `/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
             return;
         }
 
@@ -169,8 +161,7 @@ import NoAuthLayout from "@/layouts/NoAuthLayout.astro";
                 return;
             }
 
-            const { error: errorObj } = await loginAccessTokenApiAuthTokenPost({
-                client,
+            const { error: errorObj } = await loginAccessTokenAuthTokenPost({
                 body: {
                     username: username.value,
                     password: password.value,

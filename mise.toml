@@ -7,4 +7,4 @@ uv = "latest"
 watchexec = "latest"
 
 [tasks.build]
-run = "just build"
+run = "just astro-build"
