@@ -15,7 +15,7 @@ from sqlmodel import Session, col, not_, select
 from app.internal.audiobookshelf.client import abs_mark_downloaded_flags
 from app.internal.audiobookshelf.config import abs_config
 from app.internal.env_settings import Settings
-from app.internal.models import Audiobook, AudiobookRequest, User
+from app.internal.models import Audiobook, AudiobookRequest, LibraryImportItem, User
 from app.util.connection import USER_AGENT
 from app.util.log import logger
 
@@ -76,12 +76,28 @@ def _normalize_series(series_list: list[str] | None) -> tuple[list[str], str | N
 
 def clear_old_book_caches(session: Session):
     """Deletes outdated cached audiobooks that haven't been requested by anyone"""
-    delete_query = delete(Audiobook).where(
-        col(Audiobook.updated_at) < datetime.fromtimestamp(time.time() - REFETCH_TTL),
-        col(Audiobook.asin).not_in(select(col(AudiobookRequest.asin).distinct())),
+    stale_cutoff = datetime.fromtimestamp(time.time() - REFETCH_TTL)
+    deletable_asins = select(col(Audiobook.asin)).where(
+        col(Audiobook.updated_at) < stale_cutoff,
         not_(Audiobook.downloaded),
+        not_(
+            select(AudiobookRequest.asin)
+            .where(AudiobookRequest.asin == Audiobook.asin)
+            .exists()
+        ),
+        not_(
+            select(LibraryImportItem.match_asin)
+            .where(LibraryImportItem.match_asin == Audiobook.asin)
+            .exists()
+        ),
     )
-    result = cast(CursorResult[Audiobook], session.execute(delete_query))
+
+    result = cast(
+        CursorResult[Audiobook],
+        session.execute(
+            delete(Audiobook).where(col(Audiobook.asin).in_(deletable_asins))
+        ),
+    )
     session.commit()
     logger.debug("Cleared old book caches", rowcount=result.rowcount)
 
