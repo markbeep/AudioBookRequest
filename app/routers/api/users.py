@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, func, select
 
 from app.internal.auth.authentication import (
-    APIKeyAuth,
+    AnyAuth,
     DetailedUser,
     create_user,
     raise_for_invalid_password,
@@ -56,7 +56,7 @@ class UsersListResponse(BaseModel):
 @router.get("/", response_model=UsersListResponse)
 def list_users(
     session: Annotated[Session, Depends(get_session)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
     limit: Annotated[
         int, Query(ge=1, le=100, description="Maximum number of users to return")
     ] = 50,
@@ -79,7 +79,7 @@ def list_users(
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user(
-    current_user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    current_user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     """
     Returns information about the user associated with the provided API key.
@@ -93,7 +93,7 @@ def get_current_user(
 def get_user(
     username: str,
     session: Annotated[Session, Depends(get_session)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     """
     Returns detailed information about the specified user.
@@ -114,7 +114,7 @@ def get_user(
 def create_new_user(
     user_data: UserCreate,
     session: Annotated[Session, Depends(get_session)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     """
     Creates a new user with the specified username, password, and group.
@@ -153,7 +153,7 @@ def create_new_user(
 
 @router.put("/{username}", response_model=UserResponse)
 def update_user(
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
     session: Annotated[Session, Depends(get_session)],
     username: str,
     user_data: UserUpdate,
@@ -213,7 +213,7 @@ def update_user(
 def delete_user(
     username: str,
     session: Annotated[Session, Depends(get_session)],
-    current_user: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    current_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     """
     Permanently removes the specified user from the system.

@@ -5,7 +5,7 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, Security
 from sqlmodel import Session
 
-from app.internal.auth.authentication import APIKeyAuth, DetailedUser
+from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.indexers.indexer_util import (
     get_indexer_contexts,
@@ -28,7 +28,7 @@ async def update_indexer(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     """
     Update values of an indexer. The body needs to be a key-value mapping of the configuration values to update.
@@ -75,7 +75,7 @@ class StringConfigurationResponse(BaseSQLModel):
 async def get_indexer_configurations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     contexts = await get_indexer_contexts(
         SessionContainer(session=session, client_session=client_session),

@@ -4,7 +4,7 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Query, Security
 from sqlmodel import Session
 
-from app.internal.auth.authentication import APIKeyAuth, DetailedUser
+from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.book_search import audible_region_type, get_region_from_settings
 from app.internal.models import Audiobook
 from app.internal.recommendations.audible import (
@@ -31,7 +31,7 @@ router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 async def get_user_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     seed_asins: Annotated[list[str] | None, Query(alias="seed_asins")] = None,
     limit: int = 20,
     offset: int = 0,
@@ -50,7 +50,7 @@ async def get_user_recommendations(
 @router.get("/popular", response_model=list[AudiobookPopularity])
 async def get_popular_recommendations(
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     min_requests: int = 1,
     limit: int = 10,
     exclude_downloaded: bool = True,
@@ -67,7 +67,7 @@ async def get_popular_recommendations(
 @router.get("/recent", response_model=Sequence[Audiobook])
 async def get_recently_requested_recommendations(
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     limit: int = 10,
     days_back: int = 30,
     exclude_downloaded: bool = True,
@@ -85,7 +85,7 @@ async def get_recently_requested_recommendations(
 async def get_fallback_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     limit: int = 10,
     audible_region: audible_region_type | None = None,
 ) -> list[Audiobook]:
@@ -118,7 +118,7 @@ async def get_fallback_recommendations(
 async def get_category_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     audible_region: audible_region_type | None = None,
 ) -> dict[str, list[Audiobook]]:
     """Get recommendations by popular categories from Audible search."""
@@ -138,7 +138,7 @@ async def get_category_recommendations(
 async def get_popular_authors_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     limit: int = 10,
     exclude_downloaded: bool = True,
     audible_region: audible_region_type | None = None,
@@ -166,7 +166,7 @@ async def get_popular_authors_recommendations(
 async def get_popular_narrators_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     limit: int = 10,
     exclude_downloaded: bool = True,
     audible_region: audible_region_type | None = None,
