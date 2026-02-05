@@ -1,0 +1,17 @@
+---
+import SettingsLayout from "@/layouts/SettingsLayout.astro";
+import NotificationsSettingsComponent from "@/components/NotificationsSettings";
+---
+
+<SettingsLayout
+    activePage="notifications"
+    head={{
+        title: "Settings - Notifications",
+        description: "Manage notification settings for AudioBookRequest",
+    }}
+>
+    <div class="flex flex-col">
+        <h2 class="text-lg mb-4">Notification Settings</h2>
+        <NotificationsSettingsComponent client:load />
+    </div>
+</SettingsLayout>

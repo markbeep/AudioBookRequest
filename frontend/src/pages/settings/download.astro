@@ -1,0 +1,18 @@
+---
+import SettingsLayout from "@/layouts/SettingsLayout.astro";
+import DownloadSettingsComponent from "@/components/DownloadSettings";
+---
+
+<SettingsLayout
+    activePage="download"
+    head={{
+        title: "Settings - Download",
+        description:
+            "Manage download and quality settings for AudioBookRequest",
+    }}
+>
+    <div class="flex flex-col">
+        <h2 class="text-lg mb-4">Download Settings</h2>
+        <DownloadSettingsComponent client:load />
+    </div>
+</SettingsLayout>

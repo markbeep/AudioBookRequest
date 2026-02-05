@@ -1,0 +1,18 @@
+---
+import SettingsLayout from "@/layouts/SettingsLayout.astro";
+import AudiobookshelfSettingsComponent from "@/components/AudiobookshelfSettings";
+---
+
+<SettingsLayout
+    activePage="audiobookshelf"
+    head={{
+        title: "Settings - Audiobookshelf",
+        description:
+            "Manage Audiobookshelf integration settings for AudioBookRequest",
+    }}
+>
+    <div class="flex flex-col">
+        <h2 class="text-lg mb-4">Audiobookshelf Settings</h2>
+        <AudiobookshelfSettingsComponent client:load />
+    </div>
+</SettingsLayout>

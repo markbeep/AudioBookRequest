@@ -1,17 +1,21 @@
 import os
 import re
 from pathlib import Path
-from typing import Awaitable, Callable
+from typing import Annotated, Awaitable, Callable
 from urllib.parse import quote_plus, urlencode
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware import Middleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func
-from sqlmodel import select
+from sqlmodel import Session, select
+from starlette.responses import RedirectResponse
 
-from app.internal.auth.authentication import RequiresLoginException
+from app.internal.auth.authentication import (
+    AnyAuth,
+    RequiresLoginException,
+)
 from app.internal.auth.config import auth_config, initialize_force_login_type
 from app.internal.auth.oidc_config import InvalidOIDCConfiguration
 from app.internal.auth.session_middleware import (
@@ -109,7 +113,11 @@ async def redirect_to_init(
 
 
 @app.get("{file_path:path}", include_in_schema=False)
-async def astro_files(request: Request, file_path: str):
+async def astro_files(
+    request: Request,
+    file_path: str,
+    session: Annotated[Session, Depends(get_session)],
+):
     # -----------------------------------------
     # | Prevent directory traversal.          |
     # | Frontend directory HAS to be          |
@@ -155,9 +163,23 @@ async def astro_files(request: Request, file_path: str):
     }
     media_type = media_types.get(extension, "application/octet-stream")
 
-    # if a theme is given in the cookies, we adjust the html file to use that theme
+    # If viewing a page, check if authenticated.
+    # Otherwise directly redirect. Helps redirect users
+    # to login before the client side fetches start failing
+    if media_type == "text/html":
+        user = await AnyAuth(auto_error=False)(request, session)
+        relative_path = requested_path.relative_to(frontend_path)
+        if not user:
+            if (
+                not relative_path.parts
+                and relative_path.parts[0] != "login"
+                and relative_path.parts[0] != "init"
+            ):
+                return RedirectResponse("/login")
+
+    # If a theme is given in the cookies, we adjust the html file to use that theme
     # to prevent any flickering on the client-side
-    if requested_file.suffix == ".html" and (theme := request.cookies.get("theme")):
+    if media_type == "text/html" and (theme := request.cookies.get("theme")):
         with requested_file.open("r") as f:
             file_content = f.read()
             file_content = re.sub(

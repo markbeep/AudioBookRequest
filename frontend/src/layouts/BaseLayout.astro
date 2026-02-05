@@ -10,7 +10,6 @@ import SettingsIcon from "@/components/icons/Settings.astro";
 import { base } from "@/lib/base";
 
 interface Props {
-    version?: string;
     showNavbar?: boolean;
     head?: {
         title?: string;
@@ -18,8 +17,9 @@ interface Props {
         keywords?: string;
     };
 }
+const { showNavbar = true, head } = Astro.props;
 
-const { version = "local", showNavbar = true, head } = Astro.props;
+const version = import.meta.env.VERSION || "local";
 ---
 
 <!doctype html>

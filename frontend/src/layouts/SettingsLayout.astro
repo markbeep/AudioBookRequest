@@ -1,0 +1,148 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { base } from "@/lib/base";
+import Changelog from "@/../../CHANGELOG.md";
+
+interface Props {
+    activePage?: string;
+    head?: {
+        title?: string;
+        description?: string;
+        keywords?: string;
+    };
+}
+
+const { activePage = "", head } = Astro.props;
+
+const version = import.meta.env.VERSION || "local";
+---
+
+<BaseLayout head={head}>
+    <button
+        id="version-button"
+        class="fixed bottom-4 right-4 font-mono text-xs font-semibold text-neutral/80 dark:text-neutral-content/80 underline cursor-pointer z-50"
+        title="Changelog"
+    >
+        version: {version}
+    </button>
+    <dialog id="changelog_modal" class="modal">
+        <div class="modal-box changelog max-h-[80vh] overflow-y-auto">
+            <Changelog />
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
+    </dialog>
+
+    <div class="flex items-start justify-center p-2 md:p-4 relative">
+        <main
+            class="flex flex-col w-[90%] md:w-3/4 max-w-160 gap-4 gap-y-8 pb-40"
+        >
+            <div role="tablist" class="tabs tabs-boxed">
+                <a
+                    href={base("/settings/account")}
+                    role="tab"
+                    class:list={[
+                        "tab",
+                        { "tab-active": activePage === "account" },
+                    ]}
+                >
+                    Account
+                </a>
+                <a
+                    href={base("/settings/prowlarr")}
+                    role="tab"
+                    class:list={[
+                        "tab",
+                        { "tab-active": activePage === "prowlarr" },
+                    ]}
+                >
+                    Prowlarr
+                </a>
+                <a
+                    href={base("/settings/audiobookshelf")}
+                    role="tab"
+                    class:list={[
+                        "tab",
+                        { "tab-active": activePage === "audiobookshelf" },
+                    ]}
+                >
+                    Audiobookshelf
+                </a>
+                <a
+                    href={base("/settings/download")}
+                    role="tab"
+                    class:list={[
+                        "tab",
+                        { "tab-active": activePage === "download" },
+                    ]}
+                >
+                    Download
+                </a>
+                <a
+                    href={base("/settings/notifications")}
+                    role="tab"
+                    class:list={[
+                        "tab",
+                        { "tab-active": activePage === "notifications" },
+                    ]}
+                >
+                    Notifications
+                </a>
+                <a
+                    href={base("/settings/security")}
+                    role="tab"
+                    class:list={[
+                        "tab",
+                        { "tab-active": activePage === "security" },
+                    ]}
+                >
+                    Security
+                </a>
+            </div>
+
+            <slot />
+        </main>
+    </div>
+</BaseLayout>
+
+<script>
+    // Changelog modal handler
+    const versionButton = document.getElementById("version-button");
+    const changelogModal = document.getElementById(
+        "changelog_modal",
+    ) as HTMLDialogElement;
+
+    if (versionButton && changelogModal) {
+        versionButton.addEventListener("click", () => {
+            changelogModal.showModal();
+        });
+    }
+</script>
+
+<style>
+    @reference "@/styles/tw.css"
+
+    .changelog {
+        font-family: ui-monospace, monospace;
+    }
+
+    .changelog > h1 {
+        @apply text-2xl font-bold mb-4;
+    }
+    .changelog > h2 {
+        @apply text-xl font-semibold mt-8 mb-2;
+    }
+    .changelog > h3 {
+        @apply font-semibold mt-2 mb-1;
+    }
+    .changelog > ul {
+        @apply list-disc pl-5 mb-2;
+    }
+    .changelog > ul > li {
+        @apply mb-1 text-sm;
+    }
+    .changelog a {
+        @apply underline;
+    }
+</style>

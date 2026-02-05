@@ -1,0 +1,18 @@
+---
+import SettingsLayout from "@/layouts/SettingsLayout.astro";
+import ProwlarrSettingsComponent from "@/components/ProwlarrSettings";
+---
+
+<SettingsLayout
+    activePage="prowlarr"
+    head={{
+        title: "Settings - Prowlarr",
+        description:
+            "Manage Prowlarr integration settings for AudioBookRequest",
+    }}
+>
+    <div class="flex flex-col">
+        <h2 class="text-lg mb-4">Prowlarr Settings</h2>
+        <ProwlarrSettingsComponent client:load />
+    </div>
+</SettingsLayout>

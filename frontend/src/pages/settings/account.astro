@@ -1,0 +1,18 @@
+---
+import SettingsLayout from "@/layouts/SettingsLayout.astro";
+import AccountSettingsComponent from "@/components/AccountSettings";
+---
+
+<SettingsLayout
+    activePage="account"
+    head={{
+        title: "Settings - Account",
+        description:
+            "Manage your account settings, password, and API keys for AudioBookRequest",
+    }}
+>
+    <div class="flex flex-col">
+        <h2 class="text-lg mb-4">Account Settings</h2>
+        <AccountSettingsComponent client:load />
+    </div>
+</SettingsLayout>
