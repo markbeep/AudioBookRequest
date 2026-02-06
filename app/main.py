@@ -77,7 +77,7 @@ async def redirect_to_login(request: Request, exc: RequiresLoginException):
 @app.exception_handler(InvalidOIDCConfiguration)
 async def redirect_to_invalid_oidc(request: Request, exc: InvalidOIDCConfiguration):
     _ = request
-    path = "/auth/invalid-oidc"
+    path = "/auth/oidc/invalid"
     if exc.detail:
         path += f"?error={quote_plus(exc.detail)}"
     if request.headers.get("HX-Request"):
@@ -88,7 +88,7 @@ async def redirect_to_invalid_oidc(request: Request, exc: InvalidOIDCConfigurati
 @app.exception_handler(ProwlarrMisconfigured)
 async def redirect_to_invalid_prowlarr(request: Request, exc: ProwlarrMisconfigured):
     _ = exc
-    path = "/settings/invalid-oidc?prowlarr_misconfigured=true"
+    path = "/settings/invalid?prowlarr_misconfigured=true"
     if request.headers.get("HX-Request"):
         return Response(status_code=400, headers={"HX-Redirect": path})
     return BaseUrlRedirectResponse(path)

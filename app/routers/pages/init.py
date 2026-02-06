@@ -40,7 +40,7 @@ def read_init(session: Annotated[Session, Depends(get_session)]):
             username=init_username,
             login_type=login_type,
         )
-        if not login_type:
+        if login_type is None:
             logger.warning(
                 "No login type set. Defaulting to 'forms'.", username=init_username
             )
@@ -50,7 +50,10 @@ def read_init(session: Annotated[Session, Depends(get_session)]):
         session.add(user)
         auth_config.set_login_type(session, login_type)
         session.commit()
-        return BaseUrlRedirectResponse("/")
+        if login_type == LoginTypeEnum.oidc:
+            return BaseUrlRedirectResponse("/login?backup=1")
+        else:
+            return BaseUrlRedirectResponse("/login")
 
     elif init_username or init_password:
         logger.warning(
