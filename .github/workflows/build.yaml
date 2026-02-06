@@ -10,6 +10,15 @@ on:
       - "uv.lock"
       - "package-lock.json"
       - "Dockerfile"
+  pull_request:
+    paths:
+      - "**.py"
+      - "**.html"
+      - "**.css"
+      - "**.yaml"
+      - "uv.lock"
+      - "package-lock.json"
+      - "Dockerfile"
   release:
     types: [created]
 
