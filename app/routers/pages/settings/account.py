@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Security
 from sqlmodel import Session, select
 
 from app.internal.auth.authentication import ABRAuth, DetailedUser
+from app.internal.auth.config import auth_config
+from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.models import APIKey
 from app.routers.api.settings.account import ChangePasswordRequest, CreateAPIKeyRequest
 from app.routers.api.settings.account import change_password as api_change_password
@@ -28,10 +30,16 @@ def read_account(
     api_keys = session.exec(
         select(APIKey).where(APIKey.user_username == user.username)
     ).all()
+    login_type = auth_config.get_login_type(session)
+    if login_type == LoginTypeEnum.forms or login_type == LoginTypeEnum.basic:
+        allow_password_change = True
+    else:
+        allow_password_change = False
     return catalog_response(
         "Settings.Account.Index",
         user=user,
         api_keys=api_keys,
+        allow_password_change=allow_password_change,
     )
 
 
@@ -43,6 +51,10 @@ def change_password(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
+    login_type = auth_config.get_login_type(session)
+    if not (login_type == LoginTypeEnum.forms or login_type == LoginTypeEnum.basic):
+        raise HTTPException(400, "Password change not allowed for current login type")
+
     api_change_password(
         ChangePasswordRequest(
             old_password=old_password,

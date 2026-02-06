@@ -1,12 +1,15 @@
 {#def
     user: DetailedUser,
     api_keys: Sequence[APIKey],
+    allow_password_change: bool,
 #}
 
 <SettingsLayout user={{ user }} page="account" title="Settings - Account">
 <div class="flex flex-col gap-6">
-    <Settings.Account.ChangePassword />
-    <hr class="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded-sm md:my-10 dark:bg-gray-700">
+    {% if allow_password_change %}
+        <Settings.Account.ChangePassword />
+        <hr class="w-48 h-1 mx-auto my-4 bg-gray-100 border-0 rounded-sm md:my-10 dark:bg-gray-700">
+    {% endif %}
     <Settings.Account.APIKeys init api_keys={{ api_keys }} />
 </div>
 </SettingsLayout>
