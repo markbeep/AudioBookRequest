@@ -1,0 +1,39 @@
+{#def
+    user: DetailedUser,
+    auto_download: bool,
+    region_tld: str,
+    show_popular: bool, # no need to show popular if sole user with requests
+#}
+
+<BaseLayout title="AudioBookRequest" user={{ user }}>
+<div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-6">
+    <!-- Welcome Header -->
+    <div class="w-full max-w-7xl">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-4xl font-bold text-left">
+                    Welcome, {{ user.username }}!
+                </h1>
+                <p class="text-lg opacity-70 mt-1">
+                    Discover your next great audiobook
+                </p>
+            </div>
+            <a href="{{ base_url }}/search"
+               class="btn btn-primary flex items-center gap-2"
+               title="Search for books">
+                <span>
+                    Search Books
+                </span>
+                <icons.Search />
+            </a>
+        </div>
+    </div>
+
+    <Index.PopularSection title="For You" reasons={{ for_you }} view_more="/recommendations/for-you" lazy_url="/hx-for-you" description="Personalized recommendations based on your requests" empty="No recommendations available at this time. Request some books to start getting recommendations." region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} />
+    {% if show_popular %}
+        <Index.PopularSection title="Popular" reasons={{ popular }} lazy_url="/hx-popular" description="The most popular books on the instance" empty="No popular recommendations available at this time. Request some books to start getting recommendations." region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} />
+    {% endif %}
+    <Index.Categories lazy_load={{ True }} region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} />
+
+</div>
+</BaseLayout>

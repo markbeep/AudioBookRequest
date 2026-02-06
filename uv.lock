@@ -198,6 +198,7 @@ dependencies = [
     { name = "jinja2" },
     { name = "jinja2-fragments" },
     { name = "jinja2-htmlmin" },
+    { name = "jinjax" },
     { name = "markdown" },
     { name = "psycopg2-binary" },
     { name = "pydantic" },
@@ -236,6 +237,7 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "jinja2-fragments", specifier = ">=1.11.0" },
     { name = "jinja2-htmlmin", specifier = ">=1.0.1" },
+    { name = "jinjax", specifier = ">=0.63" },
     { name = "markdown", specifier = ">=3.10.1" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "pydantic", specifier = ">=2.12.5" },
@@ -760,6 +762,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1a/ef/d642475f0cc66c89f3347924a23a173751dc160ba44269e76db48a89f2a7/jinja2_htmlmin-1.0.1.tar.gz", hash = "sha256:c53398ff12799a79ab75e471e9c26be9c837d1c10103da308280bd96c45588af", size = 21088, upload-time = "2025-07-29T17:08:43.698Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/13/6f/89b2029eb311bcab200d875599ab6594e186d865c181d08b686f60d3d26e/jinja2_htmlmin-1.0.1-py3-none-any.whl", hash = "sha256:b9c6c43e88443a238e3796054c4a54cd5bd755dfc3c65b775910813988a89da3", size = 4247, upload-time = "2025-07-29T17:08:42.595Z" },
+]
+
+[[package]]
+name = "jinjax"
+version = "0.63"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jinja2" },
+    { name = "markupsafe" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6c/11/d86874087e96cd56fd59050b9a87beede2fa8ea6e1b16632324ae9d2f828/jinjax-0.63.tar.gz", hash = "sha256:2cab0bb8e336a0a12a46541e407ad002bc70f3408a36d2a560215ac791fee006", size = 31431, upload-time = "2025-12-03T20:07:03.788Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/74/8d/6c52f82511e523e4ef219bcdb2b601991f71995662b5a2e55f85a6ef8adb/jinjax-0.63-py3-none-any.whl", hash = "sha256:74b0c9a6dc360ed4b9d3ef26dd46e280d61f89ce847d0f29dd876f2f062fdd94", size = 20224, upload-time = "2025-12-03T20:07:04.815Z" },
 ]
 
 [[package]]

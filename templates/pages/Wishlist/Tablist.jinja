@@ -1,0 +1,34 @@
+{#def
+    page: str,
+    counts: WishlistCounts,
+#}
+
+<div id="tablist" hx-swap-oob="True" role="tablist" class="tabs tabs-box">
+    <a preload
+       href="{{ base_url }}/wishlist"
+       role="tab"
+       class="tab {% if page=='wishlist' %}tab-active{% endif %} relativ">
+        Requests
+        <p class="absolute badge badge-xs right-0 top-0">
+            {{ counts.requests }}
+        </p>
+    </a>
+    <a preload
+       href="{{ base_url }}/wishlist/downloaded"
+       role="tab"
+       class="tab {% if page=='downloaded' %}tab-active{% endif %}">
+        Downloaded
+        <p class="absolute badge badge-xs right-0 top-0">
+            {{ counts.downloaded }}
+        </p>
+    </a>
+    <a preload
+       href="{{ base_url }}/wishlist/manual"
+       role="tab"
+       class="tab {% if page=='manual' %}tab-active{% endif %}">
+        Manual
+        <p class="absolute badge badge-xs right-0 top-0">
+            {{ counts.manual }}
+        </p>
+    </a>
+</div>

@@ -1,19 +1,24 @@
 from datetime import datetime, timedelta
 from typing import Counter, Sequence
+
 from pydantic import BaseModel
 from sqlalchemy.sql.functions import count
 from sqlmodel import Session, col, select
 
-from app.internal.models import Audiobook, AudiobookRequest
+from app.internal.models import Audiobook, AudiobookRequest, AudiobookWithRequests
 from app.util.log import logger
 
 
 class AudiobookPopularity(BaseModel):
-    book: Audiobook
+    book: AudiobookWithRequests
     request_count: int
 
     def requested_amount(self) -> str:
         return f"{self.request_count} request{'s' if self.request_count != 1 else ''}"
+
+    @property
+    def reason(self):
+        return self.requested_amount()
 
 
 def get_popular_books(
@@ -53,9 +58,14 @@ def get_popular_books(
 
     popular: list[AudiobookPopularity] = []
     for book, request_count in results:
+        book_with_requests = AudiobookWithRequests(
+            book=book,
+            requests=book.requests,
+            username=exclude_requested_username,
+        )
         popular.append(
             AudiobookPopularity(
-                book=book,
+                book=book_with_requests,
                 request_count=request_count,
             )
         )
@@ -70,7 +80,7 @@ def get_recently_requested_books(
     days_back: int = 30,
     exclude_downloaded: bool = True,
     exclude_requested_username: str | None = None,
-) -> Sequence[Audiobook]:
+) -> Sequence[AudiobookWithRequests]:
     """Get recently requested books within the specified time frame."""
     cutoff_date = datetime.now() - timedelta(days=days_back)
 
@@ -92,7 +102,14 @@ def get_recently_requested_books(
     results = session.exec(query).all()
     logger.debug(f"Recently requested books query returned {len(results)} results")
 
-    return results
+    return [
+        AudiobookWithRequests(
+            book=book,
+            requests=book.requests,
+            username=exclude_requested_username,
+        )
+        for book in results
+    ]
 
 
 class AuthorNarrators(BaseModel):

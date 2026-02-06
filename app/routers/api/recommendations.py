@@ -6,7 +6,7 @@ from sqlmodel import Session
 
 from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.book_search import audible_region_type, get_region_from_settings
-from app.internal.models import Audiobook
+from app.internal.models import Audiobook, AudiobookWithRequests
 from app.internal.recommendations.audible import (
     list_category_audible_books,
     list_combined_audible_books,
@@ -71,7 +71,7 @@ async def get_recently_requested_recommendations(
     limit: int = 10,
     days_back: int = 30,
     exclude_downloaded: bool = True,
-) -> Sequence[Audiobook]:
+) -> Sequence[AudiobookWithRequests]:
     return get_recently_requested_books(
         session=session,
         limit=limit,
@@ -88,7 +88,7 @@ async def get_fallback_recommendations(
     user: Annotated[DetailedUser, Security(AnyAuth())],
     limit: int = 10,
     audible_region: audible_region_type | None = None,
-) -> list[Audiobook]:
+) -> list[AudiobookWithRequests]:
     """Get fallback popular recommendations from Audible search. Does not take into account user history or preference."""
 
     if audible_region is None:
@@ -120,7 +120,7 @@ async def get_category_recommendations(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(AnyAuth())],
     audible_region: audible_region_type | None = None,
-) -> dict[str, list[Audiobook]]:
+) -> dict[str, list[AudiobookWithRequests]]:
     """Get recommendations by popular categories from Audible search."""
 
     if audible_region is None:
@@ -134,7 +134,7 @@ async def get_category_recommendations(
     )
 
 
-@router.get("/authors", response_model=list[Audiobook])
+@router.get("/authors", response_model=list[AudiobookWithRequests])
 async def get_popular_authors_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
@@ -143,7 +143,7 @@ async def get_popular_authors_recommendations(
     exclude_downloaded: bool = True,
     audible_region: audible_region_type | None = None,
     personal_favorites: bool = True,
-) -> list[Audiobook]:
+) -> list[AudiobookWithRequests]:
     if audible_region is None:
         audible_region = get_region_from_settings()
 
@@ -171,7 +171,7 @@ async def get_popular_narrators_recommendations(
     exclude_downloaded: bool = True,
     audible_region: audible_region_type | None = None,
     personal_favorites: bool = True,
-) -> list[Audiobook]:
+) -> list[AudiobookWithRequests]:
     if audible_region is None:
         audible_region = get_region_from_settings()
 

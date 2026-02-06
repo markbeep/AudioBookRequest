@@ -1,0 +1,12 @@
+{#def
+    results: list[AudiobookWishlistResult],
+    user: DetailedUser,
+    counts: WishlistCounts,
+#}
+
+<WishlistLayout title="Downloaded" user={{ user }} counts={{ counts }} page="downloaded">
+<div class="overflow-x-auto h-[75vh] border-b pb-2 border-b-base-200">
+
+    <Wishlist.Wishlist results={{ results }} user={{ user }} page="downloaded" counts={{ counts }} />
+</div>
+</WishlistLayout>

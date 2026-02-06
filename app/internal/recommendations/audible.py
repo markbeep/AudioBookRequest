@@ -1,10 +1,11 @@
 import asyncio
 import time
 from typing import Awaitable
+
 from aiohttp import ClientSession
 from pydantic import BaseModel
 from sqlmodel import Session, select
-from app.internal.models import Audiobook, AudiobookRequest
+
 from app.internal.book_search import (
     REFETCH_TTL,
     CacheResult,
@@ -16,6 +17,7 @@ from app.internal.book_search import (
     list_audible_books,
     store_new_books,
 )
+from app.internal.models import Audiobook, AudiobookRequest, AudiobookWithRequests
 from app.util.connection import USER_AGENT
 from app.util.log import logger
 
@@ -27,7 +29,7 @@ async def list_combined_audible_books(
     num_results: int = 20,
     audible_region: audible_region_type | None = None,
     exclude_requested_username: str | None = None,
-) -> list[Audiobook]:
+) -> list[AudiobookWithRequests]:
     all_books: list[Audiobook] = []
     books_per_term = max(1, num_results // len(search_terms))
 
@@ -81,7 +83,16 @@ async def list_combined_audible_books(
         search_terms=search_terms,
         total_found=len(all_books),
     )
-    return all_books
+    books = [
+        AudiobookWithRequests(
+            book=book,
+            requests=book.requests,
+            username=exclude_requested_username,
+        )
+        for book in all_books
+    ]
+
+    return books
 
 
 async def list_category_audible_books(
@@ -89,7 +100,7 @@ async def list_category_audible_books(
     client_session: ClientSession,
     audible_region: audible_region_type | None = None,
     excluded_requested_username: str | None = None,
-) -> dict[str, list[Audiobook]]:
+) -> dict[str, list[AudiobookWithRequests]]:
     categories = {
         "trending": ["trending", "viral", "popular now", "hot"],
         "business": [
@@ -105,7 +116,7 @@ async def list_category_audible_books(
         "recent_releases": ["2024", "new release", "latest", "just released"],
     }
 
-    recommendations: dict[str, list[Audiobook]] = {}
+    recommendations: dict[str, list[AudiobookWithRequests]] = {}
 
     async def _fetch_category(category_name: str):
         books = await list_combined_audible_books(
@@ -115,15 +126,18 @@ async def list_category_audible_books(
             audible_region=audible_region,
             exclude_requested_username=excluded_requested_username,
         )
+
         recommendations[category_name] = books
 
     coros: list[Awaitable[None]] = []
     for category_name in categories:
         coros.append(_fetch_category(category_name))
     await asyncio.gather(*coros)
-    for book in recommendations.values():
-        for b in book:
-            session.refresh(b)
+
+    for _, v in recommendations.items():
+        for b in v:
+            for r in b.book.requests:
+                session.refresh(r)
 
     return recommendations
 

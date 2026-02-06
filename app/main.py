@@ -1,12 +1,14 @@
-from typing import Awaitable, Callable
+import json
+from typing import Awaitable, Callable, cast
 from urllib.parse import quote_plus, urlencode
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware import Middleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlmodel import select
+from starlette.responses import Content
 
 from app.internal.auth.authentication import RequiresLoginException
 from app.internal.auth.config import auth_config, initialize_force_login_type
@@ -18,11 +20,12 @@ from app.internal.auth.session_middleware import (
 from app.internal.book_search import clear_old_book_caches
 from app.internal.env_settings import Settings
 from app.internal.models import User
-from app.routers import api, auth, recommendations, root, search, settings, wishlist
+from app.internal.prowlarr.util import ProwlarrMisconfigured
+from app.routers import api, pages
 from app.util.db import get_session
 from app.util.fetch_js import fetch_scripts
 from app.util.redirect import BaseUrlRedirectResponse
-from app.util.templates import templates
+from app.util.templates import catalog_response
 from app.util.toast import ToastException
 
 # intialize js dependencies or throw an error if not in debug mode
@@ -47,13 +50,7 @@ app = FastAPI(
     redirect_slashes=False,
 )
 
-app.include_router(auth.router, include_in_schema=False)
-app.include_router(recommendations.router, include_in_schema=False)
-app.include_router(root.router, include_in_schema=False)
-app.include_router(search.router, include_in_schema=False)
-app.include_router(settings.router, include_in_schema=False)
-app.include_router(wishlist.router, include_in_schema=False)
-# api router under /api
+app.include_router(pages.router, include_in_schema=False)
 app.include_router(api.router)
 
 user_exists = False
@@ -83,23 +80,36 @@ async def redirect_to_invalid_oidc(request: Request, exc: InvalidOIDCConfigurati
     path = "/auth/invalid-oidc"
     if exc.detail:
         path += f"?error={quote_plus(exc.detail)}"
+    if request.headers.get("HX-Request"):
+        return Response(status_code=400, headers={"HX-Redirect": path})
+    return BaseUrlRedirectResponse(path)
+
+
+@app.exception_handler(ProwlarrMisconfigured)
+async def redirect_to_invalid_prowlarr(request: Request, exc: ProwlarrMisconfigured):
+    _ = exc
+    path = "/settings/invalid-oidc?prowlarr_misconfigured=true"
+    if request.headers.get("HX-Request"):
+        return Response(status_code=400, headers={"HX-Redirect": path})
     return BaseUrlRedirectResponse(path)
 
 
 @app.exception_handler(ToastException)
 async def raise_toast(request: Request, exc: ToastException):
-    context: dict[str, Request | str] = {"request": request}
+    _ = request
+    toast_error = toast_success = toast_info = None
     if exc.type == "error":
-        context["toast_error"] = exc.message
+        toast_error = exc.message
     elif exc.type == "success":
-        context["toast_success"] = exc.message
+        toast_success = exc.message
     elif exc.type == "info":
-        context["toast_info"] = exc.message
+        toast_info = exc.message
 
-    return templates.TemplateResponse(
-        "base.html",
-        context,
-        block_name="toast_block",
+    return catalog_response(
+        "ToastBlock",
+        toast_error=toast_error,
+        toast_success=toast_success,
+        toast_info=toast_info,
         headers={"HX-Retarget": "#toast-block"}
         | ({"HX-Refresh": "true"} if exc.force_refresh else {}),
     )
@@ -129,4 +139,38 @@ async def redirect_to_init(
     elif user_exists and request.url.path.startswith("/init"):
         return BaseUrlRedirectResponse("/")
     response = await call_next(request)
+    return response
+
+
+@app.middleware("http")
+async def throw_toast_exception(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[StreamingResponse]],
+):
+    """On htmx requests, convert HTTPExceptions/other errors into ToastExceptions"""
+    response = await call_next(request)
+    if (
+        400 <= response.status_code
+        and not response.headers.get("HX-Redirect")  # already handled
+        and request.headers.get("HX-Request") == "true"
+    ):
+
+        def to_string(b: Content) -> str:
+            if isinstance(b, bytes):
+                return b.decode("utf-8")
+            elif isinstance(b, str):
+                return b
+            else:
+                return str(b)
+
+        body = "".join([to_string(x) async for x in response.body_iterator])
+        try:
+            parsed = json.loads(body)  # pyright: ignore[reportAny]
+            if "detail" not in parsed or not isinstance(parsed["detail"], str):
+                raise ValueError()
+            error_message = cast(str, parsed["detail"])
+        except (json.JSONDecodeError, ValueError):
+            error_message = f"An error occurred while processing your request. status={response.status_code}"
+
+        return await raise_toast(request, ToastException(error_message, type="error"))
     return response

@@ -2,7 +2,6 @@ from typing import Annotated
 
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, HTTPException, Query, Security
-from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.internal import book_search
@@ -14,26 +13,14 @@ from app.internal.book_search import (
     get_region_from_settings,
     list_audible_books,
 )
-from app.internal.models import Audiobook, AudiobookRequest
+from app.internal.models import AudiobookWithRequests
 from app.util.connection import get_connection
 from app.util.db import get_session
 
 router = APIRouter(prefix="/search", tags=["Search"])
 
 
-class AudiobookSearchResult(BaseModel):
-    book: Audiobook
-    requests: list[AudiobookRequest]
-    username: str
-
-    @property
-    def already_requested(self):
-        if self.username:
-            return any(req.user_username == self.username for req in self.requests)
-        return len(self.requests) > 0
-
-
-@router.get("", response_model=list[AudiobookSearchResult])
+@router.get("", response_model=list[AudiobookWithRequests])
 async def search_books(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     session: Annotated[Session, Depends(get_session)],
@@ -61,7 +48,7 @@ async def search_books(
         results = []
 
     return [
-        AudiobookSearchResult(
+        AudiobookWithRequests(
             book=book,
             requests=book.requests,
             username=user.username,

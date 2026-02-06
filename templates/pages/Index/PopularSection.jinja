@@ -1,0 +1,66 @@
+{#def
+    region_tld: str,
+    title: str,
+    reasons: list[AudiobookPopularity], # (anything with a `book` and `reason` attribute)
+    view_more: str | None = None,
+    lazy_url: str | None = None,
+    description: str | None = None,
+    empty: str | None = None,
+    auto_start_download: bool = False,
+#}
+
+{% if lazy_url %}
+    <div class="w-full max-w-7xl mb-8"
+         hx-get="{{ base_url }}{{ lazy_url }}"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h2 class="text-2xl font-bold">
+                    {{ title }}
+                </h2>
+                <p class="text-sm opacity-70">
+                    {{ description }}
+                </p>
+            </div>
+            {% if view_more %}
+                <a href="{{ base_url }}{{ view_more }}" class="link link-primary">Discover more →</a>
+            {% endif %}
+        </div>
+    </div>
+{% else %}
+    <div class="w-full max-w-7xl mb-8">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h2 class="text-2xl font-bold">
+                    {{ title }}
+                </h2>
+                <p class="text-sm opacity-70">
+                    {{ description }}
+                </p>
+            </div>
+            {% if view_more %}
+                <a href="{{ base_url }}{{ view_more }}" class="link link-primary">Discover more →</a>
+            {% endif %}
+        </div>
+        <div class="overflow-x-auto">
+            <div id="for-you" class="w-full max-w-7xl mb-8">
+                {% if reasons %}
+                    <div class="flex gap-4 pb-4">
+                        {% for reason in reasons[:12] %}
+                            <div class="flex-none w-32 sm:w-40" title="{{ reason.reason }}">
+                                <BookCard book_with_requests={{ reason.book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" />
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% elif empty %}
+                    <div class="p-6 bg-base-200 rounded-md text-center">
+                        <p class="text-sm opacity-70">
+                            {{ empty }}
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endif %}

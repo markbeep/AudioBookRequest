@@ -1,0 +1,53 @@
+{#def
+    title: str,
+    backup: bool,
+    redirect_uri: str,
+#}
+
+<BaseLayout title={{ title }} hide_navbar>
+
+<div class="h-screen w-full flex flex-col items-center justify-center">
+    <h1 class="text-4xl font-bold mb-8 sm:mb-16">
+        AudioBookRequest
+    </h1>
+    <form class="flex flex-col gap-2 max-w-[30rem] px-4"
+          hx-post="{{ base_url }}/auth/login/hx-login"
+          id="form"
+          hx-target="this">
+        <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}" />
+        {% if backup %}
+            <h1 class="text-xl">
+                Backup Login
+            </h1>
+            <p class="text-error">
+                This instance has OIDC enabled. This login can only be used by the root
+                admin.
+            </p>
+        {% else %}
+            <h1 class="text-xl">
+                Login
+            </h1>
+        {% endif %}
+        <label for="username">
+            Username
+            <span class="text-xs text-neutral/60">(case-sensitive)</span>
+        </label>
+        <input id="username"
+               name="username"
+               type="text"
+               class="input w-full"
+               required />
+        <label for="password">
+            Password
+        </label>
+        <input id="password"
+               name="password"
+               type="password"
+               class="input w-full"
+               required />
+        <button id="submit" class="btn btn-primary" type="submit">
+            Login
+        </button>
+    </form>
+</div>
+</BaseLayout>

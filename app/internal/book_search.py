@@ -66,6 +66,11 @@ def get_region_from_settings() -> audible_region_type:
     return region
 
 
+def get_region_tld_from_settings() -> str:
+    region = get_region_from_settings()
+    return audible_regions[region]
+
+
 class _AudnexusResponse(BaseModel):
     class _Author(TypedDict):
         name: str

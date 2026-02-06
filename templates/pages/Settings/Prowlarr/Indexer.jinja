@@ -1,0 +1,64 @@
+{#def
+    indexers: IndexersResponse,
+    selected_indexers: set[int],
+#}
+
+<form id="indexer-select"
+      class="flex flex-col gap-2"
+      x-data="{ selectedIndexers: [{{ selected_indexers|join(",") }}].sort(), indexers: {{ indexers.json_string }} }"
+      hx-put="{{ base_url }}/settings/prowlarr/hx-indexers"
+      hx-disabled-elt="#indexer-submit-button"
+      hx-target="this"
+      hx-swap="outerHTML">
+
+    <label for="indexers">
+        Indexers
+    </label>
+    <p class="text-xs opacity-60">
+        Select the indexers to use with Prowlarr. If none are selected, all
+        indexers will be used.
+        {% if not indexers.ok %}
+            <span class="text-error font-semibold">
+                <br />
+                No indexers found. {{ indexers.error or "" }}
+            </span>
+        {% endif %}
+    </p>
+    {% if indexers.ok %}
+        <div class="flex flex-wrap gap-1">
+            <template x-for="indexerId in selectedIndexers">
+                <div class="badge badge-secondary badge-sm w-52 justify-between h-fit">
+                    <input type="hidden" name="i" x-bind:value="indexerId" />
+                    <span x-text="indexers[indexerId].name"></span>
+                    <button class="cursor-pointer [&>svg]:size-4 hover:opacity-70 transition-opacity duration-150"
+                            x-on:click="selectedIndexers = selectedIndexers.filter((itemId) => itemId !== indexerId)"
+                            type="button">
+                        <icons.XMark />
+                    </button>
+                </div>
+            </template>
+        </div>
+    {% endif %}
+    <select id="indexers"
+            name="group"
+            class="select w-full"
+            x-on:change="selectedIndexers = [...selectedIndexers, $event.target.value].sort()"
+            x-init="$el.value = ''"
+            {% if not indexers.ok %}disabled{% endif %}>
+        <option disabled selected value>
+            -- select an indexer --
+        </option>
+        <template x-for="indexerId in Object.keys(indexers)">
+            <template x-if="!selectedIndexers.includes(indexerId)">
+                <option x-text="indexers[indexerId].name" x-bind:value="indexerId">
+                </option>
+            </template>
+        </template>
+    </select>
+    <button id="indexer-submit-button"
+            x-data="{ initial: selectedIndexers }"
+            x-bind:disabled="JSON.stringify(initial) === JSON.stringify(selectedIndexers)"
+            class="btn">
+        Save indexers
+    </button>
+</form>

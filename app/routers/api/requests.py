@@ -27,6 +27,7 @@ from app.internal.models import (
     Audiobook,
     AudiobookRequest,
     AudiobookWishlistResult,
+    AudiobookWithRequests,
     EventEnum,
     GroupEnum,
     ManualBookRequest,
@@ -53,7 +54,7 @@ class DownloadSourceBody(BaseModel):
     indexer_id: int
 
 
-@router.post("/{asin}", status_code=201)
+@router.post("/{asin}", response_model=Audiobook)
 async def create_request(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
@@ -61,7 +62,7 @@ async def create_request(
     background_task: BackgroundTasks,
     asin: str,
     region: audible_region_type | None = None,
-):
+) -> AudiobookWithRequests:
     if region is None:
         region = get_region_from_settings()
     if audible_regions.get(region) is None:
@@ -104,7 +105,15 @@ async def create_request(
             auto_download=True,
         )
 
-    return Response(status_code=201)
+    requests = session.exec(
+        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+    ).all()
+
+    return AudiobookWithRequests(
+        book=book,
+        requests=list(requests),
+        username=user.username,
+    )
 
 
 @router.get("", response_model=list[AudiobookWishlistResult])

@@ -1,0 +1,83 @@
+{#def
+    book: ManualBookRequest | None,
+    auto_download: bool,
+#}
+
+<form class="flex flex-col gap-2 w-full max-w-160"
+      {% if book %} hx-post="{{ base_url }}/search/manual/hx-add?id={{ book.id }}" {% else %} hx-post="{{ base_url }}/search/manual/hx-add" {% endif %}
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-disabled-elt="#submit-button">
+    <p class="text-sm text-left w-full opacity-60">
+        {% if auto_download %}
+            Manual requests do not automatically start a
+            download. They have to be manually reviewed.
+        {% endif %}
+    </p>
+
+    <label for="title">
+        Title <span class="text-error">*</span>
+    </label>
+    <input id="title"
+           name="title"
+           type="text"
+           class="input w-full"
+           minlength="1"
+           required
+           {% if book %} value="{{ book.title }}" {% endif %}
+           placeholder="The Fellowship of the Ring" />
+    <label for="subtitle">
+        Subtitle
+    </label>
+    <input id="subtitle"
+           name="subtitle"
+           class="input w-full"
+           type="text"
+           {% if book %} value="{{ book.subtitle }}" {% endif %}
+           placeholder="The Lord of the Rings" />
+    <label for="author">
+        Author(s) <span class="text-error">*</span>
+    </label>
+    <input id="author"
+           name="author"
+           type="text"
+           class="input w-full"
+           minlength="1"
+           {% if book %} value="{{ book.authors|join(", ") }}" {% endif %}
+           required
+           placeholder="J.R.R. Tolkien" />
+    <label for="narrator">
+        Narrator(s)
+    </label>
+    <input id="narrator"
+           name="narrator"
+           type="text"
+           {% if book %} value="{{ book.narrators|join(", ") }}" {% endif %}
+           class="input w-full"
+           placeholder="Andy Serkis" />
+    <label for="publish-date">
+        Publish Date
+    </label>
+    <input id="publish_date"
+           name="publish_date"
+           type="text"
+           {% if book %} value="{{ book.publish_date }}" {% endif %}
+           class="input w-full"
+           placeholder="2021-09" />
+    <label for="info">
+        Additional Info
+    </label>
+    <textarea id="info"
+              name="info"
+              class="textarea w-full"
+              value="{{ book.additional_info if book else '' }}"
+              placeholder="The book about the ring"></textarea>
+    <button id="submit-button" class="btn btn-primary" type="submit">
+        {% if book %}
+            Update
+        {% else %}
+            Add
+        {% endif %}
+        Request
+    </button>
+</form>

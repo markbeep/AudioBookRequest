@@ -1,0 +1,70 @@
+{#def
+    user: DetailedUser,
+    auto_download: bool,
+    flac_range: QualityRange,
+    m4b_range: QualityRange,
+    mp3_range: QualityRange,
+    unknown_audio_range: QualityRange,
+    unknown_range: QualityRange,
+    min_seeders: int,
+    name_ratio: int,
+    title_ratio: int,
+    indexer_flags: list[IndexerFlags],
+#}
+
+<SettingsLayout user={{ user }} page="download" title="Settings - Download">
+
+<link href="{{ base_url }}/static/nouislider.css?v={{ version }}"
+      rel="stylesheet" />
+<script src="{{ base_url }}/static/nouislider.js?v={{ version }}"></script>
+<script>
+    const createSlider = (sliderId, fromId, toId, start, stop) => {
+        const slider = document.getElementById(sliderId);
+        noUiSlider.create(slider, {
+            start: [start, stop],
+            connect: true,
+            range: {
+                min: 0,
+                max: 1000,
+            },
+        });
+        // set correct value on initial load
+        from = document.getElementById(fromId);
+        to = document.getElementById(toId);
+        from.value = start;
+        to.value = stop;
+        slider.noUiSlider.on("update", function(values, handle) {
+            if (handle === 0) {
+                document.getElementById(fromId).value =
+                    values[0] < 1000 ? values[0] : Infinity;
+            } else {
+                document.getElementById(toId).value =
+                    values[1] < 1000 ? values[1] : Infinity;
+            }
+        });
+    };
+</script>
+
+<div class="flex flex-col">
+    <h2 class="text-lg">
+        Download
+    </h2>
+    <Settings.Download.Sliders auto_download={{ auto_download }} flac_range={{ flac_range }} m4b_range={{ m4b_range }} mp3_range={{ mp3_range }} unknown_audio_range={{ unknown_audio_range }} unknown_range={{ unknown_range }} min_seeders={{ min_seeders }} name_ratio={{ name_ratio }} title_ratio={{ title_ratio }} />
+
+    <hr class="my-4 border-base-200" />
+
+    <Settings.Download.IndexerFlags indexer_flags={{ indexer_flags }} />
+    <hr class="my-4 border-base-200" />
+    <div class="flex flex-col gap-2">
+        <h2 class="text-lg text-error">
+            Danger Zone
+        </h2>
+        <button type="button"
+                class="btn btn-error"
+                hx-delete="{{ base_url }}/settings/download"
+                hx-disabled-elt="this">
+            Reset download settings
+        </button>
+    </div>
+</div>
+</SettingsLayout>

@@ -1,16 +1,18 @@
 # pyright: reportUnknownMemberType=false
 
 import html
-from jinja2_htmlmin import minify_loader
-from jinja2 import Environment, FileSystemLoader
-from typing import Any, Mapping, overload
+import json
+from typing import Any, Literal, Mapping
 
 import markdown
-from fastapi import Request, Response
+from fastapi.responses import HTMLResponse
+from jinja2 import Environment, FileSystemLoader
 from jinja2_fragments.fastapi import Jinja2Blocks
+from jinja2_htmlmin import minify_loader
+from jinjax import Catalog
+from jinjax.jinjax import JinjaX
 from starlette.background import BackgroundTask
 
-from app.internal.auth.authentication import DetailedUser
 from app.internal.env_settings import Settings
 
 templates = Jinja2Blocks(
@@ -34,10 +36,13 @@ def _to_js_string(val: str | int | float) -> str:
     return html.escape(f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'")
 
 
+# filters
 templates.env.filters["zfill"] = _zfill
 templates.env.filters["toJSstring"] = _to_js_string
+# globals
 templates.env.globals["vars"] = vars
 templates.env.globals["getattr"] = getattr
+templates.env.globals["hasattr"] = hasattr
 templates.env.globals["version"] = Settings().app.version
 templates.env.globals["json_regexp"] = (
     r'^\{\s*(?:"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*(?:,\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*)*)?\}$'
@@ -49,57 +54,51 @@ with open("CHANGELOG.md", "r") as file:
 templates.env.globals["changelog"] = markdown.markdown(changelog_content)
 
 
-@overload
-def template_response(
+templates.env.add_extension(JinjaX)
+catalog = Catalog(jinja_env=templates.env)  # pyright: ignore[reportUnknownArgumentType]
+catalog.add_folder("templates/components")
+catalog.add_folder("templates/pages")
+catalog.add_folder("templates/layouts")
+
+
+def catalog_response(
     name: str,
-    request: Request,
-    user: DetailedUser,
-    context: dict[str, Any],  # pyright: ignore[reportExplicitAny]
     status_code: int = 200,
     headers: Mapping[str, str] | None = None,
     media_type: str | None = None,
     background: BackgroundTask | None = None,
-    *,
-    block_names: list[str] = ...,
-) -> Response: ...
-
-
-@overload
-def template_response(
-    name: str,
-    request: Request,
-    user: DetailedUser,
-    context: dict[str, Any],  # pyright: ignore[reportExplicitAny]
-    status_code: int = 200,
-    headers: Mapping[str, str] | None = None,
-    media_type: str | None = None,
-    background: BackgroundTask | None = None,
-    *,
-    block_name: str | None = None,
-) -> Response: ...
-
-
-def template_response(
-    name: str,
-    request: Request,
-    user: DetailedUser,
-    context: dict[str, Any],  # pyright: ignore[reportExplicitAny]
-    status_code: int = 200,
-    headers: Mapping[str, str] | None = None,
-    media_type: str | None = None,
-    background: BackgroundTask | None = None,
-    **kwargs: Any,  # pyright: ignore[reportAny, reportExplicitAny]
-) -> Response:
-    """Template response wrapper to make sure required arguments are passed everywhere"""
-    copy = context.copy()
-    copy.update({"request": request, "user": user})
-
-    return templates.TemplateResponse(
-        name=name,
-        context=copy,
+    **kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
+):
+    return HTMLResponse(
+        catalog.render(name, **kwargs),  # pyright: ignore[reportAny]
         status_code=status_code,
         headers=headers,
         media_type=media_type,
         background=background,
-        **kwargs,  # pyright: ignore[reportAny]
+    )
+
+
+def catalog_response_toast(
+    name: str,
+    message: str,
+    toast_type: Literal["error", "success", "info"],
+    status_code: int = 200,
+    headers: dict[str, str] | None = None,
+    media_type: str | None = None,
+    background: BackgroundTask | None = None,
+    **kwargs: Any,  # pyright: ignore[reportExplicitAny, reportAny]
+):
+    if headers is None:
+        headers = {}
+    headers["HX-Trigger"] = json.dumps(
+        {"toast": {"type": toast_type, "message": message}}
+    )
+
+    return catalog_response(
+        name,
+        status_code=status_code,
+        headers=headers,
+        media_type=media_type,
+        background=background,
+        **kwargs,
     )

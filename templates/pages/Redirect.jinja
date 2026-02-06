@@ -1,0 +1,17 @@
+{#def
+    redirect_uri: str,
+#}
+
+<BaseLayout hide_navbar title="Redirecting...">
+<div class="h-screen w-full flex items-center justify-center">
+    <div class="card flex flex-col gap-4 max-w-[20rem]">
+        <h1 class="text-2xl font-bold text-center">
+            Redirecting...
+        </h1>
+        <script>
+            window.location.href = "{{ redirect_uri }}";
+        </script>
+        <a class="btn" href="{{ redirect_uri }}">Redirect now</a>
+    </div>
+</div>
+</BaseLayout>

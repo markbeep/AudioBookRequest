@@ -1,0 +1,63 @@
+{#def
+    user: DetailedUser,
+    users: Sequence[User],
+    is_oidc: bool,
+#}
+
+<SettingsLayout user={{ user }} page="users" title="Settings - Users">
+
+{% if is_oidc %}
+    <p class="text-error font-semibold">
+        OpenID Connect is enabled. Users will be automatically created when they log in.
+        If a user has a group assigned on the authentication server, it will override their group here.
+    </p>
+{% endif %}
+<form id="create-user-form"
+      class="flex flex-col gap-2"
+      hx-post="{{ base_url }}/settings/users/hx-add"
+      hx-target="#user-list"
+      hx-on::after-request="if (event.detail.successful && event.detail.target?.id === 'user-list') this.reset()"
+      hx-swap="outerHTML"
+      hx-disabled-elt="#submit">
+    <h2 class="text-lg">
+        Create user
+    </h2>
+    <label for="username">
+        Username
+    </label>
+    <input id="username"
+           name="username"
+           minlength="1"
+           type="text"
+           class="input w-full"
+           required />
+    <label for="password">
+        Password
+    </label>
+    <input id="password"
+           name="password"
+           type="password"
+           class="input w-full"
+           required />
+    <label for="select-group">
+        Group
+    </label>
+    <select id="select-group" name="group" class="select w-full" required>
+        <option value="untrusted" selected>
+            Untrusted
+        </option>
+        <option value="trusted">
+            Trusted
+        </option>
+        <option value="admin">
+            Admin
+        </option>
+    </select>
+    <button id="submit" class="btn btn-primary" type="submit">
+        Create user
+    </button>
+</form>
+
+<Settings.Users.List user={{ user }} users={{ users }} />
+
+</SettingsLayout>

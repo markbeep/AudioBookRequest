@@ -1,0 +1,100 @@
+{#def
+    user: DetailedUser,
+    abs_base_url: str,
+    abs_api_token: str,
+    abs_library_id: str,
+    abs_check_downloaded: bool,
+    abs_libraries: list[ABSLibrary],
+#}
+
+<SettingsLayout user={{ user }} page="audiobookshelf" title="Settings - Audiobookshelf">
+
+<div class="flex flex-col gap-2">
+    <h2 class="text-lg">
+        Audiobookshelf
+    </h2>
+    <label for="abs-api-token">
+        API Token
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/audiobookshelf/hx-api-token"
+          hx-disabled-elt="#abs-api-token-button">
+        <input id="abs-api-token"
+               name="api_token"
+               type="password"
+               {% if abs_api_token %}placeholder="●●●●●●●●●●●●●●●●●"{% endif %}
+               class="input join-item w-full"
+               minlength="1"
+               required />
+        <button id="abs-api-token-button" class="join-item btn">
+            {% if abs_api_token %}
+                Update
+            {% else %}
+                Add
+            {% endif %}
+        </button>
+    </form>
+    <label for="abs-base-url" class="pt-2">
+        Base URL
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/audiobookshelf/hx-base-url"
+          hx-disabled-elt="#abs-base-url-button">
+        <input id="abs-base-url"
+               name="base_url"
+               type="url"
+               value="{{ abs_base_url }}"
+               class="input join-item w-full"
+               minlength="1"
+               required />
+        <button id="abs-base-url-button" class="join-item btn">
+            {% if abs_base_url %}
+                Update
+            {% else %}
+                Add
+            {% endif %}
+        </button>
+    </form>
+    <label for="abs-library" class="pt-2">
+        Library
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/audiobookshelf/hx-library"
+          hx-disabled-elt="#abs-library-button">
+        <select id="abs-library" name="library_id" class="select join-item w-full">
+            {% if not abs_libraries or not abs_libraries|length %}
+                <option disabled selected>
+                    Enter URL and API token first
+                </option>
+            {% endif %}
+            {% for lib in abs_libraries %}
+                <option value="{{ lib.id }}"
+                        {% if abs_library_id==lib.id %}selected{% endif %}>
+                    {{ lib.name }}
+                    ({{ lib.mediaType }})
+                </option>
+            {% endfor %}
+        </select>
+        <button id="abs-library-button" class="join-item btn">
+            Save
+        </button>
+    </form>
+    <div class="form-control pt-4">
+        <label class="label cursor-pointer">
+            <span class="label-text">Use ABS to mark existing books as downloaded</span>
+            <input hx-put="{{ base_url }}/settings/audiobookshelf/hx-check-downloaded"
+                   type="checkbox"
+                   name="check_downloaded"
+                   class="toggle"
+                   {% if abs_check_downloaded %}checked{% endif %}
+                   hx-trigger="change" />
+        </label>
+        <p class="text-xs opacity-60">
+            When enabled, search results will be checked against Audiobookshelf and marked as
+            downloaded if found to avoid duplicate requests. Will likely make search and recommendations slower as they
+            are checked against ABS.
+        </p>
+    </div>
+</div>
+
+</SettingsLayout>

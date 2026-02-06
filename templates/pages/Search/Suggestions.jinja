@@ -1,0 +1,11 @@
+{#def
+    id: str,
+    suggestions: list[str],
+#}
+
+<datalist id="{{ id }}">
+    {% for suggestion in suggestions[:3] %}
+        <option value="{{ suggestion }}">
+        </option>
+    {% endfor %}
+</datalist>

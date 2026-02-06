@@ -1,0 +1,176 @@
+{#def
+    notifications: Sequence[Notification],
+    event_types: list[str],
+    body_types: list[str],
+#}
+
+<div id="notification-list"
+     class="pt-4 border-t border-base-200"
+     x-data="{ edit: null }"
+     x-init="$watch('edit', value => { if (edit) htmx.process(document.querySelector('#edit-notification-form')) })">
+    <h2 class="text-lg">
+        Added Notifications
+    </h2>
+    <div class="max-h-120 overflow-x-auto">
+        <table class="table table-pin-rows">
+            <thead>
+                <tr>
+                    <th>
+                    </th>
+                    <th>
+                        Name
+                    </th>
+                    <th>
+                        Event
+                    </th>
+                    <th>
+                        URL
+                    </th>
+                    <th>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in notifications %}
+                    <tr>
+                        <th>
+                            {{ loop.index }}
+                        </th>
+                        <td>
+                            {{ n.name }}
+                        </td>
+                        <td>
+                            {{ n.event.value }}
+                        </td>
+                        <td>
+                            {{ n.url }}
+                        </td>
+                        <td class="grid grid-cols-2 min-w-32 gap-1">
+                            <button title="Test"
+                                    class="btn btn-square"
+                                    hx-post="{{ base_url }}/settings/notifications/hx-test/{{ n.id }}"
+                                    hx-disabled-elt="this">
+                                <icons.TestPipe />
+                            </button>
+                            <button title="Edit"
+                                    class="btn btn-square"
+                                    x-on:click="edit === '{{ n.id }}' ?edit=null: edit='{{ n.id }}'">
+                                <icons.Pencil />
+                            </button>
+                            <button title="{{ 'Enabled' if n.enabled else 'Disabled' }}"
+                                    class="btn btn-square {{ 'btn-success' if n.enabled else 'btn-error' }}"
+                                    hx-patch="{{ base_url }}/settings/notifications/hx-enable/{{ n.id }}"
+                                    hx-disabled-elt="this"
+                                    hx-target="#notification-list"
+                                    hx-swap="outerHTML">
+                                {% if n.enabled %}
+                                    <icons.Checkmark />
+                                {% else %}
+                                    <icons.XMark />
+                                {% endif %}
+                            </button>
+                            <button title="Delete"
+                                    class="btn btn-error btn-square"
+                                    hx-delete="{{ base_url }}/settings/notifications/hx-delete/{{ n.id }}"
+                                    hx-target="#notification-list"
+                                    hx-swap="outerHTML"
+                                    hx-confirm="Are you sure you want to delete this notification? ({{ n.name }})">
+                                <icons.Trash />
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% for n in notifications %}
+        <template x-if="edit === '{{ n.id }}'">
+            <form x-data="{ name: {{ n.name|toJSstring }}, event: {{ n.event.value|toJSstring }}, body_type: {{ n.body_type.value|toJSstring }}, url: {{ n.url|toJSstring }}, headers: {{ n.serialized_headers|toJSstring }}, body: {{ n.body|toJSstring }} }"
+                  class="flex flex-col gap-2"
+                  hx-put="{{ base_url }}/settings/notifications/hx-update/{{ n.id }}"
+                  hx-target="#notification-list"
+                  hx-swap="outerHTML"
+                  id="edit-notification-form">
+                {{ n.name }}
+                <label for="name-edit">
+                    Name<span class="text-error">*</span>
+                </label>
+                <input id="name-edit"
+                       name="name"
+                       minlength="1"
+                       type="text"
+                       class="input w-full"
+                       required
+                       x-model="name" />
+                <label for="event-edit">
+                    Event<span class="text-error">*</span>
+                </label>
+                <select id="event-edit"
+                        name="event_type"
+                        class="select w-full"
+                        required
+                        x-model="event">
+                    {% for e in event_types %}
+                        <option value="{{ e }}">
+                            {{ e }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <label for="url-edit">
+                    Notification URL<span class="text-error">*</span>
+                    <br />
+                    <span class="text-xs font-mono">(http://.../notify/c2h3fg...)</span>
+                </label>
+                <input id="url-edit"
+                       name="url"
+                       minlength="1"
+                       type="text"
+                       class="input w-full"
+                       required
+                       x-model="url" />
+                <label for="body_type-edit">
+                    Body Type<span class="text-error">*</span>
+                </label>
+                <select id="body_type-edit"
+                        name="body_type"
+                        class="select w-full"
+                        required
+                        x-model="body_type">
+                    {% for e in body_types %}
+                        <option value="{{ e }}" {% if loop.index.__eq__(0) %}selected{% endif %}>
+                            {{ e }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <label for="body-edit">
+                    Body<span class="text-error">*</span>
+                    <template x-if="body_type === 'json'">
+                        <span class="text-xs text-error">(JSON format)</span>
+                    </template>
+                </label>
+                <textarea id="body-edit"
+                          required
+                          name="body"
+                          type="text"
+                          class="textarea w-full font-mono"
+                          x-model="body"
+                          :class="{ 'font-mono': body_type === 'json' }"
+                          placeholder="{&quot;{eventType}&quot;: {&quot;book&quot;: &quot;{bookTitle}&quot;}}"></textarea>
+                <label for="headers-edit">
+                    Headers
+                    <span class="text-xs font-mono">(JSON format, optional)</span>
+                </label>
+                <input id="headers-edit"
+                       name="headers"
+                       type="text"
+                       class="input w-full font-mono"
+                       placeholder="{&quot;username&quot;: &quot;admin&quot;, &quot;password&quot;: &quot;password123&quot;}"
+                       pattern="{{ json_regexp }}"
+                       x-model="headers" />
+                <button type="submit" class="btn">
+                    Update
+                </button>
+            </form>
+        </template>
+    {% endfor %}
+</div>

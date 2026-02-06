@@ -1,5 +1,4 @@
 import html
-from sqlmodel._compat import SQLModelConfig
 import json
 import uuid
 from datetime import datetime
@@ -8,6 +7,7 @@ from typing import Annotated, Literal, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 from sqlmodel import JSON, Column, DateTime, Field, SQLModel, func
+from sqlmodel._compat import SQLModelConfig
 from sqlmodel.main import Relationship
 
 
@@ -93,6 +93,18 @@ class Audiobook(BaseSQLModel, table=True):
     @property
     def runtime_length_hrs(self):
         return round(self.runtime_length_min / 60, 1)
+
+
+class AudiobookWithRequests(BaseModel):
+    book: Audiobook
+    requests: list[AudiobookRequest]
+    username: str | None
+
+    @property
+    def already_requested(self):
+        if self.username:
+            return any(req.user_username == self.username for req in self.requests)
+        return len(self.requests) > 0
 
 
 class AudiobookRequest(BaseSQLModel, table=True):
