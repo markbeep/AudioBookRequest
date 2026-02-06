@@ -1,5 +1,7 @@
 [tools]
+go = "1.25.7"
     "http:tailwindcss" = { version = "4.1.18", url = "https://github.com/tailwindlabs/tailwindcss/releases/download/v{{version}}/tailwindcss-linux-{{arch()}}" }
+hugo-extended = "0.147.7"
     just = "latest"
     node = "25"
     sqlite = "latest"
