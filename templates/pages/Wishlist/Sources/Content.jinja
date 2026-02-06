@@ -9,7 +9,7 @@
     <h1 class="text-3xl font-bold">
         Sources for {{ result.book.title }}
     </h1>
-    {% if result.state.ok and not result.sources %}
+    {% if result.ok and not result.sources %}
         <div role="alert" class="alert">
             <span class="stroke-info h-6 w-6 shrink-0">
                 <icons.InfoCircle />

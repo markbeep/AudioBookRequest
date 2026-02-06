@@ -47,6 +47,19 @@
             </template>
         </template>
     </select>
+
+    <div class="join w-full">
+        <input type="number"
+               class="input input-bordered join-item w-full"
+               placeholder="3130"
+               x-ref="customCategoryInput" />
+        <button class="btn btn-primary join-item"
+                type="button"
+                x-on:click=" const val = Number($refs.customCategoryInput.value); if (val && !selected.includes(val)) { selected = [...selected, val].sort(); $refs.customCategoryInput.value = ''; } ">
+            Add custom
+        </button>
+    </div>
+
     <button id="category-submit-button"
             x-data="{ initial: selected }"
             x-bind:disabled="JSON.stringify(initial) === JSON.stringify(selected)"
