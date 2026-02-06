@@ -102,9 +102,39 @@
                     <td>
                         {{ book.runtime_length_hrs }}
                     </td>
-                    <td title="{{ result.requested_by_usernames }}">
-                        {{ result.amount_requested }}
+
+                    <td title="{{ result.amount_requested }}">
+                        {% if user.is_admin() %}
+                            <button class="btn px-1 text-sm"
+                                    onclick="requesters{{ loop.index }}.showModal()">
+                                {{ result.amount_requested }}
+                                <icons.Users />
+                            </button>
+                            <dialog id="requesters{{ loop.index }}" class="modal">
+                                <div class="modal-box">
+                                    <h3 class="text-lg font-bold">
+                                        Users that requested:
+                                        <span class="italic">{{ book.title }}</span>
+                                    </h3>
+                                    <ul class="py-4 text-sm max-h-60 overflow-y-auto truncate list-disc list-inside">
+                                        {% for user in result.requests %}
+                                            <li>
+                                                {{ user.user_username }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <form method="dialog" class="modal-backdrop">
+                                    <button>
+                                        close
+                                    </button>
+                                </form>
+                            </dialog>
+                        {% else %}
+                            {{ result.amount_requested }}
+                        {% endif %}
                     </td>
+
                     <td class="grid grid-cols-2 min-w-32 gap-1">
                         <a preload
                            title="Torrent Sources"
