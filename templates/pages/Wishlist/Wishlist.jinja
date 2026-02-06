@@ -1,0 +1,183 @@
+{#def
+    results: list[AudiobookWishlistResult],
+    user: DetailedUser,
+    page: str,
+    counts: WishlistCounts,
+    update_tablist = False, # performs oob replacement for the tablist
+#}
+
+<table id="book-table-body" class="table table-pin-rows min-w-240">
+    {% if update_tablist %}
+        <Wishlist.Tablist page={{ page }} counts={{ counts }} />
+    {% endif %}
+
+    <thead>
+        <tr>
+            <th>
+            </th>
+            <th>
+            </th>
+            <th>
+                Title
+            </th>
+            <th>
+                Author
+            </th>
+            <th>
+                Narrator
+            </th>
+            <th>
+                Release
+            </th>
+            <th>
+                Length (hrs)
+            </th>
+            <th>
+                # Requested
+            </th>
+            <th>
+            </th>
+        </tr>
+    </thead>
+    {% if not results %}
+        <div role="alert" class="alert my-2">
+            <span class="stroke-info h-6 w-6 shrink-0">
+                <icons.InfoCircle />
+            </span>
+            <span>
+                {% if page.__eq__("wishlist") %}
+                    No books on your wishlist. Add some
+                    books by heading to the
+                    <a preload class="link" href="{{ base_url }}/search">search</a> tab {%
+                    elif page.__eq__("downloaded") %} No books have been downloaded yet. {%
+                    endif %}
+                </span>
+            </div>
+        {% endif %}
+        <tbody>
+            {% for result in results %}
+                {% set book = result.book %}
+                <tr class="text-xs lg:text-sm" id="{{ book.asin }}">
+                    <th>
+                        {{ loop.index }}
+                    </th>
+                    <td>
+                        <div class="size-16 lg:size-24">
+                            {% if book.cover_image %}
+                                <img class="object-cover w-full h-full"
+                                     height="64"
+                                     width="64"
+                                     src="{{ book.cover_image }}"
+                                     alt="{{ book.title }}" />
+                            {% else %}
+                                <div class="flex items-center justify-center w-full h-full bg-neutral opacity-30">
+                                    <icons.PhotoOff />
+                                </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="flex flex-col">
+                            <a preload
+                               href="{{ base_url }}/search?q={{ book.title+' ' +(book.authors|join(",") ) }}"
+                               class="font-bold text-primary line-clamp-4"
+                               title="{{ book.title }}">{{ book.title }}</a>
+                            {% if book.subtitle %}
+                                <span class="font-semibold line-clamp-4" title="{{ book.subtitle }}">{{ book.subtitle }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {{ book.authors|join(", ") }}
+                    </td>
+                    <td>
+                        {{ book.narrators|join(", ") }}
+                    </td>
+                    <td class="hidden lg:table-cell">
+                        {{ book.release_date.strftime("%B %Y") }}
+                    </td>
+                    <td class="lg:hidden">
+                        {{ book.release_date.strftime("%Y") }}
+                    </td>
+                    <td>
+                        {{ book.runtime_length_hrs }}
+                    </td>
+
+                    <td title="{{ result.amount_requested }}">
+                        {% if user.is_admin() %}
+                            <button class="btn px-1 text-sm"
+                                    onclick="requesters{{ loop.index }}.showModal()">
+                                {{ result.amount_requested }}
+                                <icons.Users />
+                            </button>
+                            <dialog id="requesters{{ loop.index }}" class="modal">
+                                <div class="modal-box">
+                                    <h3 class="text-lg font-bold">
+                                        Users that requested:
+                                        <span class="italic">{{ book.title }}</span>
+                                    </h3>
+                                    <ul class="py-4 text-sm max-h-60 overflow-y-auto truncate list-disc list-inside">
+                                        {% for user in result.requests %}
+                                            <li>
+                                                {{ user.user_username }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <form method="dialog" class="modal-backdrop">
+                                    <button>
+                                        close
+                                    </button>
+                                </form>
+                            </dialog>
+                        {% else %}
+                            {{ result.amount_requested }}
+                        {% endif %}
+                    </td>
+
+                    <td class="grid grid-cols-2 min-w-32 gap-1">
+                        <a preload
+                           title="Torrent Sources"
+                           href="{{ base_url }}/wishlist/sources/{{ book.asin }}"
+                           {% if not user.is_admin() %}disabled{% endif %}
+                           class="btn btn-square">
+                            <icons.List />
+                        </a>
+                        <button {% if book.downloaded %}title="Downloaded"class="btn btn-square btn-ghost bg-success text-neutral/20" {% else %} title="Automatic Download" class="btn btn-square" {% endif %}
+                                {% if not user.can_download() or book.downloaded %}disabled{% endif %}
+                                hx-post="{{ base_url }}/wishlist/hx-auto-download/{{ book.asin }}"
+                                hx-swap="outerHTML"
+                                hx-target="#book-table-body"
+                                hx-disabled-elt="this">
+                            <icons.Download />
+                        </button>
+                        <button title="Remove"
+                                class="btn btn-square"
+                                hx-delete="{{ base_url }}/wishlist/hx-delete/{{ book.asin }}{%- if page.__eq__('downloaded') -%}?downloaded=true{%- endif -%}"
+                                hx-swap="outerHTML"
+                                hx-target="#book-table-body"
+                                hx-disabled-elt="this">
+                            <icons.Ban />
+                        </button>
+                        {% if book.downloaded %}
+                            <button class="btn btn-square btn-ghost bg-success text-neutral/20"
+                                    disabled
+                                    title="Set as downloaded">
+                                <icons.Checkmark />
+                            </button>
+                        {% else %}
+                            <button class="btn btn-square"
+                                    title="Set as downloaded"
+                                    hx-patch="{{ base_url }}/wishlist/downloaded/hx-add/{{ book.asin }}"
+                                    {% if not user.is_admin() %}disabled{% endif %}
+                                    hx-swap="outerHTML"
+                                    hx-target="#book-table-body"
+                                    hx-disabled-elt="this">
+                                <icons.Checkmark />
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>

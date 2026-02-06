@@ -1,0 +1,115 @@
+{#def
+    results: list[ManualBookRequest],
+    user: DetailedUser,
+    counts: WishlistCounts,
+    update_tablist = False, # performs oob replacement for the tablist
+#}
+
+<table id="book-table-body" class="table table-pin-rows min-w-240">
+    {% if update_tablist %}
+        <Wishlist.Tablist page="manual" counts={{ counts }} />
+    {% endif %}
+
+    <thead>
+        <tr>
+            <th>
+            </th>
+            <th>
+                Title
+            </th>
+            <th>
+                Author
+            </th>
+            <th>
+                Narrator
+            </th>
+            <th>
+                Released
+            </th>
+            <th>
+                Info
+            </th>
+            <th>
+                Requested by
+            </th>
+            <th>
+            </th>
+        </tr>
+    </thead>
+    {% if not results %}
+        <div role="alert" class="alert my-2">
+            <span class="stroke-info h-6 w-6 shrink-0">
+                <icons.InfoCircle />
+            </span>
+            <span>
+                No manual book requests on your wishlist. Add some books by heading to
+                the
+                <a preload class="link" href="{{ base_url }}/search/manual">search</a>
+                tab.
+            </span>
+        </div>
+    {% endif %}
+    <tbody>
+        {% for book in results %}
+            <tr class="text-xs lg:text-sm {% if book.downloaded %}bg-success/30{% endif %}">
+                <th>
+                    {{ loop.index }}
+                </th>
+                <td class="{% if book.subtitle %}flex{% endif %} flex-col">
+                    <span>{{ book.title }}</span>
+                    {% if book.subtitle %}
+                        <span class="font-semibold line-clamp-4">{{ book.subtitle }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {{ book.authors|join(", ") }}
+                </td>
+                <td>
+                    {{ book.narrators|join(", ") }}
+                </td>
+                <td>
+                    {{ book.publish_date }}
+                </td>
+                <td>
+                    {{ book.additional_info }}
+                </td>
+                <td>
+                    {{ book.user_username }}
+                </td>
+                <td>
+                    <button title="Remove"
+                            class="btn btn-square"
+                            {% if not user.is_admin() %}disabled{% endif %}
+                            hx-delete="{{ base_url }}/wishlist/manual/hx-delete/{{ book.id }}"
+                            hx-swap="outerHTML"
+                            hx-target="#book-table-body"
+                            hx-disabled-elt="this">
+                        <icons.Ban />
+                    </button>
+                    {% if book.downloaded %}
+                        <button class="btn btn-square btn-ghost bg-success text-neutral/20"
+                                disabled
+                                title="Set as downloaded">
+                            <icons.Checkmark />
+                        </button>
+                    {% else %}
+                        <button class="btn btn-square"
+                                title="Set as downloaded"
+                                {% if not user.is_admin() %}disabled{% endif %}
+                                hx-patch="{{ base_url }}/wishlist/manual/hx-add/{{ book.id }}"
+                                hx-swap="outerHTML"
+                                hx-target="#book-table-body"
+                                hx-disabled-elt="this">
+                            <icons.Checkmark />
+                        </button>
+                    {% endif %}
+                    <a class="btn btn-square"
+                       href="{{ base_url }}/search/manual?id={{ book.id }}"
+                       title="Edit">
+                        <icons.Pencil />
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

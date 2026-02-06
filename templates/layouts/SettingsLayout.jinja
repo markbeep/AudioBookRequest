@@ -1,0 +1,70 @@
+{#def
+    user: DetailedUser,
+    title: str,
+    page: str,
+#}
+
+<BaseLayout title={{ title }} user={{ user }}>
+
+{% if version %}
+    <button class="fixed bottom-4 right-4 font-mono text-xs font-semibold text-neutral/80 dark:text-neutral-content/80 underline cursor-pointer z-50"
+            title="Changelog"
+            onclick="changelog_modal.showModal()">
+        version: {{ version }}
+    </button>
+    <dialog id="changelog_modal" class="modal">
+        <div class="modal-box changelog max-h-4/5">
+            {{ changelog | safe }}
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>
+                close
+            </button>
+        </form>
+    </dialog>
+{% endif %}
+<div class="flex items-start justify-center p-2 md:p-4 relative">
+    <main class="flex flex-col w-[90%] md:w-3/4 max-w-160 gap-4 gap-y-8 pb-40">
+        {% if user.is_admin() %}
+            <div role="tablist" class="tabs tabs-box">
+                <a preload
+                   href="{{ base_url }}/settings/account"
+                   role="tab"
+                   class="tab {% if page=='account' %}tab-active{% endif %}">Account</a>
+                <a preload
+                   href="{{ base_url }}/settings/users"
+                   role="tab"
+                   class="tab {% if page=='users' %}tab-active{% endif %}">Users</a>
+                <a preload
+                   href="{{ base_url }}/settings/prowlarr"
+                   role="tab"
+                   class="tab {% if page=='prowlarr' %}tab-active{% endif %}">Prowlarr</a>
+                <a preload
+                   href="{{ base_url }}/settings/audiobookshelf"
+                   role="tab"
+                   class="tab {% if page=='audiobookshelf' %}tab-active{% endif %}">Audiobookshelf</a>
+                <a preload
+                   href="{{ base_url }}/settings/download"
+                   role="tab"
+                   class="tab {% if page=='download' %}tab-active{% endif %}">Download</a>
+                <a preload
+                   href="{{ base_url }}/settings/notifications"
+                   role="tab"
+                   class="tab {% if page=='notifications' %}tab-active{% endif %}">Notifications</a>
+                <a preload
+                   href="{{ base_url }}/settings/security"
+                   role="tab"
+                   class="tab {% if page=='security' %}tab-active{% endif %}">Security</a>
+                <a preload
+                   href="{{ base_url }}/settings/indexers"
+                   role="tab"
+                   class="tab {% if page=='indexers' %}tab-active{% endif %}">Indexers</a>
+            </div>
+        {% endif %}
+
+        {{ content }}
+
+    </main>
+</div>
+
+</BaseLayout>

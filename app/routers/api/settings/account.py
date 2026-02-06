@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from app.internal.auth.authentication import (
-    APIKeyAuth,
+    AnyAuth,
     DetailedUser,
     create_api_key,
     create_user,
@@ -37,7 +37,7 @@ class ChangePasswordRequest(BaseModel):
 @router.get("/api-keys", response_model=list[APIKeyResponse])
 def list_api_keys(
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     api_keys = session.exec(
         select(APIKey).where(APIKey.user_username == user.username)
@@ -49,7 +49,7 @@ def list_api_keys(
 def create_new_api_key(
     body: CreateAPIKeyRequest,
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     name = body.name.strip()
     same_name_key = session.exec(
@@ -72,7 +72,7 @@ def create_new_api_key(
 def delete_api_key(
     id: str,
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     try:
         uuid_id = uuid.UUID(id)
@@ -97,7 +97,7 @@ def delete_api_key(
 def toggle_api_key(
     id: str,
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     try:
         uuid_id = uuid.UUID(id)
@@ -123,7 +123,7 @@ def toggle_api_key(
 def change_password(
     body: ChangePasswordRequest,
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     if not is_correct_password(user, body.old_password):
         raise HTTPException(status_code=400, detail="Old password is incorrect")

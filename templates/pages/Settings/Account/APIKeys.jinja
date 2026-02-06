@@ -1,0 +1,181 @@
+{#def
+    api_keys: list,
+    show_api_key = False,
+    init = False,
+    new_api_key: str | None = None,
+#}
+
+<div id="api_keys">
+    {% if init %}
+        <script>
+            let beingCopied = false;
+
+            function copyAPIKey(apiKey) {
+                if (beingCopied) return;
+                beingCopied = true;
+                navigator.clipboard.writeText(apiKey);
+                const copiedText = document.getElementById('copy-button');
+                copiedText.classList.add('btn-success');
+                copiedText.textContent = 'Copied!';
+                setTimeout(() => {
+                    copiedText.classList.remove('btn-success');
+                    copiedText.textContent = 'Copy';
+                    beingCopied = false;
+                }, 2000);
+            }
+        </script>
+    {% endif %}
+
+    <h2 class="text-lg mb-2">
+        API Keys
+    </h2>
+    <p class="text-sm text-gray-600 mb-4">
+        API keys allow external applications to access your account.
+    </p>
+    <form id="create-api-key-form"
+          class="flex flex-col gap-2 mb-4"
+          hx-post="{{ base_url }}/settings/account/hx-api-key"
+          hx-target="#api_keys">
+        <div class="flex gap-2">
+            <input name="name"
+                   type="text"
+                   placeholder="API Key Name"
+                   class="input w-full"
+                   required />
+            <button type="submit" class="btn btn-primary">
+                Create API Key
+            </button>
+        </div>
+    </form>
+    {% if show_api_key %}
+        <div class="card mb-4 shadow-sm dark:border dark:border-gray-700">
+            <div class="flex flex-col card-body gap-2">
+                <p>
+                    <strong>Your new API key:</strong>
+                </p>
+                <div class="flex gap-2">
+                    <code class="bg-base-200 p-2 rounded flex-1">{{ new_api_key }}</code>
+                    <div class="relative">
+                        <button id="copy-button"
+                                onclick="copyAPIKey('{{ new_api_key }}')"
+                                class="btn text-xs transition-all duration-500 min-w-20">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                <p class="text-sm text-error">
+                    <strong>Important:</strong> This is the only time you'll see this key. Store it securely!
+                </p>
+            </div>
+        </div>
+    {% endif %}
+    {% if api_keys %}
+        <div class="overflow-x-auto">
+            <table class="table w-full">
+                <thead>
+                    <tr>
+                        <th>
+                            Name
+                        </th>
+                        <th>
+                            Created
+                        </th>
+                        <th>
+                            Last Used
+                        </th>
+                        <th>
+                            Status
+                        </th>
+                        <th>
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for api_key in api_keys %}
+                        <tr>
+                            <td>
+                                {{ api_key.name }}
+                            </td>
+                            <td>
+                                {{ api_key.created_at.strftime("%Y-%m-%d %H:%M") }} GMT
+                            </td>
+                            <td>
+                                {% if api_key.last_used %}
+                                    {{ api_key.last_used.strftime("%Y-%m-%d %H:%M") }} GMT
+                                {% else %}
+                                    Never
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if api_key.enabled %}badge-success{% else %}badge-error{% endif %}">
+                                    {% if api_key.enabled %}
+                                        Enabled
+                                    {% else %}
+                                        Disabled
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="flex gap-2">
+                                    <button hx-patch="{{ base_url }}/settings/account/hx-api-key/{{ api_key.id }}/toggle"
+                                            hx-target="#api_keys"
+                                            class="btn btn-sm">
+                                        {% if api_key.enabled %}
+                                            Disable
+                                        {% else %}
+                                            Enable
+                                        {% endif %}
+                                    </button>
+                                    <button onclick="delete_api_key_modal_{{ loop.index }}.showModal()"
+                                            class="btn btn-sm btn-error">
+                                        Delete
+                                    </button>
+                                    <dialog id="delete_api_key_modal_{{ loop.index }}" class="modal">
+                                        <div class="modal-box">
+                                            <h3 class="text-lg font-bold">
+                                                Are you sure you want to delete this API key?
+                                            </h3>
+                                            <div class="grid grid-cols-2 py-4">
+                                                <span class="font-semibold mr-2">Name</span><span class="font-mono">{{ api_key.name }}</span>
+                                                <span class="font-semibold mr-2">Created</span><span class="font-mono">{{ api_key.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
+                                                <span class="font-semibold mr-2">Last Used</span>
+                                                <span class="font-mono">
+                                                    {% if api_key.last_used %}
+                                                        {{ api_key.last_used.strftime("%Y-%m-%d %H:%M") }} GMT
+                                                    {% else %}
+                                                        Never
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                            <form method="dialog" class="flex justify-between">
+                                                <button class="btn">
+                                                    Cancel
+                                                </button>
+                                                <button class="btn bg-error"
+                                                        hx-delete="{{ base_url }}/settings/account/hx-api-key/{{ api_key.id }}"
+                                                        hx-disabled-elt="this"
+                                                        hx-target="#api_keys">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <form method="dialog" class="modal-backdrop">
+                                            <button>
+                                                close
+                                            </button>
+                                        </form>
+                                    </dialog>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-gray-600">
+            No API keys created yet.
+        </p>
+    {% endif %}
+</div>

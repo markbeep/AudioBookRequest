@@ -1,0 +1,74 @@
+{#def
+    indexer_flags: list[IndexerFlags],
+#}
+
+<form id="flags-form"
+      hx-post="{{ base_url }}/settings/download/hx-flags"
+      hx-target="this"
+      hx-disabled-elt="#add-button">
+    <div class="flex gap-1 items-end w-full">
+        <div class="flex flex-col w-full">
+            <label for="indexer-flag">
+                Indexer flag
+            </label>
+            <input required
+                   id="indexer-flag"
+                   name="flag"
+                   type="text"
+                   class="input"
+                   placeholder="freeleech" />
+        </div>
+        <div class="flex flex-col w-full">
+            <label for="flag-score">
+                Score
+            </label>
+            <input required
+                   id="flag-score"
+                   name="score"
+                   type="number"
+                   class="input"
+                   placeholder="10" />
+        </div>
+        <button type="submit" class="btn btn-primary" id="add-button">
+            Add
+        </button>
+    </div>
+    {% if indexer_flags %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        Flag
+                    </th>
+                    <th class="w-full">
+                        Score
+                    </th>
+                    <th>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flag in indexer_flags %}
+                    <tr>
+                        <td>
+                            {{ flag.flag }}
+                        </td>
+                        <td>
+                            {{ flag.score }}
+                        </td>
+                        <td>
+                            <button title="Delete flag"
+                                    type="button"
+                                    class="btn btn-square delete-button"
+                                    hx-delete="{{ base_url }}/settings/download/hx-flags/{{ flag.flag }}"
+                                    hx-disabled-elt=".delete-button"
+                                    hx-target="#flags-form">
+                                <icons.Trash />
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</form>

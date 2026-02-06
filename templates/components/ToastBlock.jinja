@@ -1,0 +1,36 @@
+{#def
+    hidden = True,
+    toast_error: str | None = None,
+    toast_success: str | None = None,
+    toast_info: str | None = None,
+    init = False,
+#}
+
+<div {% if hidden %}class="hidden"{% endif %} id="toast-block">
+    {% if init %}
+        <script>
+            // listens for toast events triggered with `catalog_response_toast`
+            document.body.addEventListener("toast", e => {
+                const message = e.detail.message;
+                const type = e.detail.type;
+                toast(message, type);
+            });
+        </script>
+    {% endif %}
+
+    {% if toast_error %}
+        <script>
+            toast("{{toast_error|safe}}", "error");
+        </script>
+    {% endif %}
+    {% if toast_success %}
+        <script>
+            toast("{{toast_success|safe}}", "success");
+        </script>
+    {% endif %}
+    {% if toast_info %}
+        <script>
+            toast("{{toast_info|safe}}", "info");
+        </script>
+    {% endif %}
+</div>

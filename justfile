@@ -25,8 +25,11 @@ tailwind:
 upgrade:
     uvx uv-upgrade
 
+format_html:
+    uv run djlint templates --extension=html --reformat
+
 types:
     uv run basedpyright
-    uv run djlint templates
+    uv run djlint templates --extension=html --check
     uv run ruff format --check app
     uv run alembic check

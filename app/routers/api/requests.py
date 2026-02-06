@@ -7,25 +7,27 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     HTTPException,
-    Security,
     Response,
+    Security,
 )
 from pydantic import BaseModel
-from sqlmodel import Session, asc, col, select, delete
+from sqlmodel import Session, asc, col, delete, select
 
 from app.internal.audiobookshelf.client import background_abs_trigger_scan
 from app.internal.audiobookshelf.config import abs_config
-from app.internal.auth.authentication import APIKeyAuth, DetailedUser
+from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.book_search import (
-    get_book_by_asin,
     audible_region_type,
-    get_region_from_settings,
     audible_regions,
+    get_book_by_asin,
+    get_region_from_settings,
 )
+from app.internal.db_queries import get_wishlist_results
 from app.internal.models import (
     Audiobook,
     AudiobookRequest,
     AudiobookWishlistResult,
+    AudiobookWithRequests,
     EventEnum,
     GroupEnum,
     ManualBookRequest,
@@ -37,9 +39,8 @@ from app.internal.notifications import (
 )
 from app.internal.prowlarr.prowlarr import start_download
 from app.internal.prowlarr.util import ProwlarrMisconfigured, prowlarr_config
-from app.internal.query import query_sources, QueryResult, background_start_query
+from app.internal.query import QueryResult, background_start_query, query_sources
 from app.internal.ranking.quality import quality_config
-from app.internal.db_queries import get_wishlist_results
 from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.log import logger
@@ -53,15 +54,15 @@ class DownloadSourceBody(BaseModel):
     indexer_id: int
 
 
-@router.post("/{asin}", status_code=201)
+@router.post("/{asin}", response_model=Audiobook)
 async def create_request(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     background_task: BackgroundTasks,
     asin: str,
     region: audible_region_type | None = None,
-):
+) -> AudiobookWithRequests:
     if region is None:
         region = get_region_from_settings()
     if audible_regions.get(region) is None:
@@ -104,13 +105,21 @@ async def create_request(
             auto_download=True,
         )
 
-    return Response(status_code=201)
+    requests = session.exec(
+        select(AudiobookRequest).where(AudiobookRequest.asin == asin)
+    ).all()
+
+    return AudiobookWithRequests(
+        book=book,
+        requests=list(requests),
+        username=user.username,
+    )
 
 
 @router.get("", response_model=list[AudiobookWishlistResult])
 async def list_requests(
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     filter: Literal["all", "downloaded", "not_downloaded"] = "all",
 ):
     username = None if user.is_admin() else user.username
@@ -122,7 +131,7 @@ async def list_requests(
 async def delete_request(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     if user.is_admin():
         session.execute(
@@ -144,7 +153,7 @@ async def mark_downloaded(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
     if book:
@@ -165,7 +174,7 @@ async def mark_downloaded(
 @router.get("/manual", response_model=list[ManualBookRequest])
 async def list_manual_requests(
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     return session.exec(
         select(ManualBookRequest)
@@ -191,7 +200,7 @@ async def create_manual_request(
     body: ManualRequest,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     book_request = ManualBookRequest(
         user_username=user.username,
@@ -218,7 +227,7 @@ async def update_manual_request(
     id: uuid.UUID,
     body: ManualRequest,
     session: Annotated[Session, Depends(get_session)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
 ):
     book_request = session.get(ManualBookRequest, id)
     if not book_request:
@@ -244,7 +253,7 @@ async def mark_manual_downloaded(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     book_request = session.get(ManualBookRequest, id)
     if book_request:
@@ -265,7 +274,7 @@ async def mark_manual_downloaded(
 async def delete_manual_request(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     book = session.get(ManualBookRequest, id)
     if book:
@@ -283,7 +292,7 @@ async def refresh_source(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth())],
+    user: Annotated[DetailedUser, Security(AnyAuth())],
     force_refresh: bool = False,
 ):
     # causes the sources to be placed into cache once they're done
@@ -302,7 +311,7 @@ async def list_sources(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    admin_user: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
     only_cached: bool = False,
 ):
     try:
@@ -327,7 +336,7 @@ async def download_book(
     body: DownloadSourceBody,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    admin_user: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     try:
         resp = await start_download(
@@ -360,7 +369,7 @@ async def start_auto_download_endpoint(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    user: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.trusted))],
+    user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.trusted))],
 ):
     try:
         await query_sources(

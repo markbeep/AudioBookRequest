@@ -1,10 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Security, Response
+from fastapi import APIRouter, Depends, Response, Security
 from pydantic import BaseModel
 from sqlmodel import Session
 
-from app.internal.auth.authentication import APIKeyAuth, DetailedUser
+from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.models import GroupEnum
 from app.internal.ranking.quality import IndexerFlag, QualityRange, quality_config
 from app.util.db import get_session
@@ -28,7 +28,7 @@ class DownloadSettings(BaseModel):
 @router.get("", response_model=DownloadSettings)
 def get_download_settings(
     session: Annotated[Session, Depends(get_session)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     return DownloadSettings(
         auto_download=quality_config.get_auto_download(session),
@@ -60,7 +60,7 @@ class UpdateDownloadSettings(BaseModel):
 def update_download_settings(
     body: UpdateDownloadSettings,
     session: Annotated[Session, Depends(get_session)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     quality_config.set_auto_download(session, body.auto_download)
     quality_config.set_range(session, "quality_flac", body.flac_range)

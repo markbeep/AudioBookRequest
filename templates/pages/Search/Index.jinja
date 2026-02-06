@@ -1,0 +1,114 @@
+{#def
+    user: DetailedUser,
+    search_term: str,
+    selected_region: str,
+    regions: dict[audible_region_type, str],
+    search_results: list[AudiobookSearchResult],
+    page: int,
+    auto_start_download: bool,
+    prowlarr_configured: bool,
+    suggestions: list[str] = [],
+#}
+
+<BaseLayout title="Search" user={{ user }}>
+<script>
+    const onSearch = () => {
+        const search_term = document.querySelector("input").value;
+        document.getElementById("search").disabled = true;
+        document.getElementById("search-text").style.display = "none";
+        document.getElementById("search-spinner").style.display = "inline-block";
+        window.location.href = `/search?q=${encodeURIComponent(search_term)}`;
+    };
+    const onPageChange = page => {
+        const url = new URL(window.location);
+        url.searchParams.set("page", page);
+        window.location = url;
+    };
+</script>
+<div class="w-screen flex flex-col items-center justify-center p-6 sm:p-8 overflow-x-hidden gap-4">
+    <div class="flex w-full justify-between items-center">
+        <h1 class="text-3xl font-bold text-left">
+            Search
+        </h1>
+        <a preload
+           href="{{ base_url }}/search/manual"
+           title="Manually add request"
+           class="btn btn- flex items-center justify-center">
+            Manual
+            <icons.Plus />
+        </a>
+    </div>
+    <div class="flex flex-col gap-4 justify-start items-center">
+        <form class="flex items-start w-full join" onsubmit="onSearch();">
+            <input name="q"
+                   class="input join-item focus:z-10"
+                   placeholder="Book name..."
+                   {% if not search_term %}autofocus{% endif %}
+                   value="{{ search_term }}"
+                   spellcheck="false"
+                   autocomplete="off"
+                   list="search-suggestions"
+                   hx-get="{{ base_url }}/search/hx-suggestions?region={{ selected_region }}"
+                   hx-target="#search-suggestions"
+                   hx-swap="outerHTML"
+                   hx-trigger="keyup changed delay:100ms" />
+
+            <Search.Suggestions id="search-suggestions" suggestions={{ suggestions }} />
+
+            <select class="select join-item max-w-16 sm:max-w-20 focus:z-10"
+                    name="region">
+                {% for region in regions.keys() %}
+                    <option value="{{ region }}"
+                            {% if region.__eq__(selected_region) %}selected="selected"{% endif %}>
+                        {{ region }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button id="search" class="btn btn-primary join-item" type="submit">
+                <span id="search-text">Search</span>
+                <span id="search-spinner" class="loading hidden"></span>
+            </button>
+        </form>
+        {% block book_results %}
+            <div id="book-results"
+                 class="min-w-[60vw] max-w-[90vw] sm:max-w-[80vw] h-full grid gap-1 gap-y-2 sm:gap-y-4 sm:gap-2 p-1 grid-flow-row grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7">
+                {% for result in search_results %}
+                    <BookCard book_with_requests={{ result }} auto_start_download={{ auto_start_download }} region_tld={{ regions[selected_region] }} />
+                {% endfor %}
+
+            </div>
+        {% endblock book_results %}
+        {% if search_results or page > 0 %}
+            <div class="join">
+                <button class="join-item btn"
+                        onclick="onPageChange('{{ page-1 }}')"
+                        {% if page.__eq__(0) %}disabled{% endif %}>
+                    «
+                </button>
+                <button class="join-item btn flex flex-col gap-0"
+                        onclick="onPageChange('{{ 0 }}')"
+                        {% if page.__eq__(0) %}disabled{% endif %}>
+                    Page {{ page+1 }}
+                    <span class="text-[0.5rem]">back to first</span>
+                </button>
+                <button class="join-item btn" onclick="onPageChange('{{ page+1 }}')">
+                    »
+                </button>
+            </div>
+        {% endif %}
+        {% if not search_results %}
+            <div class="pt-8 flex flex-col gap-1 items-center justify-center text-center max-w-[20rem]">
+                {% if search_term %}
+                    <span class="text-xl font-semibold">No results found</span>
+                    <span class="text-sm">No audiobooks were found. Do note, that internally Audible is used for
+                        searching. If the book doesn't exist on Audible it'll have to be added
+                        <a class="link" preload href="{{ base_url }}/search/manual">manually</a>.</span>
+                {% else %}
+                    <span class="text-xl font-semibold">Perform a search</span>
+                    <span class="text-sm opacity-60">Nothing has been searched yet.</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+</BaseLayout>

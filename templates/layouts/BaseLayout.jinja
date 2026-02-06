@@ -1,0 +1,157 @@
+{#def
+    user: DetailedUser | None = None,
+    title="AudiobookRequest",
+    hide_navbar=False,
+#}
+
+<!DOCTYPE html>
+<html lang="en" data-theme="garden">
+    <head>
+        <meta charset="UTF-8" />
+
+        <title>
+            {{ title }}
+        </title>
+        <meta name="description"
+              content="AudioBookRequest - Your platform for managing audiobook requests." />
+        <meta name="keywords"
+              content="audiobooks, requests, wishlist, search, settings" />
+
+        <link rel="stylesheet"
+              href="{{ base_url }}/static/globals.css?v={{ version }}" />
+        <script src="{{ base_url }}/static/htmx.js?v={{ version }}"></script>
+        <script defer src="{{ base_url }}/static/htmx-preload.js?v={{ version }}"></script>
+        <script>
+            const setTheme = theme => {
+                if (!theme) {
+                    theme = localStorage.getItem("theme");
+                    if (!theme) {
+                        theme = window.matchMedia("(prefers-color-scheme: dark)").matches ?
+                            "night" :
+                            "nord";
+                    }
+                }
+                document.documentElement.setAttribute("data-theme", theme);
+                localStorage.setItem("theme", theme);
+                if (theme === "night") {
+                    for (const elem of document.getElementsByClassName(
+                            "light-dark-toggle",
+                        )) {
+                        elem.classList.add("DARKCLASS");
+                        document.documentElement.classList.add("dark");
+                    }
+                } else {
+                    for (const elem of document.getElementsByClassName(
+                            "light-dark-toggle",
+                        )) {
+                        elem.classList.remove("DARKCLASS");
+                        document.documentElement.classList.remove("dark");
+                    }
+                }
+            };
+            const toggleTheme = () => {
+                const theme = document.documentElement.getAttribute("data-theme");
+
+                const newTheme = theme === "nord" ? "night" : "nord";
+                setTheme(newTheme);
+            };
+        </script>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="apple-touch-icon"
+              sizes="180x180"
+              href="{{ base_url }}/static/apple-touch-icon.png?v={{ version }}" />
+        <link rel="icon"
+              sizes="any"
+              type="image/svg+xml"
+              href="{{ base_url }}/static/favicon.svg?v={{ version }}" />
+        <link rel="icon"
+              type="image/png"
+              sizes="32x32"
+              href="{{ base_url }}/static/favicon-32x32.png?v={{ version }}" />
+        <link rel="icon"
+              type="image/png"
+              sizes="16x16"
+              href="{{ base_url }}/static/favicon-16x16.png?v={{ version }}" />
+        <link rel="manifest"
+              href="{{ base_url }}/static/site.webmanifest?v={{ version }}" />
+
+        <js.Toast />
+
+    </head>
+    <body class="w-screen min-h-screen overflow-x-hidden" hx-ext="preload">
+
+        <ToastBlock init />
+
+        <script>
+            // execute the script once here (to have it run on all pages), and once when the button loads below in the navbar
+            setTheme();
+        </script>
+        {% if not hide_navbar %}
+            <header class="shadow-lg">
+                <nav class="navbar">
+                    <div class="flex-1">
+                        <a preload
+                           href="{{ base_url }}/"
+                           class="btn btn-ghost text-lg hidden sm:inline-flex">
+                            AudioBookRequest
+                        </a>
+                        <a preload
+                           href="{{ base_url }}/"
+                           class="btn btn-ghost text-lg sm:hidden">
+                            ABR
+                        </a>
+                        <a preload
+                           href="{{ base_url }}/search"
+                           class="btn btn-ghost btn-square"
+                           title="Search">
+                            <icons.Search />
+                        </a>
+                        <a preload
+                           href="{{ base_url }}/wishlist"
+                           class="btn btn-ghost btn-square group relative"
+                           title="Wishlist">
+                            <span class="opacity-0 group-hover:opacity-100 absolute left-2 top-2 transition-opacity duration-500">
+                                <icons.GiftSolid />
+                            </span>
+                            <span class="opacity-100 group-hover:opacity-0 absolute left-2 top-2 transition-opacity duration-500">
+                                <icons.Gift />
+                            </span>
+                        </a>
+                    </div>
+                    <div class="flex-none flex pr-4">
+                        <button class="btn btn-ghost btn-square light-dark-toggle"
+                                onclick="toggleTheme()">
+                            <script>
+                                setTheme();
+                            </script>
+                            <span class="theme-dark svg-dark">
+                                <icons.Moon />
+                            </span>
+                            <span class="theme-light svg-light">
+                                <icons.Sun />
+                            </span>
+                        </button>
+                        {% if user.can_logout() %}
+                            <button hx-post="{{ base_url }}/auth/logout"
+                                    class="btn btn-ghost btn-square"
+                                    title="Logout">
+                                <icons.DoorExit />
+                            </button>
+                        {% endif %}
+                        <a preload
+                           href="{{ base_url }}/settings/account"
+                           class="btn btn-ghost btn-square group"
+                           title="Settings">
+                            <span class="group-hover:rotate-90 transition-all duration-500 ease-in-out">
+                                <icons.Settings />
+                            </span>
+                        </a>
+                    </div>
+                </nav>
+            </header>
+        {% endif %}
+
+        {{ content }}
+
+    </body>
+</html>

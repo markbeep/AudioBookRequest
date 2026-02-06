@@ -1,0 +1,85 @@
+{#def
+    book_with_requests: AudiobookWithRequests,
+    auto_start_download: bool,
+    region_tld: str,
+#}
+
+{% set book = book_with_requests.book %}
+{% set already_requested = book_with_requests.already_requested %}
+
+<div class="book-card flex flex-col">
+    <div class="relative w-32 h-32 sm:w-40 sm:h-40 rounded-md overflow-hidden shadow shadow-black items-center justify-center flex">
+        {% if book.cover_image %}
+            <img class="object-cover w-full h-full hover:scale-110 transition-transform duration-500 ease-in-out"
+                 height="128"
+                 width="128"
+                 src="{{ book.cover_image }}"
+                 alt="{{ book.title }}" />
+        {% else %}
+            <icons.PhotoOff />
+        {% endif %}
+        <!-- Request Button -->
+        <button class="absolute top-0 right-0 rounded-none rounded-bl-md btn-sm btn btn-square items-center justify-center flex {% if book.downloaded or already_requested %}btn-ghost bg-success text-neutral/20{% else %}btn-info{% endif %}"
+                hx-post="{{ base_url }}/request/hx-add/{{ book.asin }}"
+                hx-disabled-elt="this"
+                hx-target="closest .book-card"
+                hx-swap="outerHTML"
+                hx-on:click="this.disabled = true;"
+                {% if book.downloaded or already_requested %}disabled{% endif %}>
+            {% if book.downloaded or already_requested %}
+                <span>
+                    <icons.Checkmark />
+                </span>
+            {% else %}
+                {% if auto_start_download and user.can_download() %}
+                    <span>
+                        <icons.Download />
+                    </span>
+                {% else %}
+                    <span>
+                        <icons.Plus />
+                    </span>
+                {% endif %}
+            {% endif %}
+        </button>
+    </div>
+    <!-- Book Info -->
+    {% if book.asin %}
+        <a class="text-sm text-primary font-bold pt-1 line-clamp-2"
+           title="{{ book.title }}"
+           target="_blank"
+           href="https://audible{{ region_tld }}/pd/{{ book.asin }}?ipRedirectOverride=true">
+            {{ book.title }}
+        </a>
+    {% else %}
+        <div class="text-sm text-primary font-bold pt-1 line-clamp-2"
+             title="{{ book.title }}">
+            {{ book.title }}
+        </div>
+    {% endif %}
+    {% if book.subtitle %}
+        <div class="opacity-60 font-semibold text-xs line-clamp-1"
+             title="{{ book.subtitle }}">
+            {{ book.subtitle }}
+        </div>
+    {% endif %}
+    <div class="text-xs font-semibold line-clamp-1"
+         title="Authors: {{ book.authors | join(", ") }}">
+        {% for author in book.authors[:2] %}
+            <a href="{{ base_url }}/search?q={{ author }}"
+               title="Search for {{ author }}"
+               class="hover:underline">
+                {{ author }}
+            {{- "," if loop.index < book.authors | length and loop.index < 2 else "" -}}</a>
+        {% endfor %}
+        {% if book.authors | length > 2 %}
+            <span class="opacity-60">+{{ book.authors | length - 2 }} more</span>
+        {% endif %}
+    </div>
+    <!-- Runtime -->
+    {% if book.runtime_length_hrs %}
+        <div class="text-xs opacity-60 mt-1">
+            {{ book.runtime_length_hrs }}h
+        </div>
+    {% endif %}
+</div>

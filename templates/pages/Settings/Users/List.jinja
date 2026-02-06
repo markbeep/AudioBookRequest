@@ -1,0 +1,130 @@
+{#def
+    user: DetailedUser,
+    users: Sequence[User],
+#}
+
+<div id="user-list" class="pt-4 border-t border-base-200">
+    <h2 class="text-lg">
+        Users
+    </h2>
+
+    <div class="flex flex-col opacity-60 text-sm">
+        <span class="font-bold">Untrusted:</span> <span>Can search and request files.</span>
+        <span class="font-bold">Trusted:</span> <span>Same as untrused, but if auto-download is enabled the user can start
+        downloads.</span>
+        <span class="font-bold">Admin:</span> <span>Can manage users and settings.</span>
+        <span class="mt-4 font-bold">Note:</span> <span>Extra data changes are updated automatically when input is not
+        focused anymore. The data can be used for some notes or in notification messages as a variable.</span>
+    </div>
+    <div class="max-h-120 overflow-x-auto">
+        <table class="table table-pin-rows">
+            <thead>
+                <tr>
+                    <th>
+                    </th>
+                    <th>
+                        Username
+                    </th>
+                    <th>
+                        Group
+                    </th>
+                    <th>
+                        Extra Data
+                    </th>
+                    <th>
+                        Delete
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                    <tr>
+                        <th>
+                            {{ loop.index }}
+                        </th>
+                        <td>
+                            {{ u.username }}
+                        </td>
+                        <td>
+                            <select id="select-group"
+                                    name="group"
+                                    class="select w-full"
+                                    required
+                                    {% if u.root %}disabled{% endif %}
+                                    hx-patch="{{ base_url }}/settings/users/hx-update/{{ u.username }}"
+                                    hx-trigger="change"
+                                    hx-disabled-elt="this"
+                                    hx-target="#user-list"
+                                    hx-swap="outerHTML">
+                                <option value="untrusted"
+                                        {% if u.group.value.__eq__("untrusted") %}selected{% endif %}>
+                                    Untrusted
+                                </option>
+                                <option value="trusted"
+                                        {% if u.group.value.__eq__("trusted") %}selected{% endif %}>
+                                    Trusted
+                                </option>
+                                <option value="admin"
+                                        {% if u.group.value.__eq__("admin") %}selected{% endif %}>
+                                    Admin
+                                </option>
+                                {% if u.root %}
+                                    <option value="admin" selected>
+                                        Root Admin
+                                    </option>
+                                {% endif %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text"
+                                   class="input w-full"
+                                   value="{{ u.extra_data or '' }}"
+                                   name="extra_data"
+                                   placeholder="Extra data"
+                                   hx-patch="{{ base_url }}/settings/users/hx-update/{{ u.username }}"
+                                   hx-trigger="change delay:500ms"
+                                   hx-disabled-elt="this"
+                                   hx-target="#user-list"
+                                   hx-swap="outerHTML" />
+                        </td>
+                        <td {% if u.root %}title="Can't delete the root admin" {% elif u.is_self(user.username) %} title="Can't delete yourself" {% endif %}>
+                            <button class="btn btn-square btn-ghost" onclick="delete_modal_{{ loop.index }}.showModal()" {% if
+                                u.is_self(user.username) or u.root %}disabled{% endif %}>
+                                <icons.Trash />
+                            </button>
+                            <dialog id="delete_modal_{{ loop.index }}" class="modal">
+                                <div class="modal-box">
+                                    <h3 class="text-lg font-bold">
+                                        Are you sure you want to delete a user?
+                                    </h3>
+                                    <div class="grid grid-cols-2 py-4">
+                                        <span class="font-semibold mr-2">Username</span><span class="font-mono">{{ u.username }}</span>
+                                        <span class="font-semibold mr-2">Group</span><span class="font-mono">{{ u.group.value.capitalize() 
+                                        }}</span>
+                                    </div>
+                                    <form method="dialog" class="flex justify-between">
+                                        <button class="btn">
+                                            Cancel
+                                        </button>
+                                        <button class="btn bg-primary"
+                                                hx-delete="{{ base_url }}/settings/users/hx-delete/{{ u.username }}"
+                                                hx-disabled-elt="this"
+                                                hx-target="#user-list"
+                                                hx-swap="outerHTML">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                                <form method="dialog" class="modal-backdrop">
+                                    <button>
+                                        close
+                                    </button>
+                                </form>
+                            </dialog>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

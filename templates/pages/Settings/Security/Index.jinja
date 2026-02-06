@@ -1,0 +1,38 @@
+{#def
+    user: DetailedUser,
+    login_type: LoginTypeEnum,
+    access_token_expiry: Minute,
+    min_password_length: int,
+    oidc_endpoint: str,
+    oidc_client_secret: str,
+    oidc_client_id: str,
+    oidc_scope: str,
+    oidc_username_claim: str,
+    oidc_group_claim: str,
+    oidc_redirect_https: bool,
+    oidc_logout_url: str,
+    force_login_type: LoginTypeEnum | None,
+#}
+
+<SettingsLayout user={{ user }} page="security" title="Settings - Security">
+<js.AlpineJS />
+
+<div class="flex flex-col">
+    <Settings.Security.Form user={{ user }} login_type={{ login_type }} access_token_expiry={{ access_token_expiry }} min_password_length={{ min_password_length }} oidc_endpoint={{ oidc_endpoint }} oidc_client_secret={{ oidc_client_secret }} oidc_client_id={{ oidc_client_id }} oidc_scope={{ oidc_scope }} oidc_username_claim={{ oidc_username_claim }} oidc_group_claim={{ oidc_group_claim }} oidc_redirect_https={{ oidc_redirect_https }} oidc_logout_url={{ oidc_logout_url }} force_login_type={{ force_login_type }} />
+
+    <hr class="my-8 border-base-200" />
+    <div class="flex flex-col gap-2">
+        <h2 class="text-lg text-error">
+            Danger Zone
+        </h2>
+        <button type="button"
+                class="btn btn-error"
+                hx-post="{{ base_url }}/settings/security/hx-reset-auth"
+                hx-confirm="Are you sure you want to reset the authentication secret? This will invalidate everyone's login session forcing them to log in again."
+                hx-target="this">
+            Reset Authentication Secret (invalidates all logins)
+        </button>
+    </div>
+</div>
+
+</SettingsLayout>

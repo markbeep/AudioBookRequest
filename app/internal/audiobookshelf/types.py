@@ -1,10 +1,12 @@
 from typing import Literal
+
 from pydantic import BaseModel
 
 
 class ABSLibrary(BaseModel):
     id: str
     name: str
+    mediaType: str
 
 
 class ABSBookMinified(BaseModel):

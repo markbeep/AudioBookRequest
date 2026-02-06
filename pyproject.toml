@@ -15,6 +15,7 @@ dependencies = [
     "jinja2>=3.1.6",
     "jinja2-fragments>=1.11.0",
     "jinja2-htmlmin>=1.0.1",
+    "jinjax>=0.63",
     "markdown>=3.10.1",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.5",
@@ -41,15 +42,24 @@ where = ["."]
 package = false
 
 [tool.djlint]
-profile = "jinja"
+profile = "django"
 ignore = "H021"
+format_js=true
+line_break_after_multiline_tag=true
+max_blank_lines=1
+# NOTE: custom_html formats documents, but also adds quotes around attributes breaking jinjax
+# custom_html="BaseLayout,Index.PopularSection,BookCard"
+ignore_case=true
+
+
+
 
 [tool.basedpyright]
 typeCheckingMode = "all"
 include = ["app"]
 reportDeprecated = false
 reportUnusedCallResult = false
-allowedUntypedLibraries = ["apscheduler", "torrent_parser"]
+allowedUntypedLibraries = ["apscheduler", "torrent_parser", "jinjax"]
 
 [dependency-groups]
 dev = ["basedpyright>=1.37.2", "djlint>=1.36.4", "ruff>=0.14.14"]

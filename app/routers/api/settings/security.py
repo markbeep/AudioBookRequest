@@ -1,11 +1,11 @@
 from typing import Annotated, Optional
 
 from aiohttp import ClientSession
-from fastapi import APIRouter, Depends, Security, Response, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response, Security
 from pydantic import BaseModel
 from sqlmodel import Session
 
-from app.internal.auth.authentication import APIKeyAuth, DetailedUser
+from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.auth.oidc_config import InvalidOIDCConfiguration, oidc_config
@@ -37,7 +37,7 @@ class SecuritySettings(BaseModel):
 @router.get("", response_model=SecuritySettings)
 def get_security_settings(
     session: Annotated[Session, Depends(get_session)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     try:
         force_login_type = Settings().app.get_force_login_type()
@@ -64,7 +64,7 @@ def get_security_settings(
 @router.post("/reset-auth", status_code=204)
 def reset_auth_secret(
     session: Annotated[Session, Depends(get_session)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     auth_config.reset_auth_secret(session)
     return Response(status_code=204)
@@ -89,7 +89,7 @@ async def update_security_settings(
     body: UpdateSecuritySettings,
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
-    _: Annotated[DetailedUser, Security(APIKeyAuth(GroupEnum.admin))],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     if (
         body.login_type in [LoginTypeEnum.basic, LoginTypeEnum.forms]

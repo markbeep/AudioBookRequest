@@ -1,0 +1,73 @@
+{#def
+    user: DetailedUser,
+    prowlarr_base_url: str | None,
+    prowlarr_api_key: str,
+    indexer_categories: dict[int, str],
+    selected_categories: set[int],
+    indexers: IndexersResponse,
+    selected_indexers: set[int],
+    prowlarr_misconfigured: bool,
+#}
+
+<SettingsLayout user={{ user }} page="prowlarr" title="Settings - Prowlarr">
+<js.AlpineJS />
+
+<div class="flex flex-col gap-2">
+    <h2 class="text-lg">
+        Prowlarr
+    </h2>
+    {% if prowlarr_misconfigured %}
+        <p class="text-red-400">
+            Prowlarr is misconfigured. Please configure it.
+        </p>
+    {% endif %}
+    <label for="prowlarr-api-key">
+        API Key
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/prowlarr/hx-api-key"
+          hx-disabled-elt="#api-button">
+        <input id="prowlarr-api-key"
+               name="api_key"
+               type="password"
+               {% if prowlarr_api_key %}placeholder="●●●●●●●●●●●●●●●●●"{% endif %}
+               class="input join-item w-full"
+               minlength="1"
+               required />
+        <button id="api-button" class="join-item btn">
+            {% if prowlarr_api_key %}
+                Update
+            {% else %}
+                Add
+            {% endif %}
+        </button>
+    </form>
+    <label for="prowlarr-base-url" class="pt-2">
+        Base URL
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/prowlarr/hx-base-url"
+          hx-disabled-elt="#base-url-button">
+        <input id="prowlarr-base-url"
+               name="base_url"
+               type="url"
+               value="{{ prowlarr_base_url or "" }}"
+               placeholder="http://prowlarr:9696"
+               class="input join-item w-full"
+               minlength="1"
+               required />
+        <button id="base-url-button" class="join-item btn">
+            {% if prowlarr_base_url %}
+                Update
+            {% else %}
+                Add
+            {% endif %}
+        </button>
+    </form>
+
+    <Settings.Prowlarr.Category indexer_categories={{ indexer_categories }} selected_categories={{ selected_categories }} />
+
+    <Settings.Prowlarr.Indexer indexers={{ indexers }} selected_indexers={{ selected_indexers }} />
+</div>
+
+</SettingsLayout>
