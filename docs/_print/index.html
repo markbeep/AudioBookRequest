@@ -30,7 +30,7 @@
 
   <meta itemprop="name" content="Documentation">
   <meta itemprop="description" content="Welcome to the documentation for AudioBookRequest.">
-  <meta itemprop="dateModified" content="2025-10-02T15:14:28+02:00">
+  <meta itemprop="dateModified" content="2026-02-06T18:54:05+01:00">
   <meta itemprop="wordCount" content="245">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Documentation">
@@ -305,7 +305,7 @@ This is the multi-page printable view of this section.
     
     
 	
-<li>2.3: <a href="#pg-70cac3f21ec9ace937ed903becc9f4ca">OpenID Connect</a></li>
+<li>2.3: <a href="#pg-70cac3f21ec9ace937ed903becc9f4ca">OpenID Connect with Authentik</a></li>
 
 
     
@@ -316,6 +316,25 @@ This is the multi-page printable view of this section.
   
   
 
+  
+    
+    
+	
+<li>2.3.1: <a href="#pg-276c0bf43bae6ce9ee3b6f38d3a92ba4">OpenID Connect with Authelia</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+
+    </ul>
+    
   
 
     </ul>
@@ -959,7 +978,7 @@ be a JSON object with key-value pairs of the values you want to update.</p>
 
 <div class="td-content" style="page-break-before: always">
     
-	<h1 id="pg-70cac3f21ec9ace937ed903becc9f4ca">2.3 - OpenID Connect</h1>
+	<h1 id="pg-70cac3f21ec9ace937ed903becc9f4ca">2.3 - OpenID Connect with Authentik</h1>
     <div class="lead">Setting up OIDC login</div>
 	<p>OIDC allows you to use the same login across multiple apps. This guide will show
 you how to set up OIDC with Authentik, but the concepts are the same or similar
@@ -1072,6 +1091,65 @@ receive the <code>Trusted</code> role once they login to AudioBookRequest.
   
   
 
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-276c0bf43bae6ce9ee3b6f38d3a92ba4">2.3.1 - OpenID Connect with Authelia</h1>
+    <div class="lead">Setting up OIDC login</div>
+	<p>Fundamentally it should be similar to how <a href="/AudioBookRequest/docs/tutorials/oidc/authelia/">Authentik</a> is setup. This page just shows an example config you can use.</p>
+<p>There&rsquo;s a relevant <a href="https://github.com/markbeep/AudioBookRequest/issues/150#issuecomment-3694691554">Authelia Github Issue</a> for a little more information.</p>
+<p>Use the following config:</p>
+<pre tabindex="0"><code>client_id: &#39;clientID&#39; 
+client_name: &#39;AudioBookRequest&#39;
+client_secret: &#39;[secret]&#39;
+public: false
+authorization_policy: &#39;one_factor&#39;
+require_pkce: &#39;false&#39;
+redirect_uris:
+  - &#39;https://abr.example.com/auth/oidc&#39;
+scopes:
+  - &#39;openid&#39;
+  - &#39;profile&#39;
+  - &#39;groups&#39;
+  - &#39;email&#39;
+response_types:
+  - &#39;code&#39;
+grant_types:
+  - &#39;authorization_code&#39;
+access_token_signed_response_alg: &#39;none&#39;
+userinfo_signed_response_alg: &#39;none&#39;
+token_endpoint_auth_method: &#39;client_secret_post&#39;
+</code></pre><p>Importantly:</p>
+<ul>
+<li><code>redirect_uris</code> needs to end with <code>/auth/oidc</code></li>
+<li><code>token_endpoint_auth_method</code> needs to be <code>client_secret_post</code> (not ending in <code>...basic</code>)</li>
+</ul>
+<p>Here&rsquo;s an example configuration on ABR in the Security settings:</p>
+<p><img src="/AudioBookRequest/docs/tutorials/oidc/authelia/authelia.png" alt="Authelia ABR"></p>
+
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+
+    
+	
   
 
     
@@ -1496,7 +1574,7 @@ basic introduction to GitHub concepts and workflow.</li>
 
       </div><div class="td-footer__center col-12 col-sm-4 py-2 order-sm-2">
         <span class="td-footer__copyright">&copy;
-    2025&ndash;2025
+    2025&ndash;2026
     <span class="td-footer__authors">markbeep | <a href="https://creativecommons.org/licenses/by/4.0">CC BY 4.0</a> |</span></span><span class="td-footer__all_rights_reserved">All Rights Reserved</span>
       </div>
     </div>
