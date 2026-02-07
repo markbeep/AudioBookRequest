@@ -1,6 +1,7 @@
 import base64
 import secrets
 import time
+from pathlib import Path
 from typing import Annotated, cast
 from urllib.parse import urljoin
 
@@ -22,6 +23,7 @@ from app.internal.auth.authentication import (
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.auth.oidc_config import InvalidOIDCConfiguration, oidc_config
+from app.internal.env_settings import Settings
 from app.internal.models import GroupEnum, User
 from app.util.connection import USER_AGENT, get_connection
 from app.util.db import get_session
@@ -62,7 +64,7 @@ async def login_oidc(
     if not username_claim:
         raise InvalidOIDCConfiguration("Missing OIDC username claim")
 
-    auth_redirect_uri = urljoin(str(request.url), "/auth/oidc")
+    auth_redirect_uri = str(request.url_for("login_oidc"))
     if oidc_config.get_redirect_https(session):
         auth_redirect_uri = auth_redirect_uri.replace("http:", "https:")
 

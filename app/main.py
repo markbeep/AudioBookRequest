@@ -62,7 +62,7 @@ async def redirect_to_login(request: Request, exc: RequiresLoginException):
         params: dict[str, str] = {}
         if exc.detail:
             params["error"] = exc.detail
-        path = request.url.path
+        path = request.url.path.removeprefix(Settings().app.base_url.rstrip("/"))
         if path != "/" and not path.startswith("/login"):
             params["redirect_uri"] = path
         return BaseUrlRedirectResponse("/login?" + urlencode(params))
@@ -124,10 +124,11 @@ async def redirect_to_init(
     Initial redirect if no user exists. We force the user to create a new login
     """
     global user_exists
+    path = request.url.path.removeprefix(Settings().app.base_url.rstrip("/"))
     if (
         not user_exists
-        and request.url.path != "/init"
-        and not request.url.path.startswith("/static")
+        and path != "/init"
+        and not path.startswith("/static")
         and request.method == "GET"
     ):
         with next(get_session()) as session:
@@ -136,7 +137,7 @@ async def redirect_to_init(
                 return BaseUrlRedirectResponse("/init")
             else:
                 user_exists = True
-    elif user_exists and request.url.path.startswith("/init"):
+    elif user_exists and path.startswith("/init"):
         return BaseUrlRedirectResponse("/")
     response = await call_next(request)
     return response

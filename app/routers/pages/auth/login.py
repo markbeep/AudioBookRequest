@@ -60,7 +60,7 @@ async def login(
     if not client_id:
         raise InvalidOIDCConfiguration("Missing OIDC client ID")
 
-    auth_redirect_uri = urljoin(str(request.url), "/auth/oidc")
+    auth_redirect_uri = str(request.url_for("login_oidc"))
     if oidc_config.get_redirect_https(session):
         auth_redirect_uri = auth_redirect_uri.replace("http:", "https:")
 

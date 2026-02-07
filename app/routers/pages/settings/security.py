@@ -68,10 +68,10 @@ def reset_auth_secret(
 
 @router.post("/hx-update")
 async def update_security(
-    login_type: Annotated[LoginTypeEnum, Form()],
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    login_type: Annotated[LoginTypeEnum | None, Form()] = None,
     access_token_expiry: Annotated[int | None, Form()] = None,
     min_password_length: Annotated[int | None, Form()] = None,
     oidc_endpoint: Annotated[str | None, Form()] = None,
@@ -83,6 +83,17 @@ async def update_security(
     oidc_redirect_https: Annotated[bool | None, Form()] = None,
     oidc_logout_url: Annotated[str | None, Form()] = None,
 ):
+    try:
+        force_login_type = Settings().app.get_force_login_type()
+    except ValueError as e:
+        logger.error("Invalid force login type", exc_info=e)
+        raise ToastException("Invalid force login type configured", "error") from e
+
+    if force_login_type is not None:
+        login_type = force_login_type
+    elif login_type is None:
+        raise ToastException("Login type is required", "error")
+
     try:
         await api_update_security_settings(
             UpdateSecuritySettings(
@@ -104,12 +115,6 @@ async def update_security(
         )
     except HTTPException as e:
         raise ToastException(e.detail, "error") from None
-
-    try:
-        force_login_type = Settings().app.get_force_login_type()
-    except ValueError as e:
-        logger.error("Invalid force login type", exc_info=e)
-        force_login_type = None
 
     old = auth_config.get_login_type(session)
 
