@@ -1,5 +1,5 @@
 from typing import Annotated
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode
 
 import jwt
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status

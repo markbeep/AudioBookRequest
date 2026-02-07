@@ -9,7 +9,7 @@ migrate:
     uv run alembic upgrade heads
 
 create_revision *MESSAGE:
-    uv run alembic revision --autogenerate -m "{{MESSAGE}}"
+    uv run alembic revision --autogenerate -m "{{ MESSAGE }}"
 
 dev: migrate
     uv run fastapi dev
@@ -26,10 +26,10 @@ upgrade:
     uvx uv-upgrade
 
 format_html:
-    uv run djlint templates --extension=html --reformat
+    uv run djlint templates --extension=jinja --reformat
 
 types:
     uv run basedpyright
-    uv run djlint templates --extension=html --check
+    uv run djlint templates --extension=jinja --check
     uv run ruff format --check app
     uv run alembic check

@@ -1,9 +1,7 @@
 import base64
 import secrets
 import time
-from pathlib import Path
 from typing import Annotated, cast
-from urllib.parse import urljoin
 
 import jwt
 from aiohttp import ClientSession
@@ -23,7 +21,6 @@ from app.internal.auth.authentication import (
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.auth.oidc_config import InvalidOIDCConfiguration, oidc_config
-from app.internal.env_settings import Settings
 from app.internal.models import GroupEnum, User
 from app.util.connection import USER_AGENT, get_connection
 from app.util.db import get_session
