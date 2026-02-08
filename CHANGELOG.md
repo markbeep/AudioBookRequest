@@ -1,5 +1,51 @@
 # Changelog
 
+## [1.10.0](https://github.com/markbeep/AudioBookRequest/compare/v1.9.0...v1.10.0) (2026-02-08)
+
+
+### Features
+
+* add ability for querying custom categories on prowlarr ([8fee7b8](https://github.com/markbeep/AudioBookRequest/commit/8fee7b84fac18c460ba7192c45d109686e284a6b))
+* add button for admin to more easily see who requested what. Closes [#149](https://github.com/markbeep/AudioBookRequest/issues/149) ([86065ef](https://github.com/markbeep/AudioBookRequest/commit/86065ef5f319ecafb68a2c9979bf232f6ad84365))
+* add placeholder to prowlarr settings for clarity. Closes [#179](https://github.com/markbeep/AudioBookRequest/issues/179) ([54554a3](https://github.com/markbeep/AudioBookRequest/commit/54554a36db85527a74da0dead841e4a480f3c13d))
+* update API endpoints to support both API key auth and session ([ed62d5e](https://github.com/markbeep/AudioBookRequest/commit/ed62d5e7a1d8aaf7ffe10a9c4ed88bfca1e60b1a))
+
+
+### Bug Fixes
+
+* Cannot change password if none or oidc login type is used. Closes [#68](https://github.com/markbeep/AudioBookRequest/issues/68) ([a0d6e67](https://github.com/markbeep/AudioBookRequest/commit/a0d6e67188fa9298f2f2357fc79b6caab41bd8e0))
+* fix forced oidc login type not redirecting correctly. Closes [#143](https://github.com/markbeep/AudioBookRequest/issues/143) ([ae7c679](https://github.com/markbeep/AudioBookRequest/commit/ae7c67922ce3a48734ad09d51f2e04e9afb5cd6f))
+* fix long names from breaking index page ([9ed4e4a](https://github.com/markbeep/AudioBookRequest/commit/9ed4e4a0c606a045502f1dc7fc68d7244ce7ff3e))
+* fix oidc flow not redirecting correctly with base url set. Closes [#159](https://github.com/markbeep/AudioBookRequest/issues/159) ([f5256f1](https://github.com/markbeep/AudioBookRequest/commit/f5256f1adb6e74fcc8689976b5024fe26c43ee5b))
+* fix sources page crashing ([8fee7b8](https://github.com/markbeep/AudioBookRequest/commit/8fee7b84fac18c460ba7192c45d109686e284a6b))
+
+
+### Dependencies
+
+* update vulnerable python-multipart dependency ([7d83db7](https://github.com/markbeep/AudioBookRequest/commit/7d83db76e14bac00655f1f792d1ce629246d2a6d))
+
+
+### Documentation
+
+* add small example for authelia oidc. Closes [#150](https://github.com/markbeep/AudioBookRequest/issues/150) ([6f85ed5](https://github.com/markbeep/AudioBookRequest/commit/6f85ed58967094f04db126c5a5313b455847f3e0))
+* remove hugo docs and migrate to github wiki ([a7d4cb3](https://github.com/markbeep/AudioBookRequest/commit/a7d4cb3f781046c48f341386a3f44d6d97f81344))
+
+
+### Miscellaneous Chores
+
+* add contribution guidelines ([#181](https://github.com/markbeep/AudioBookRequest/issues/181)) ([cc15d3c](https://github.com/markbeep/AudioBookRequest/commit/cc15d3c1ce63d93445456ff2a023cf45f445b7d5))
+
+
+### Code Refactoring
+
+* update templating library to jinjax and reorganize file structure. Closes [#186](https://github.com/markbeep/AudioBookRequest/issues/186) ([0e13e1a](https://github.com/markbeep/AudioBookRequest/commit/0e13e1a1dec8ccdba58f8a1c7ad4fd653cc3da86))
+
+
+### Continuous Integration
+
+* fix wrong types and incorrectly formatted files ([2735079](https://github.com/markbeep/AudioBookRequest/commit/273507915c23e6df3ba810e63377b45e378fb87a))
+* run build/test pipeline on pull requests ([f5de040](https://github.com/markbeep/AudioBookRequest/commit/f5de040b08edbe2c6b36199feb2919790b123400))
+
 ## [1.9.0](https://github.com/markbeep/AudioBookRequest/compare/v1.8.0...v1.9.0) (2026-01-24)
 
 
