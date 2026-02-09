@@ -40,7 +40,10 @@ from app.internal.notifications import (
 from app.internal.prowlarr.prowlarr import start_download
 from app.internal.prowlarr.util import ProwlarrMisconfigured, prowlarr_config
 from app.internal.query import QueryResult, background_start_query, query_sources
-from app.internal.readarr.client import readarr_add_and_search
+from app.internal.readarr.client import (
+    background_readarr_add_and_search,
+    readarr_add_and_search,
+)
 from app.internal.readarr.config import ReadarrMisconfigured, readarr_config
 from app.internal.ranking.quality import quality_config
 from app.util.connection import get_connection
@@ -98,7 +101,10 @@ async def create_request(
         book_asin=asin,
     )
 
-    if quality_config.get_auto_download(session) and user.is_above(GroupEnum.trusted):
+    if readarr_config.is_valid(session):
+        # hand off to Readarr immediately — it manages the full pipeline
+        background_task.add_task(background_readarr_add_and_search, asin=asin)
+    elif quality_config.get_auto_download(session) and user.is_above(GroupEnum.trusted):
         # start querying and downloading if auto download is enabled
         background_task.add_task(
             background_start_query,

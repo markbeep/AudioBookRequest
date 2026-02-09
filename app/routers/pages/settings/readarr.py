@@ -24,9 +24,6 @@ from app.routers.api.settings.readarr import (
 from app.routers.api.settings.readarr import (
     update_readarr_root_folder as api_update_readarr_root_folder,
 )
-from app.routers.api.settings.readarr import (
-    update_readarr_search_on_add as api_update_readarr_search_on_add,
-)
 from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.templates import catalog_response
@@ -54,7 +51,6 @@ async def read_readarr(
         readarr_quality_profile_id=response.readarr_quality_profile_id,
         readarr_metadata_profile_id=response.readarr_metadata_profile_id,
         readarr_root_folder_path=response.readarr_root_folder_path,
-        readarr_search_on_add=response.readarr_search_on_add,
         quality_profiles=response.quality_profiles,
         metadata_profiles=response.metadata_profiles,
         root_folders=response.root_folders,
@@ -115,19 +111,5 @@ def update_readarr_root_folder(
 ):
     api_update_readarr_root_folder(
         root_folder_path=root_folder_path, session=session, admin_user=admin_user
-    )
-    return Response(status_code=204, headers={"HX-Refresh": "true"})
-
-
-@router.put("/hx-search-on-add")
-def update_readarr_search_on_add(
-    session: Annotated[Session, Depends(get_session)],
-    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
-    search_on_add: Annotated[bool, Form()] = False,
-):
-    api_update_readarr_search_on_add(
-        session=session,
-        admin_user=admin_user,
-        search_on_add=search_on_add,
     )
     return Response(status_code=204, headers={"HX-Refresh": "true"})

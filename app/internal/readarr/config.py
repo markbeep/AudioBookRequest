@@ -15,7 +15,6 @@ ReadarrConfigKey = Literal[
     "readarr_quality_profile_id",
     "readarr_metadata_profile_id",
     "readarr_root_folder_path",
-    "readarr_search_on_add",
 ]
 
 
@@ -73,12 +72,6 @@ class ReadarrConfig(StringConfigCache[ReadarrConfigKey]):
 
     def set_root_folder_path(self, session: Session, path: str):
         self.set(session, "readarr_root_folder_path", path)
-
-    def get_search_on_add(self, session: Session) -> bool:
-        return bool(self.get_bool(session, "readarr_search_on_add") or False)
-
-    def set_search_on_add(self, session: Session, enabled: bool):
-        self.set_bool(session, "readarr_search_on_add", enabled)
 
 
 readarr_config = ReadarrConfig()

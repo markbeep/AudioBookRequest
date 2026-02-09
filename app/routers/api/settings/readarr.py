@@ -31,7 +31,6 @@ class ReadarrResponse(BaseModel):
     readarr_quality_profile_id: int | None
     readarr_metadata_profile_id: int | None
     readarr_root_folder_path: str
-    readarr_search_on_add: bool
     quality_profiles: list[ReadarrQualityProfile]
     metadata_profiles: list[ReadarrMetadataProfile]
     root_folders: list[ReadarrRootFolder]
@@ -49,7 +48,6 @@ async def read_readarr(
     quality_profile_id = readarr_config.get_quality_profile_id(session)
     metadata_profile_id = readarr_config.get_metadata_profile_id(session)
     root_folder_path = readarr_config.get_root_folder_path(session) or ""
-    search_on_add = readarr_config.get_search_on_add(session)
 
     quality_profiles: list[ReadarrQualityProfile] = []
     metadata_profiles: list[ReadarrMetadataProfile] = []
@@ -65,7 +63,6 @@ async def read_readarr(
         readarr_quality_profile_id=quality_profile_id,
         readarr_metadata_profile_id=metadata_profile_id,
         readarr_root_folder_path=root_folder_path,
-        readarr_search_on_add=search_on_add,
         quality_profiles=quality_profiles,
         metadata_profiles=metadata_profiles,
         root_folders=root_folders,
@@ -124,17 +121,6 @@ def update_readarr_root_folder(
 ):
     _ = admin_user
     readarr_config.set_root_folder_path(session, root_folder_path)
-    return Response(status_code=204)
-
-
-@router.put("/search-on-add")
-def update_readarr_search_on_add(
-    session: Annotated[Session, Depends(get_session)],
-    admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
-    search_on_add: Annotated[bool, Form()] = False,
-):
-    _ = admin_user
-    readarr_config.set_search_on_add(session, search_on_add)
     return Response(status_code=204)
 
 

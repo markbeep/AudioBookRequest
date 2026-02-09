@@ -5,8 +5,10 @@ import re
 import aiohttp
 from aiohttp import ClientSession
 from pydantic import TypeAdapter
-from sqlmodel import Session
+from sqlmodel import Session, select
 
+from app.internal.audiobookshelf.client import abs_trigger_scan
+from app.internal.audiobookshelf.config import abs_config
 from app.internal.models import Audiobook
 from app.internal.readarr.config import readarr_config
 from app.internal.readarr.types import (
@@ -248,14 +250,18 @@ async def readarr_add_and_search(
 
     book.monitored = True
     book.addOptions = ReadarrBookAddOptions(
-        searchForNewBook=readarr_config.get_search_on_add(session),
+        searchForNewBook=True,
     )
 
     return await _add_book(session, client_session, book)
 
 
 async def background_readarr_add_and_search(asin: str) -> None:
-    """Background task wrapper for readarr_add_and_search."""
+    """Background task wrapper for readarr_add_and_search.
+
+    On success, marks matching books as downloaded and triggers an ABS
+    library scan so new media is picked up quickly.
+    """
     with next(get_session()) as session:
         async with ClientSession(
             timeout=aiohttp.ClientTimeout(total=300)
@@ -267,6 +273,19 @@ async def background_readarr_add_and_search(asin: str) -> None:
             logger.info("Readarr background: starting add+search", asin=asin)
             success = await readarr_add_and_search(session, client_session, audiobook)
             logger.info("Readarr background: complete", asin=asin, success=success)
+            if success:
+                same_books = session.exec(
+                    select(Audiobook).where(Audiobook.asin == asin)
+                ).all()
+                for b in same_books:
+                    b.downloaded = True
+                    session.add(b)
+                session.commit()
+                try:
+                    if abs_config.is_valid(session):
+                        await abs_trigger_scan(session, client_session)
+                except Exception:
+                    pass
 
 
 # ---------------------------------------------------------------------------

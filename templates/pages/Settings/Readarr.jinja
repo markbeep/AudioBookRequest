@@ -5,7 +5,6 @@
     readarr_quality_profile_id: int | None,
     readarr_metadata_profile_id: int | None,
     readarr_root_folder_path: str,
-    readarr_search_on_add: bool,
     quality_profiles: list,
     metadata_profiles: list,
     root_folders: list,
@@ -139,21 +138,6 @@
         </button>
     </form>
 
-    <div class="form-control pt-4">
-        <label class="label cursor-pointer">
-            <span class="label-text">Search for book on add</span>
-            <input hx-put="{{ base_url }}/settings/readarr/hx-search-on-add"
-                   type="checkbox"
-                   name="search_on_add"
-                   class="toggle"
-                   {% if readarr_search_on_add %}checked{% endif %}
-                   hx-trigger="change" />
-        </label>
-        <p class="text-xs opacity-60">
-            When enabled, Readarr will automatically search indexers for the book after adding it.
-            This triggers Readarr's full download pipeline (search, grab, download, import, rename).
-        </p>
-    </div>
 </div>
 
 </SettingsLayout>
