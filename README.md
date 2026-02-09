@@ -118,9 +118,9 @@ Notes:
 
 ### Readarr Integration
 
-Readarr integration lets ABR hand off downloads to [Readarr](https://github.com/Readarr/Readarr) (or compatible forks like [Bookshelf](https://github.com/pennydreadful/bookshelf)). When a user requests an audiobook, ABR adds the book to Readarr and triggers an indexer search. Readarr then handles the full pipeline: searching, grabbing, downloading, importing, renaming, and organizing files into your library folder.
+Readarr integration lets ABR hand off downloads to [Readarr](https://github.com/Readarr/Readarr) (or compatible forks like [Bookshelf](https://github.com/pennydreadful/bookshelf)). When a user requests an audiobook, ABR immediately adds the book to Readarr and triggers an indexer search in the background. Readarr then handles the full pipeline: searching, grabbing, downloading, importing, renaming, and organizing files into your library folder.
 
-This is particularly useful if you want Readarr to manage filenames and folder structure before files land in Audiobookshelf.
+This is particularly useful if you want Readarr to manage filenames and folder structure before files land in Audiobookshelf or Plex.
 
 Setup steps:
 
@@ -130,13 +130,13 @@ Setup steps:
    - **Base URL** of your Readarr instance (e.g. `http://readarr:8787`)
    - **API Key** from step 2
    - Select a **Quality Profile**, **Metadata Profile**, and **Root Folder**
-   - Enable **Search for book on add** if you want Readarr to immediately search indexers after adding the book
 
 Notes:
 
-- When Readarr is configured, ABR tries Readarr first for all downloads. If the Readarr add/search fails for any reason, ABR falls back to the direct Prowlarr download path automatically.
-- ABR matches books from Audible to Readarr's metadata by title and author. If no match is found in Readarr's metadata, the download falls back to Prowlarr.
+- When Readarr is configured, every new request is sent to Readarr automatically as a background task. No manual intervention or auto-download toggle is required.
+- ABR matches books from Audible to Readarr's metadata by title and author. If no match is found, the book remains in the request queue for manual handling.
 - Readarr's add-book operation can take 30 seconds to several minutes for new authors, since it fetches metadata from upstream providers. This runs as a background task — users see an immediate response.
+- If Readarr is not configured, ABR falls back to the standard Prowlarr auto-download flow (if enabled).
 
 ### OpenID Connect
 
