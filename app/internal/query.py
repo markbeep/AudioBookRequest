@@ -14,7 +14,10 @@ from app.internal.models import Audiobook, ProwlarrSource, User
 from app.internal.prowlarr.prowlarr import query_prowlarr, start_download
 from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.download_ranking import rank_sources
+from app.internal.readarr.client import readarr_add_and_search
+from app.internal.readarr.config import ReadarrMisconfigured, readarr_config
 from app.util.db import get_session
+from app.util.log import logger
 
 querying: set[str] = set()
 
@@ -84,16 +87,45 @@ async def query_sources(
 
         # start download if requested
         if start_auto_download and not book.downloaded and len(ranked) > 0:
-            resp = await start_download(
-                session=session,
-                client_session=client_session,
-                guid=ranked[0].guid,
-                indexer_id=ranked[0].indexer_id,
-                requester=requester,
-                book_asin=asin,
-                prowlarr_source=ranked[0],
-            )
-            if resp.ok:
+            download_success = False
+
+            # Try Readarr first if configured
+            if readarr_config.is_valid(session):
+                try:
+                    download_success = await readarr_add_and_search(
+                        session, client_session, book
+                    )
+                    if not download_success:
+                        logger.warning(
+                            "Readarr add+search returned False, falling back to Prowlarr",
+                            asin=asin,
+                        )
+                except ReadarrMisconfigured:
+                    logger.warning("Readarr misconfigured, falling back to Prowlarr", asin=asin)
+                except Exception as e:
+                    logger.error(
+                        "Readarr add+search failed, falling back to Prowlarr",
+                        asin=asin,
+                        error=str(e),
+                    )
+
+            # Fallback to Prowlarr direct download
+            if not download_success:
+                resp = await start_download(
+                    session=session,
+                    client_session=client_session,
+                    guid=ranked[0].guid,
+                    indexer_id=ranked[0].indexer_id,
+                    requester=requester,
+                    book_asin=asin,
+                    prowlarr_source=ranked[0],
+                )
+                if resp.ok:
+                    download_success = True
+                else:
+                    raise HTTPException(status_code=500, detail="Failed to start download")
+
+            if download_success:
                 same_books = session.exec(
                     select(Audiobook).where(Audiobook.asin == asin)
                 ).all()
@@ -107,8 +139,6 @@ async def query_sources(
                         await abs_trigger_scan(session, client_session)
                 except Exception:
                     pass
-            else:
-                raise HTTPException(status_code=500, detail="Failed to start download")
 
         return QueryResult(
             sources=ranked,
@@ -119,7 +149,7 @@ async def query_sources(
 
 async def background_start_query(asin: str, requester: User, auto_download: bool):
     with next(get_session()) as session:
-        async with ClientSession(timeout=aiohttp.ClientTimeout(60)) as client_session:
+        async with ClientSession(timeout=aiohttp.ClientTimeout(300)) as client_session:
             await query_sources(
                 asin=asin,
                 session=session,
