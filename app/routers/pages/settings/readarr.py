@@ -67,7 +67,9 @@ def update_readarr_base_url(
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
-    api_update_readarr_base_url(base_url=base_url, session=session, admin_user=admin_user)
+    api_update_readarr_base_url(
+        base_url=base_url, session=session, admin_user=admin_user
+    )
     return Response(status_code=204, headers={"HX-Refresh": "true"})
 
 

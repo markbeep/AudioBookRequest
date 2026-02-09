@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Form, HTTPException, Response, Security
@@ -13,6 +13,11 @@ from app.internal.readarr.client import (
     readarr_get_root_folders,
 )
 from app.internal.readarr.config import readarr_config
+from app.internal.readarr.types import (
+    ReadarrMetadataProfile,
+    ReadarrQualityProfile,
+    ReadarrRootFolder,
+)
 from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.log import logger
@@ -27,9 +32,9 @@ class ReadarrResponse(BaseModel):
     readarr_metadata_profile_id: int | None
     readarr_root_folder_path: str
     readarr_search_on_add: bool
-    quality_profiles: list[dict[str, Any]]
-    metadata_profiles: list[dict[str, Any]]
-    root_folders: list[dict[str, Any]]
+    quality_profiles: list[ReadarrQualityProfile]
+    metadata_profiles: list[ReadarrMetadataProfile]
+    root_folders: list[ReadarrRootFolder]
 
 
 @router.get("")
@@ -46,9 +51,9 @@ async def read_readarr(
     root_folder_path = readarr_config.get_root_folder_path(session) or ""
     search_on_add = readarr_config.get_search_on_add(session)
 
-    quality_profiles: list[dict[str, Any]] = []
-    metadata_profiles: list[dict[str, Any]] = []
-    root_folders: list[dict[str, Any]] = []
+    quality_profiles: list[ReadarrQualityProfile] = []
+    metadata_profiles: list[ReadarrMetadataProfile] = []
+    root_folders: list[ReadarrRootFolder] = []
     if base_url and api_key:
         quality_profiles = await readarr_get_quality_profiles(session, client_session)
         metadata_profiles = await readarr_get_metadata_profiles(session, client_session)
@@ -155,7 +160,8 @@ async def test_readarr_connection(
     quality_profiles = await readarr_get_quality_profiles(session, client_session)
     if not quality_profiles:
         raise HTTPException(
-            status_code=400, detail="Failed to connect to Readarr — could not fetch quality profiles"
+            status_code=400,
+            detail="Failed to connect to Readarr — could not fetch quality profiles",
         )
     metadata_profiles = await readarr_get_metadata_profiles(session, client_session)
     root_folders = await readarr_get_root_folders(session, client_session)

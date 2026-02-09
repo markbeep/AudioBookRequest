@@ -101,7 +101,9 @@ async def query_sources(
                             asin=asin,
                         )
                 except ReadarrMisconfigured:
-                    logger.warning("Readarr misconfigured, falling back to Prowlarr", asin=asin)
+                    logger.warning(
+                        "Readarr misconfigured, falling back to Prowlarr", asin=asin
+                    )
                 except Exception as e:
                     logger.error(
                         "Readarr add+search failed, falling back to Prowlarr",
@@ -123,7 +125,9 @@ async def query_sources(
                 if resp.ok:
                     download_success = True
                 else:
-                    raise HTTPException(status_code=500, detail="Failed to start download")
+                    raise HTTPException(
+                        status_code=500, detail="Failed to start download"
+                    )
 
             if download_success:
                 same_books = session.exec(
