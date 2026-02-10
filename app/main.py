@@ -10,6 +10,7 @@ from sqlalchemy import func
 from sqlmodel import select
 from starlette.responses import Content
 
+from app.internal.audible.search import clear_old_book_caches
 from app.internal.auth.authentication import RequiresLoginException
 from app.internal.auth.config import auth_config, initialize_force_login_type
 from app.internal.auth.oidc_config import InvalidOIDCConfiguration
@@ -17,7 +18,6 @@ from app.internal.auth.session_middleware import (
     DynamicSessionMiddleware,
     middleware_linker,
 )
-from app.internal.book_search import clear_old_book_caches
 from app.internal.env_settings import Settings
 from app.internal.models import User
 from app.internal.prowlarr.util import ProwlarrMisconfigured

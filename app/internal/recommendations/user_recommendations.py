@@ -8,8 +8,8 @@ from aiohttp import ClientSession
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from app.internal.audible.similar import list_similar_audible_books
 from app.internal.models import Audiobook, AudiobookRequest, AudiobookWithRequests, User
-from app.internal.recommendations.audible import list_similar_audible_books
 from app.util.log import logger
 
 

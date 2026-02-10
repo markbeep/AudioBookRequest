@@ -13,15 +13,15 @@ from fastapi import (
 from pydantic import BaseModel
 from sqlmodel import Session, asc, col, delete, select
 
+from app.internal.audible.single import get_single_book
+from app.internal.audible.types import (
+    audible_region_type,
+    audible_regions,
+    get_region_from_settings,
+)
 from app.internal.audiobookshelf.client import background_abs_trigger_scan
 from app.internal.audiobookshelf.config import abs_config
 from app.internal.auth.authentication import AnyAuth, DetailedUser
-from app.internal.book_search import (
-    audible_region_type,
-    audible_regions,
-    get_book_by_asin,
-    get_region_from_settings,
-)
 from app.internal.db_queries import get_wishlist_results
 from app.internal.models import (
     Audiobook,
@@ -68,9 +68,21 @@ async def create_request(
     if audible_regions.get(region) is None:
         raise HTTPException(status_code=400, detail="Invalid region")
 
-    book = await get_book_by_asin(client_session, asin, region)
+    book = session.get(Audiobook, asin)
     if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
+        try:
+            book = await get_single_book(client_session, asin=asin)
+            if book:
+                session.add(book)
+                session.commit()
+        except Exception as e:
+            logger.error(
+                "Failed to fetch book details from Audible",
+                asin=asin,
+                error=str(e),
+            )
+        if not book:
+            raise HTTPException(status_code=404, detail="Book not found")
 
     if not session.exec(
         select(AudiobookRequest).where(

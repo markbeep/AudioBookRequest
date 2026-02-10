@@ -4,12 +4,12 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Query, Security
 from sqlmodel import Session
 
-from app.internal.auth.authentication import ABRAuth, DetailedUser
-from app.internal.book_search import (
+from app.internal.audible.types import (
     audible_region_type,
     audible_regions,
     get_region_from_settings,
 )
+from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.models import GroupEnum
 from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.quality import quality_config
@@ -43,7 +43,6 @@ async def read_search(
     try:
         results = await search_books(
             client_session=client_session,
-            session=session,
             user=user,
             query=query,
             num_results=num_results,

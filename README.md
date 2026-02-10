@@ -50,9 +50,9 @@ It is not intended as a full replacement for Readarr/Chaptarr, but instead inten
 
 - AudioBookRequest does **not** handle moving, renaming, nor editing metadata after downloads. Instead, ABR supports multiple REST API endpoints that allow for easy interoptability with scripts and other apps.
   - Combinations:
-    - *Know of or have an app or script that works with ABR? Open an issue and I'll add it here or to the docs.*
+    - _Know of or have an app or script that works with ABR? Open an issue and I'll add it here or to the docs._
   - Alternatives:
-    - *I'd love to add alternatives for ABR here. If you know of any good ones, open an issue!*
+    - _I'd love to add alternatives for ABR here. If you know of any good ones, open an issue!_
 
 ---
 
@@ -117,7 +117,6 @@ Notes:
 
 Head to the [OpenID Connect](/wiki/OpenID-Connect) page in the wiki to learn how to set up OIDC authentication with your favorite auth provider.
 
-
 ### Environment Variables
 
 Head to the [environment variables](/wiki/Environment-Variables) page in the wiki.
@@ -140,7 +139,5 @@ Head to the [local development](/wiki/Local-Development) page in the wiki.
 
 AudioBookRequest builds on top of a some other great open-source tools. A big thanks goes out to these developers.
 
-- [Audimeta](https://github.com/Vito0912/AudiMeta) - Main audiobook metadata provider. Active in development and quick to fix issues.
-- [Audnexus](https://github.com/laxamentumtech/audnexus) - Backup audiobook metadata provider.
 - [Prowlarr](https://github.com/Prowlarr/Prowlarr) - Does a lot of the heavy lifting concerning searching through indexers and forwarding download requests to download clients. Saves me the ordeal of having to reimplement everything again.
 - [External Audible API](https://audible.readthedocs.io/en/latest/misc/external_api.html) - Audible exposes key API endpoints which are used to, for example, search for books.
