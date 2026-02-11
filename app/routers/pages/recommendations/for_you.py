@@ -4,8 +4,8 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Security
 from sqlmodel import Session
 
+from app.internal.audible.types import get_region_tld_from_settings
 from app.internal.auth.authentication import ABRAuth, DetailedUser
-from app.internal.book_search import get_region_tld_from_settings
 from app.internal.ranking.quality import quality_config
 from app.routers.api.recommendations import (
     get_user_recommendations as api_get_user_recommendations,

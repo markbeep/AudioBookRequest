@@ -4,13 +4,13 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Query, Security
 from sqlmodel import Session
 
-from app.internal.auth.authentication import AnyAuth, DetailedUser
-from app.internal.book_search import audible_region_type, get_region_from_settings
-from app.internal.models import Audiobook, AudiobookWithRequests
-from app.internal.recommendations.audible import (
+from app.internal.audible.category import (
     list_category_audible_books,
     list_combined_audible_books,
 )
+from app.internal.audible.types import audible_region_type, get_region_from_settings
+from app.internal.auth.authentication import AnyAuth, DetailedUser
+from app.internal.models import Audiobook, AudiobookWithRequests
 from app.internal.recommendations.local import (
     AudiobookPopularity,
     get_most_popular_authors,

@@ -6,8 +6,8 @@ from pydantic import BaseModel
 from sqlalchemy.sql.functions import count
 from sqlmodel import Session, select
 
+from app.internal.audible.types import audible_region_type, get_region_tld_from_settings
 from app.internal.auth.authentication import ABRAuth, DetailedUser
-from app.internal.book_search import audible_region_type, get_region_tld_from_settings
 from app.internal.models import AudiobookRequest, AudiobookWithRequests
 from app.internal.ranking.quality import quality_config
 from app.routers.api.recommendations import (
