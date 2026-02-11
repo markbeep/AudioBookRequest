@@ -21,6 +21,7 @@ from sqlmodel import Session, select
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.models import APIKey, GroupEnum, User
+from app.util.censor import censor
 from app.util.db import get_session
 from app.util.log import logger
 
@@ -230,7 +231,7 @@ class ABRAuth(SecurityBase):
         if not standard_user.is_above(self.lowest_allowed_group):
             logger.warning(
                 "User does not have sufficient permissions",
-                username=standard_user.username,
+                username=censor(standard_user.username),
                 group=standard_user.group,
                 lowest_allowed_group=self.lowest_allowed_group,
             )
@@ -254,7 +255,7 @@ class ABRAuth(SecurityBase):
 
         logger.debug(
             "User authenticated successfully",
-            username=user.username,
+            username=censor(user.username),
             group=user.group,
             login_type=login_type,
         )
@@ -280,10 +281,12 @@ class ABRAuth(SecurityBase):
 
         user = authenticate_user(session, credentials.username, credentials.password)
         if not user:
-            logger.debug("Invalid username or password", username=credentials.username)
+            logger.debug(
+                "Invalid username or password", username=censor(credentials.username)
+            )
             raise invalid_exception
 
-        logger.debug("Logged in with basic auth", username=user.username)
+        logger.debug("Logged in with basic auth", username=censor(user.username))
         return user
 
     async def _get_session_auth(
@@ -300,10 +303,10 @@ class ABRAuth(SecurityBase):
 
         user = session.get(User, username)
         if not user:
-            logger.debug("User does not exist", username=username)
+            logger.debug("User does not exist", username=censor(username))
             raise RequiresLoginException("User does not exist")
 
-        logger.debug("Logged in with session", username=user.username)
+        logger.debug("Logged in with session", username=censor(user.username))
         return user
 
     async def _get_oidc_auth(
@@ -322,7 +325,7 @@ class ABRAuth(SecurityBase):
         if self.none_user:
             logger.debug(
                 "Using none auth, returning cached admin user",
-                username=self.none_user.username,
+                username=censor(self.none_user.username),
                 group=self.none_user.group,
             )
             return self.none_user
@@ -334,7 +337,7 @@ class ABRAuth(SecurityBase):
 
         logger.debug(
             "Using none auth, returning newly fetched admin user",
-            username=self.none_user.username,
+            username=censor(self.none_user.username),
             group=self.none_user.group,
         )
         return user

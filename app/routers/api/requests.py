@@ -41,6 +41,7 @@ from app.internal.prowlarr.prowlarr import start_download
 from app.internal.prowlarr.util import ProwlarrMisconfigured, prowlarr_config
 from app.internal.query import QueryResult, background_start_query, query_sources
 from app.internal.ranking.quality import quality_config
+from app.util.censor import censor
 from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.log import logger
@@ -95,7 +96,7 @@ async def create_request(
         session.commit()
         logger.info(
             "Added new audiobook request",
-            username=user.username,
+            username=censor(user.username),
             asin=asin,
         )
     else:

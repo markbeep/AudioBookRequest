@@ -8,6 +8,7 @@ from app.internal.audible.types import audible_region_type, get_region_tld_from_
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.ranking.quality import quality_config
 from app.routers.api.requests import create_request
+from app.util.censor import censor
 from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.log import logger
@@ -38,7 +39,7 @@ async def add_request(
     except HTTPException as e:
         logger.warning(
             e.detail,
-            username=user.username,
+            username=censor(user.username),
             asin=asin,
         )
         raise ToastException(e.detail) from e

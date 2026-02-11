@@ -22,6 +22,7 @@ from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.auth.oidc_config import InvalidOIDCConfiguration, oidc_config
 from app.internal.models import GroupEnum, User
+from app.util.censor import censor
 from app.util.connection import USER_AGENT, get_connection
 from app.util.db import get_session
 from app.util.log import logger
@@ -119,7 +120,7 @@ async def login_oidc(
             logger.warning(
                 "Invalid OIDC group claim type, expected list or string. Defaulted to empty groups list",
                 group_claim_type=type(groups).__name__,
-                username=username,
+                username=censor(username),
             )
             groups = []
         groups = [str(g) for g in groups if isinstance(g, str)]  # pyright: ignore[reportUnknownVariableType]

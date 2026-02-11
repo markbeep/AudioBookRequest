@@ -8,6 +8,7 @@ from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.env_settings import Settings
 from app.internal.models import GroupEnum
+from app.util.censor import censor
 from app.util.db import get_session
 from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse
@@ -37,12 +38,13 @@ def read_init(session: Annotated[Session, Depends(get_session)]):
     if init_username and init_password:
         logger.info(
             "Initial root credentials provided. Skipping init page.",
-            username=init_username,
+            username=censor(init_username),
             login_type=login_type,
         )
         if login_type is None:
             logger.warning(
-                "No login type set. Defaulting to 'forms'.", username=init_username
+                "No login type set. Defaulting to 'forms'.",
+                username=censor(init_username),
             )
             login_type = LoginTypeEnum.forms
 

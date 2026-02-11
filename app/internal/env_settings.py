@@ -26,6 +26,7 @@ class ApplicationSettings(BaseModel):
     version: str = "local"
     log_level: str = "INFO"
     base_url: str = ""
+    disable_censor: bool = False
 
     default_region: str = "us"
     """Default region used in the search"""

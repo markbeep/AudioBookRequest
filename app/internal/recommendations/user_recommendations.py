@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 
 from app.internal.audible.similar import list_similar_audible_books
 from app.internal.models import Audiobook, AudiobookRequest, AudiobookWithRequests, User
+from app.util.censor import censor
 from app.util.log import logger
 
 
@@ -80,7 +81,7 @@ async def get_user_sims_recommendations(
     if not seeds:
         logger.debug(
             "No seed ASINs for user recommendations",
-            username=user.username,
+            username=censor(user.username),
             input_seed_asins=seed_asins,
         )
         return UserSimsRecommendation(recommendations=[], total=0)
@@ -105,7 +106,7 @@ async def get_user_sims_recommendations(
     if not similar_books:
         logger.debug(
             "No sims found for user recommendations",
-            username=user.username,
+            username=censor(user.username),
             seed_asins=list(seeds.keys()),
         )
         return UserSimsRecommendation(recommendations=[], total=0)
@@ -227,7 +228,7 @@ async def get_user_sims_recommendations(
         book_with_requests = AudiobookWithRequests(
             book=sim.book,
             requests=sim.book.requests,
-            username=user.username,
+            username=censor(user.username),
         )
         results.append(
             AudiobookRecommendation(
