@@ -58,7 +58,7 @@ It is not intended as a full replacement for Readarr/Chaptarr, but instead inten
 
 # Getting Started
 
-AudioBookRequest is intended to be deployed using Docker or Kubernetes. For "bare-metal" deployments, read up on [local development](/wiki/Local-Development) in the wiki.
+AudioBookRequest is intended to be deployed using Docker or Kubernetes. For "bare-metal" deployments, read up on [local development](https://github.com/markbeep/AudioBookRequest/wiki/Local-Development) in the wiki.
 
 ## Quick Start
 
@@ -115,11 +115,11 @@ Notes:
 
 ### OpenID Connect
 
-Head to the [OpenID Connect](/wiki/OpenID-Connect) page in the wiki to learn how to set up OIDC authentication with your favorite auth provider.
+Head to the [OpenID Connect](https://github.com/markbeep/AudioBookRequest/wiki/OpenID-Connect) page in the wiki to learn how to set up OIDC authentication with your favorite auth provider.
 
 ### Environment Variables
 
-Head to the [environment variables](/wiki/Environment-Variables) page in the wiki.
+Head to the [environment variables](https://github.com/markbeep/AudioBookRequest/wiki/Environment-Variables) page in the wiki.
 
 ---
 
@@ -133,7 +133,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org) to
 
 ## Local Development
 
-Head to the [local development](/wiki/Local-Development) page in the wiki.
+Head to the [local development](https://github.com/markbeep/AudioBookRequest/wiki/Local-Development) page in the wiki.
 
 # Tools
 
