@@ -10,6 +10,7 @@ from sqlmodel import Session
 from app.internal.models import Audiobook, ProwlarrSource
 from app.internal.ranking.quality import quality_config
 from app.internal.ranking.quality_extract import Quality, extract_qualities
+from app.util.log import logger
 
 
 class RankSource(pydantic.BaseModel):
@@ -90,6 +91,62 @@ class CompareSource:
 
         return quality_range.from_kbits < a.quality.kbits < quality_range.to_kbits
 
+    def _has_minimum_match(self, a: RankSource) -> bool:
+        """Check if source has at least a minimal match with the book.
+
+        Requires either:
+        - Title match, OR
+        - At least one author/narrator match
+        """
+        title_ratio = quality_config.get_title_exists_ratio(self.session)
+        name_ratio = quality_config.get_name_exists_ratio(self.session)
+
+        # Check title match
+        title_match = exists_in_title(
+            self.book.title,
+            a.source.title,
+            title_ratio,
+        )
+
+        if title_match:
+            logger.debug(
+                "Title matches",
+                book_title=self.book.title,
+                source_title=a.source.title,
+                ratio=title_ratio,
+            )
+            return True
+
+        # Check author/narrator match
+        author_score = max(
+            vaguely_exist_in_title(
+                self.book.authors,
+                a.source.title,
+                name_ratio,
+            ),
+            fuzzy_author_narrator_match(
+                a.source.book_metadata.authors,
+                self.book.authors,
+                name_ratio,
+            ),
+        )
+
+        narrator_score = max(
+            vaguely_exist_in_title(
+                self.book.narrators,
+                a.source.title,
+                name_ratio,
+            ),
+            fuzzy_author_narrator_match(
+                a.source.book_metadata.narrators,
+                self.book.narrators,
+                name_ratio,
+            ),
+        )
+
+        # Require at least one author OR one narrator match
+        return author_score > 0 or narrator_score > 0
+
     def _compare_valid(self, a: RankSource, b: RankSource, next_compare: int) -> int:
         """Filter out any reasons that make it not valid"""
         if a.source.protocol == "torrent":
@@ -105,6 +162,11 @@ class CompareSource:
             ) and b.source.seeders >= quality_config.get_min_seeders(self.session)
         else:
             b_valid = self._is_valid_quality(b)
+
+        # Check if the source has a reasonable match with the book
+        # Require either title match OR (author/narrator match)
+        a_valid = a_valid and self._has_minimum_match(a)
+        b_valid = b_valid and self._has_minimum_match(b)
 
         if a_valid == b_valid:
             return self._get_next_compare(next_compare)(a, b, next_compare + 1)
