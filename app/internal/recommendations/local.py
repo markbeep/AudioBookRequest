@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
-from typing import Counter, Sequence
+from typing import Counter, Sequence, cast
 
 from pydantic import BaseModel
+from sqlalchemy.sql.elements import KeyedColumnElement
 from sqlalchemy.sql.functions import count
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col, func, select
 
 from app.internal.models import Audiobook, AudiobookRequest, AudiobookWithRequests
 from app.util.log import logger
@@ -30,22 +31,30 @@ def get_popular_books(
 ) -> list[AudiobookPopularity]:
     """Get the most popular books based on how many users have requested them."""
 
+    subquery = (
+        select(
+            AudiobookRequest.asin,
+            count(col(AudiobookRequest.user_username)).label("count"),
+            func.max(col(AudiobookRequest.updated_at)).label("max_updated_at"),
+        )
+        .group_by(AudiobookRequest.asin)
+        .having(count(col(AudiobookRequest.user_username)) >= min_requests)
+    ).subquery()
+
     query = (
         select(
             Audiobook,
-            request_count := count(col(AudiobookRequest.user_username)),
+            cast(KeyedColumnElement[int], subquery.c.count),
         )
-        .join(AudiobookRequest)
-        .group_by(AudiobookRequest.asin)
-        .having(request_count >= min_requests)
-        .order_by(request_count.desc(), col(AudiobookRequest.updated_at).desc())
+        .join(subquery, col(Audiobook.asin) == subquery.c.asin)
+        .order_by(subquery.c.count.desc(), subquery.c.max_updated_at.desc())
         .limit(limit)
     )
 
     if exclude_downloaded:
         query = query.where(~col(Audiobook.downloaded))
-    if exclude_requested_username:
-        query = query.having(
+    if exclude_requested_username:  # removes all books requested by the excluded user
+        query = query.where(
             col(Audiobook.asin).not_in(
                 select(AudiobookRequest.asin).where(
                     AudiobookRequest.user_username == exclude_requested_username

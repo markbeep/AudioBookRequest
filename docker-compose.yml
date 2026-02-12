@@ -19,7 +19,7 @@ services:
       - ./data/gotify/data:/app/data
 
   psql:
-    image: postgres:15
+    image: postgres:17
     environment:
       POSTGRES_USER: abr
       POSTGRES_PASSWORD: password
