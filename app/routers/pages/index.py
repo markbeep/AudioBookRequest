@@ -78,6 +78,7 @@ async def get_user_recommendations(
     return catalog_response(
         "Index.PopularSection",
         title="For You",
+        user=user,
         reasons=result.recommendations,
         view_more="/recommendations/for-you",
         description="Personalized recommendations based on your requests",
@@ -106,6 +107,7 @@ async def get_popular_recommendations(
     return catalog_response(
         "Index.PopularSection",
         title="Popular",
+        user=user,
         reasons=result,
         description="The most popular books on the instance",
         empty="No popular recommendations available at this time. Request some books to start getting recommendations.",
@@ -132,7 +134,8 @@ async def get_category_recommendations(
         "Index.Categories",
         categories=result,
         region_tld=get_region_tld_from_settings(),
-        auto_download=quality_config.get_auto_download(session),
+        auto_start_download=quality_config.get_auto_download(session),
+        user=user,
     )
 
 
@@ -173,6 +176,7 @@ async def get_recently_requested_recommendations(
     return catalog_response(
         "Index.PopularSection",
         reasons=reasons,
+        user=user,
         description="Books that have been recently requested by users on the instance",
         empty="No recently requested recommendations available at this time. Request some books to start getting recommendations.",
         region_tld=get_region_tld_from_settings(),
@@ -206,6 +210,7 @@ async def get_fallback_recommendations(
     return catalog_response(
         "Index.PopularSection",
         reasons=reasons,
+        user=user,
         description="Popular books from Audible",
         empty="No fallback recommendations available at this time.",
         region_tld=get_region_tld_from_settings(),
@@ -240,6 +245,7 @@ async def get_popular_authors_recommendations(
     return catalog_response(
         "Index.PopularSection",
         reasons=reasons,
+        user=user,
         description="Books from popular authors",
         empty="No popular author recommendations available at this time. Request some books to start getting recommendations.",
         region_tld=get_region_tld_from_settings(),
@@ -274,6 +280,7 @@ async def get_popular_narrators_recommendations(
     return catalog_response(
         "Index.PopularSection",
         reasons=reasons,
+        user=user,
         description="Books from popular narrators",
         empty="No popular narrator recommendations available at this time. Request some books to start getting recommendations.",
         region_tld=get_region_tld_from_settings(),

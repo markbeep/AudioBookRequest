@@ -1,8 +1,9 @@
 {#def
     region_tld: str,
+    auto_start_download: bool,
+    user: DetailedUser,
     categories: dict[str, list[Audiobook]] = {},
     lazy_load = False,
-    auto_start_download: bool = False,
 #}
 
 {% if lazy_load %}
@@ -31,7 +32,7 @@
                             <div class="flex gap-4 pb-4" style="width: max-content">
                                 {% for book in categories.trending[:12] %}
                                     <div class="flex-none w-32 sm:w-40">
-                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" />
+                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" user={{ user }} />
                                     </div>
                                 {% endfor %}
                             </div>
@@ -54,7 +55,7 @@
                             <div class="flex gap-4 pb-4" style="width: max-content">
                                 {% for book in categories.business[:12] %}
                                     <div class="flex-none w-32 sm:w-40">
-                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" />
+                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" user={{ user }} />
                                     </div>
                                 {% endfor %}
                             </div>
@@ -77,7 +78,7 @@
                             <div class="flex gap-4 pb-4" style="width: max-content">
                                 {% for book in categories.fiction[:12] %}
                                     <div class="flex-none w-32 sm:w-40">
-                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" />
+                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" user={{ user }} />
                                     </div>
                                 {% endfor %}
                             </div>
@@ -100,7 +101,7 @@
                             <div class="flex gap-4 pb-4" style="width: max-content">
                                 {% for book in categories.biography[:12] %}
                                     <div class="flex-none w-32 sm:w-40">
-                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" />
+                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" user={{ user }} />
                                     </div>
                                 {% endfor %}
                             </div>
@@ -123,7 +124,7 @@
                             <div class="flex gap-4 pb-4" style="width: max-content">
                                 {% for book in categories.science[:12] %}
                                     <div class="flex-none w-32 sm:w-40">
-                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" />
+                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" user={{ user }} />
                                     </div>
                                 {% endfor %}
                             </div>
@@ -146,7 +147,7 @@
                             <div class="flex gap-4 pb-4" style="width: max-content">
                                 {% for book in categories.recent_releases[:12] %}
                                     <div class="flex-none w-32 sm:w-40">
-                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" />
+                                        <BookCard book_with_requests={{ book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" user={{ user }} />
                                     </div>
                                 {% endfor %}
                             </div>

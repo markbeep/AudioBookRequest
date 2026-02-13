@@ -40,7 +40,7 @@ async def login(
         await ABRAuth()(request, session)
         # already logged in
         return BaseUrlRedirectResponse(redirect_uri)
-    except (HTTPException, RequiresLoginException):
+    except HTTPException, RequiresLoginException:
         pass
 
     if login_type == LoginTypeEnum.forms or backup:

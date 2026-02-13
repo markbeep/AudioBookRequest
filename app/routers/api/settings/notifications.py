@@ -47,7 +47,7 @@ def _validate_headers(headers: str) -> dict[str, str]:
             raise HTTPException(400, "Invalid headers JSON. Not of type object/dict")
         headers_json = cast(dict[str, str], headers_json)
         return headers_json
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         raise HTTPException(400, "Invalid headers JSON")
 
 
@@ -68,7 +68,7 @@ def _upsert_notification(
             if not isinstance(json_body, dict):
                 raise HTTPException(422, "Invalid body. Not a JSON object")
             body = json.dumps(json_body, indent=2)
-    except (json.JSONDecodeError, ValueError):
+    except json.JSONDecodeError, ValueError:
         raise HTTPException(422, "Body is invalid JSON")
 
     try:

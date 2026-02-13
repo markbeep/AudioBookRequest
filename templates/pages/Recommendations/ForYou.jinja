@@ -44,7 +44,7 @@
         {% if recommendations %}
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {% for rec in recommendations %}
-                    <BookCard book_with_requests={{ rec.book }} region_tld={{ region_tld }} auto_start_download={{ auto_start_download }} />
+                    <BookCard book_with_requests={{ rec.book }} region_tld={{ region_tld }} auto_start_download={{ auto_start_download }} user={{ user }} />
                 {% endfor %}
             </div>
         {% else %}

@@ -73,7 +73,7 @@
             <div id="book-results"
                  class="min-w-[60vw] max-w-[90vw] sm:max-w-[80vw] h-full grid gap-1 gap-y-2 sm:gap-y-4 sm:gap-2 p-1 grid-flow-row grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7">
                 {% for result in search_results %}
-                    <BookCard book_with_requests={{ result }} auto_start_download={{ auto_start_download }} region_tld={{ regions[selected_region] }} />
+                    <BookCard book_with_requests={{ result }} auto_start_download={{ auto_start_download }} region_tld={{ regions[selected_region] }} user={{ user }} />
                 {% endfor %}
 
             </div>

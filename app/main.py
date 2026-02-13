@@ -170,7 +170,7 @@ async def throw_toast_exception(
             if "detail" not in parsed or not isinstance(parsed["detail"], str):
                 raise ValueError()
             error_message = cast(str, parsed["detail"])
-        except (json.JSONDecodeError, ValueError):
+        except json.JSONDecodeError, ValueError:
             error_message = f"An error occurred while processing your request. status={response.status_code}"
 
         return await raise_toast(request, ToastException(error_message, type="error"))

@@ -49,4 +49,5 @@ async def add_request(
         book_with_requests=book,
         auto_start_download=quality_config.get_auto_download(session),
         region_tld=get_region_tld_from_settings(),
+        user=user,
     )
