@@ -20,6 +20,7 @@ If you've heard of Overseer, Ombi, or Jellyseer; this is in the similar vein, <i
   - [Basic Usage](#basic-usage)
     - [Auto download](#auto-download)
     - [Audiobookshelf Integration](#audiobookshelf-integration)
+    - [Readarr Integration](#readarr-integration)
     - [OpenID Connect](#openid-connect)
       - [Getting locked out](#getting-locked-out)
     - [Environment Variables](#environment-variables)
@@ -40,6 +41,7 @@ It is not intended as a full replacement for Readarr/Chaptarr, but instead inten
 - Add manual audiobook requests for any books not available on Audible.
 - Easy user management. Only three assignable groups, made to get out of your way.
 - Automatic downloading of requests. Integrate Prowlarr to use all your existing indexer settings and download clients.
+- Optional Readarr integration for managed downloads with file renaming and library organization.
 - Send notifications to your favorite notification service (apprise, gotify, discord, ntfy, etc.).
 - Single image deployment. You can deploy and create your first requests in under 5 minutes.
 - SQLite and Postgres support!
@@ -48,9 +50,10 @@ It is not intended as a full replacement for Readarr/Chaptarr, but instead inten
 
 ## Out of Scope Features
 
-- AudioBookRequest does **not** handle moving, renaming, nor editing metadata after downloads. Instead, ABR supports multiple REST API endpoints that allow for easy interoptability with scripts and other apps.
+- AudioBookRequest does **not** handle moving, renaming, nor editing metadata after downloads on its own. However, you can use the [Readarr integration](#readarr-integration) to have Readarr manage the full download-to-library pipeline, or use the REST API endpoints for custom scripts.
   - Combinations:
-    - _Know of or have an app or script that works with ABR? Open an issue and I'll add it here or to the docs._
+    - [Readarr](https://github.com/Readarr/Readarr) / [Bookshelf](https://github.com/pennydreadful/bookshelf) - ABR can add books to Readarr and trigger searches, letting Readarr handle downloading, importing, renaming, and organizing files.
+    - *Know of or have an app or script that works with ABR? Open an issue and I'll add it here or to the docs.*
   - Alternatives:
     - _I'd love to add alternatives for ABR here. If you know of any good ones, open an issue!_
 
@@ -113,6 +116,28 @@ Notes:
 - ABR searches ABS by ASIN and by “title + first author” to detect existing books; this is a best-effort match and may not catch every case depending on your metadata.
 - ABS is automatically asked to scan after successful downloads are marked in ABR. ABS typically auto-detects updates, but this helps pick up changes sooner.
 
+### Readarr Integration
+
+Readarr integration lets ABR hand off downloads to [Readarr](https://github.com/Readarr/Readarr) (or compatible forks like [Bookshelf](https://github.com/pennydreadful/bookshelf)). When a user requests an audiobook, ABR immediately adds the book to Readarr and triggers an indexer search in the background. Readarr then handles the full pipeline: searching, grabbing, downloading, importing, renaming, and organizing files into your library folder.
+
+This is particularly useful if you want Readarr to manage filenames and folder structure before files land in Audiobookshelf or Plex.
+
+Setup steps:
+
+1. Ensure your Readarr instance is set up with at least one indexer and download client.
+2. In Readarr, go to Settings > General and copy the **API Key**.
+3. In ABR, go to Settings > Readarr and enter:
+   - **Base URL** of your Readarr instance (e.g. `http://readarr:8787`)
+   - **API Key** from step 2
+   - Select a **Quality Profile**, **Metadata Profile**, and **Root Folder**
+
+Notes:
+
+- When Readarr is configured, every new request is sent to Readarr automatically as a background task. No manual intervention or auto-download toggle is required.
+- ABR matches books from Audible to Readarr's metadata by title and author. If no match is found, the book remains in the request queue for manual handling.
+- Readarr's add-book operation can take 30 seconds to several minutes for new authors, since it fetches metadata from upstream providers. This runs as a background task — users see an immediate response.
+- If Readarr is not configured, ABR falls back to the standard Prowlarr auto-download flow (if enabled).
+
 ### OpenID Connect
 
 Head to the [OpenID Connect](https://github.com/markbeep/AudioBookRequest/wiki/OpenID-Connect) page in the wiki to learn how to set up OIDC authentication with your favorite auth provider.
@@ -140,4 +165,5 @@ Head to the [local development](https://github.com/markbeep/AudioBookRequest/wik
 AudioBookRequest builds on top of a some other great open-source tools. A big thanks goes out to these developers.
 
 - [Prowlarr](https://github.com/Prowlarr/Prowlarr) - Does a lot of the heavy lifting concerning searching through indexers and forwarding download requests to download clients. Saves me the ordeal of having to reimplement everything again.
+- [Readarr](https://github.com/Readarr/Readarr) - Book management and download automation. ABR can optionally add books to Readarr and let it handle the full download-to-library pipeline.
 - [External Audible API](https://audible.readthedocs.io/en/latest/misc/external_api.html) - Audible exposes key API endpoints which are used to, for example, search for books.

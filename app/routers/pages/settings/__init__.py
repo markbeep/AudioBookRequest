@@ -7,6 +7,7 @@ from . import (
     indexers,
     notification,
     prowlarr,
+    readarr,
     security,
     users,
 )
@@ -19,5 +20,6 @@ router.include_router(download.router)
 router.include_router(indexers.router)
 router.include_router(notification.router)
 router.include_router(prowlarr.router)
+router.include_router(readarr.router)
 router.include_router(security.router)
 router.include_router(users.router)

@@ -1,0 +1,143 @@
+{#def
+    user: DetailedUser,
+    readarr_base_url: str,
+    readarr_api_key: str,
+    readarr_quality_profile_id: int | None,
+    readarr_metadata_profile_id: int | None,
+    readarr_root_folder_path: str,
+    quality_profiles: list,
+    metadata_profiles: list,
+    root_folders: list,
+#}
+
+<SettingsLayout user={{ user }} page="readarr" title="Settings - Readarr">
+
+<div class="flex flex-col gap-2">
+    <h2 class="text-lg">
+        Readarr
+    </h2>
+    <p class="text-xs opacity-60">
+        Connect to Readarr to add books and trigger searches. Readarr handles downloading,
+        importing, renaming, and organizing files into your Audiobookshelf library.
+    </p>
+
+    <label for="readarr-api-key" class="pt-2">
+        API Key
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/readarr/hx-api-key"
+          hx-disabled-elt="#readarr-api-key-button">
+        <input id="readarr-api-key"
+               name="api_key"
+               type="password"
+               {% if readarr_api_key %}placeholder="●●●●●●●●●●●●●●●●●"{% endif %}
+               class="input join-item w-full"
+               minlength="1"
+               required />
+        <button id="readarr-api-key-button" class="join-item btn">
+            {% if readarr_api_key %}
+                Update
+            {% else %}
+                Add
+            {% endif %}
+        </button>
+    </form>
+
+    <label for="readarr-base-url" class="pt-2">
+        Base URL
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/readarr/hx-base-url"
+          hx-disabled-elt="#readarr-base-url-button">
+        <input id="readarr-base-url"
+               name="base_url"
+               type="url"
+               value="{{ readarr_base_url }}"
+               placeholder="http://readarr-audiobooks:8787"
+               class="input join-item w-full"
+               minlength="1"
+               required />
+        <button id="readarr-base-url-button" class="join-item btn">
+            {% if readarr_base_url %}
+                Update
+            {% else %}
+                Add
+            {% endif %}
+        </button>
+    </form>
+
+    <label for="readarr-quality-profile" class="pt-2">
+        Quality Profile
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/readarr/hx-quality-profile"
+          hx-disabled-elt="#readarr-quality-profile-button">
+        <select id="readarr-quality-profile" name="quality_profile_id" class="select join-item w-full">
+            {% if not quality_profiles or not quality_profiles|length %}
+                <option disabled selected>
+                    Enter URL and API key first
+                </option>
+            {% endif %}
+            {% for profile in quality_profiles %}
+                <option value="{{ profile.id }}"
+                        {% if readarr_quality_profile_id == profile.id %}selected{% endif %}>
+                    {{ profile.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button id="readarr-quality-profile-button" class="join-item btn">
+            Save
+        </button>
+    </form>
+
+    <label for="readarr-metadata-profile" class="pt-2">
+        Metadata Profile
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/readarr/hx-metadata-profile"
+          hx-disabled-elt="#readarr-metadata-profile-button">
+        <select id="readarr-metadata-profile" name="metadata_profile_id" class="select join-item w-full">
+            {% if not metadata_profiles or not metadata_profiles|length %}
+                <option disabled selected>
+                    Enter URL and API key first
+                </option>
+            {% endif %}
+            {% for profile in metadata_profiles %}
+                <option value="{{ profile.id }}"
+                        {% if readarr_metadata_profile_id == profile.id %}selected{% endif %}>
+                    {{ profile.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button id="readarr-metadata-profile-button" class="join-item btn">
+            Save
+        </button>
+    </form>
+
+    <label for="readarr-root-folder" class="pt-2">
+        Root Folder
+    </label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/readarr/hx-root-folder"
+          hx-disabled-elt="#readarr-root-folder-button">
+        <select id="readarr-root-folder" name="root_folder_path" class="select join-item w-full">
+            {% if not root_folders or not root_folders|length %}
+                <option disabled selected>
+                    Enter URL and API key first
+                </option>
+            {% endif %}
+            {% for folder in root_folders %}
+                <option value="{{ folder.path }}"
+                        {% if readarr_root_folder_path == folder.path %}selected{% endif %}>
+                    {{ folder.name }} ({{ folder.path }})
+                </option>
+            {% endfor %}
+        </select>
+        <button id="readarr-root-folder-button" class="join-item btn">
+            Save
+        </button>
+    </form>
+
+</div>
+
+</SettingsLayout>
