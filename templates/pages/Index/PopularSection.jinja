@@ -2,7 +2,6 @@
     title: str,
     user: DetailedUser,
     region_tld: str,
-    reasons: list[AudiobookPopularity], # (anything with a `book` and `reason` attribute)
     view_more: str | None = None,
     lazy_url: str | None = None,
     description: str | None = None,
@@ -46,15 +45,7 @@
         </div>
         <div class="overflow-x-auto">
             <div id="for-you" class="w-full max-w-7xl mb-8">
-                {% if reasons %}
-                    <div class="flex gap-4 pb-4">
-                        {% for reason in reasons[:12] %}
-                            <div class="flex-none w-32 sm:w-40" title="{{ reason.reason }}">
-                                <BookCard book_with_requests={{ reason.book }} auto_start_download={{ auto_start_download }} region_tld="{{ region_tld }}" user={{ user }} />
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% elif empty %}
+                {% if empty %}
                     <div class="p-6 bg-base-200 rounded-md text-center">
                         <p class="text-sm opacity-70">
                             {{ empty }}

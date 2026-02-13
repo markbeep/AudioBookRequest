@@ -28,21 +28,14 @@ templates = Jinja2Blocks(
 )
 
 
-def _zfill(val: str | int | float, num: int) -> str:
-    return str(val).zfill(num)
-
-
 def _to_js_string(val: str | int | float) -> str:
     return html.escape(f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'")
 
 
 # filters
-templates.env.filters["zfill"] = _zfill
 templates.env.filters["toJSstring"] = _to_js_string
 # globals
-templates.env.globals["vars"] = vars
 templates.env.globals["getattr"] = getattr
-templates.env.globals["hasattr"] = hasattr
 templates.env.globals["version"] = Settings().app.version
 templates.env.globals["json_regexp"] = (
     r'^\{\s*(?:"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*(?:,\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*)*)?\}$'

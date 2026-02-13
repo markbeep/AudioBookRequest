@@ -28,9 +28,9 @@
         </div>
     </div>
 
-    <Index.PopularSection title="For You" user={{ user }} reasons={{ for_you }} view_more="/recommendations/for-you" lazy_url="/hx-for-you" description="Personalized recommendations based on your requests" empty="No recommendations available at this time. Request some books to start getting recommendations." region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} />
+    <Index.PopularSection title="For You" user={{ user }} view_more="/recommendations/for-you" lazy_url="/hx-for-you" description="Personalized recommendations based on your requests" empty="No recommendations available at this time. Request some books to start getting recommendations." region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} />
     {% if show_popular %}
-        <Index.PopularSection title="Popular" user={{ user }} reasons={{ popular }} lazy_url="/hx-popular" description="The most popular books on the instance" empty="No popular recommendations available at this time. Request some books to start getting recommendations." region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} />
+        <Index.PopularSection title="Popular" user={{ user }} lazy_url="/hx-popular" description="The most popular books on the instance" empty="No popular recommendations available at this time. Request some books to start getting recommendations." region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} />
     {% endif %}
     <Index.Categories lazy_load={{ True }} region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} user={{ user }} />
 
