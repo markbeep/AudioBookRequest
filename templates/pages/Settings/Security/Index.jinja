@@ -9,7 +9,7 @@
     oidc_scope: str,
     oidc_username_claim: str,
     oidc_group_claim: str,
-    oidc_redirect_https: bool,
+    oidc_redirect_scheme: str,
     oidc_logout_url: str,
     force_login_type: LoginTypeEnum | None,
 #}
@@ -18,7 +18,7 @@
 <js.AlpineJS />
 
 <div class="flex flex-col">
-    <Settings.Security.Form user={{ user }} login_type={{ login_type }} access_token_expiry={{ access_token_expiry }} min_password_length={{ min_password_length }} oidc_endpoint={{ oidc_endpoint }} oidc_client_secret={{ oidc_client_secret }} oidc_client_id={{ oidc_client_id }} oidc_scope={{ oidc_scope }} oidc_username_claim={{ oidc_username_claim }} oidc_group_claim={{ oidc_group_claim }} oidc_redirect_https={{ oidc_redirect_https }} oidc_logout_url={{ oidc_logout_url }} force_login_type={{ force_login_type }} />
+    <Settings.Security.Form user={{ user }} login_type={{ login_type }} access_token_expiry={{ access_token_expiry }} min_password_length={{ min_password_length }} oidc_endpoint={{ oidc_endpoint }} oidc_client_secret={{ oidc_client_secret }} oidc_client_id={{ oidc_client_id }} oidc_scope={{ oidc_scope }} oidc_username_claim={{ oidc_username_claim }} oidc_group_claim={{ oidc_group_claim }} oidc_redirect_scheme={{ oidc_redirect_scheme }} oidc_logout_url={{ oidc_logout_url }} force_login_type={{ force_login_type }} />
 
     <hr class="my-8 border-base-200" />
     <div class="flex flex-col gap-2">
