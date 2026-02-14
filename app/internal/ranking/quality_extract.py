@@ -83,8 +83,6 @@ async def extract_qualities(
     book_seconds = getattr(book, "runtime_length_min", 0) * 60
     if book_seconds == 0:
         if isinstance(book, ManualBookRequest):
-            # For manual requests with unknown duration, we just return a placeholder quality
-            # This allows them to pass through without being filtered by kbits check
             return [Quality(kbits=0, file_format="unknown")]
         return []
 

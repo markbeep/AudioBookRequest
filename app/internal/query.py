@@ -86,7 +86,8 @@ async def query_sources(
                 state="uncached",
             )
 
-        ranked = await rank_sources(session, client_session, sources, book)
+        is_manual = isinstance(book, ManualBookRequest)
+        ranked = await rank_sources(session, client_session, sources, book, is_manual)
 
         # start download if requested
         if start_auto_download and not book.downloaded and len(ranked) > 0:
