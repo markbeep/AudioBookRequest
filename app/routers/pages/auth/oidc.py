@@ -63,7 +63,10 @@ async def login_oidc(
         raise InvalidOIDCConfiguration("Missing OIDC username claim")
 
     auth_redirect_uri = str(request.url_for("login_oidc"))
-    if oidc_config.get_redirect_https(session):
+    scheme = oidc_config.get_redirect_scheme(session)
+    if scheme == "http":
+        auth_redirect_uri = auth_redirect_uri.replace("https:", "http:")
+    elif scheme == "https":
         auth_redirect_uri = auth_redirect_uri.replace("http:", "https:")
 
     data = {

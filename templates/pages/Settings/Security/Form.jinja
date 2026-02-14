@@ -8,7 +8,7 @@
     oidc_scope: str,
     oidc_username_claim: str,
     oidc_group_claim: str,
-    oidc_redirect_https: bool,
+    oidc_redirect_scheme: str,
     oidc_logout_url: str,
     force_login_type: LoginTypeEnum | None,
 #}
@@ -171,22 +171,26 @@
                    class="input w-full"
                    value="{{ oidc_group_claim }}" />
             <div>
-                <label for="oidc-logout-url">
-                    Use http or https for the redirect URL
+                <label for="oidc-redirect-scheme">
+                    OIDC Redirect Scheme
                 </label>
                 <p class="opacity-60 text-xs">
-                    After you login on your authentication server, you will be
-                    redirected to <span class="font-mono">/auth/oidc</span>. Determine
-                    if you should be redirected to http or https. This should match up
-                    with what you configured as the redirect URL in your OIDC provider.
+                    The protocol scheme used for the OIDC redirect URI. "Auto" detects
+                    the scheme from the incoming request (works with reverse proxies
+                    using <span class="font-mono">--proxy-headers</span>). Use "http"
+                    or "https" to force a specific scheme. This should match what you
+                    configured as the redirect URL in your OIDC provider.
                 </p>
             </div>
-            <select class="select" name="oidc_redirect_https">
-                <option value="True" {% if oidc_redirect_https %}selected{% endif %}>
-                    https
+            <select id="oidc-redirect-scheme" class="select" name="oidc_redirect_scheme">
+                <option value="auto" {% if oidc_redirect_scheme == 'auto' %}selected{% endif %}>
+                    Auto (detect from request)
                 </option>
-                <option value="False" {% if not oidc_redirect_https %}selected{% endif %}>
+                <option value="http" {% if oidc_redirect_scheme == 'http' %}selected{% endif %}>
                     http
+                </option>
+                <option value="https" {% if oidc_redirect_scheme == 'https' %}selected{% endif %}>
+                    https
                 </option>
             </select>
             <div>
