@@ -51,7 +51,7 @@
     {% endif %}
     <tbody>
         {% for book in results %}
-            <tr class="text-xs lg:text-sm {% if book.downloaded %}bg-success/30{% endif %}">
+            <tr id="{{ book.id }}" class="text-xs lg:text-sm {% if book.downloaded %}bg-success/30{% endif %}">
                 <th>
                     {{ loop.index }}
                 </th>
@@ -103,6 +103,13 @@
                             <icons.Checkmark />
                         </button>
                     {% endif %}
+                    <a preload
+                       title="Torrent Sources"
+                       href="{{ base_url }}/wishlist/sources/{{ book.id }}"
+                       {% if not user.is_admin() %}disabled{% endif %}
+                       class="btn btn-square">
+                        <icons.List />
+                    </a>
                     <a class="btn btn-square"
                        href="{{ base_url }}/search/manual?id={{ book.id }}"
                        title="Edit">

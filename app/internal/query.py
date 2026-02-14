@@ -1,4 +1,4 @@
-# To dermine what is currently being queried:
+import uuid
 from contextlib import contextmanager
 from typing import Literal
 
@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 
 from app.internal.audiobookshelf.client import abs_trigger_scan
 from app.internal.audiobookshelf.config import abs_config
-from app.internal.models import Audiobook, ProwlarrSource, User
+from app.internal.models import Audiobook, ManualBookRequest, ProwlarrSource, User
 from app.internal.prowlarr.prowlarr import query_prowlarr, start_download
 from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.download_ranking import rank_sources
@@ -33,7 +33,7 @@ def manage_queried(asin: str):
 
 class QueryResult(pydantic.BaseModel):
     sources: list[ProwlarrSource] | None
-    book: Audiobook
+    book: Audiobook | ManualBookRequest
     state: Literal["ok", "querying", "uncached"]
     error_message: str | None = None
 
@@ -51,7 +51,13 @@ async def query_sources(
     start_auto_download: bool = False,
     only_return_if_cached: bool = False,
 ) -> QueryResult:
-    book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
+    # First check if the ASIN is a UUID (manual request)
+    try:
+        uuid_obj = uuid.UUID(asin)
+        book = session.get(ManualBookRequest, uuid_obj)
+    except ValueError:
+        # Standard Audiobook ASIN
+        book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
