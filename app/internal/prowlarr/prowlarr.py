@@ -16,6 +16,7 @@ from app.internal.models import (
     Audiobook,
     EventEnum,
     Indexer,
+    ManualBookRequest,
     ProwlarrSource,
     TorrentSource,
     UsenetSource,
@@ -157,7 +158,7 @@ _ProwlarrSearchResult = TypeAdapter(
 async def query_prowlarr(
     session: Session,
     client_session: ClientSession,
-    book: Audiobook,
+    book: Audiobook | ManualBookRequest,
     indexer_ids: list[int] | None = None,
     force_refresh: bool = False,
     only_return_if_cached: bool = False,

@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 from pydantic import BaseModel, ValidationError
 from sqlmodel import Session
 
-from app.internal.models import Audiobook, ProwlarrSource
+from app.internal.models import Audiobook, ManualBookRequest, ProwlarrSource
 from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.quality import FileFormat
 from app.util.connection import USER_AGENT
@@ -74,14 +74,16 @@ async def extract_qualities(
     session: Session,
     client_session: ClientSession,
     source: ProwlarrSource,
-    book: Audiobook,
+    book: Audiobook | ManualBookRequest,
 ) -> list[Quality]:
     api_key = prowlarr_config.get_api_key(session)
     if not api_key:
         raise ValueError("Prowlarr API key not set")
 
-    book_seconds = book.runtime_length_min * 60
+    book_seconds = getattr(book, "runtime_length_min", 0) * 60
     if book_seconds == 0:
+        if isinstance(book, ManualBookRequest):
+            return [Quality(kbits=0, file_format="unknown")]
         return []
 
     data = None
@@ -143,7 +145,7 @@ def get_torrent_info(data: bytes, book_seconds: int) -> list[Quality]:
         parsed = _DecodedTorrent.model_validate(
             tp.decode(data, hash_fields={"pieces": (1, False)})
         )
-    except tp.InvalidTorrentDataException, ValidationError:
+    except (tp.InvalidTorrentDataException, ValidationError):
         return []
     actual_sizes: dict[FileFormat, int] = defaultdict(int)
     file_formats = set[str]()

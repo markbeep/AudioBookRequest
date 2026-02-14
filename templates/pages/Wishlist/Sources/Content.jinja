@@ -2,9 +2,12 @@
     result: QueryResult,
 #}
 
+{% set book_id = result.book.id if result.book.id is defined else result.book.asin %}
+{% set is_manual = result.book.id is defined %}
+
 <div class="w-screen p-2 md:p-4 lg:p-8 flex flex-col gap-2" id="sources">
     <a preload
-       href="{{ base_url }}/wishlist#{{ result.book.asin }}"
+       href="{{ base_url }}/wishlist{% if is_manual %}/manual{% endif %}#{{ book_id }}"
        class="w-fit btn btn-ghost">&lt; Back to wishlist</a>
     <h1 class="text-3xl font-bold">
         Sources for {{ result.book.title }}
@@ -21,7 +24,7 @@
     {% elif not result.ok %}
         <div role="alert"
              class="alert"
-             hx-get="{{ base_url }}/wishlist/sources/{{ result.book.asin }}?only_body=true"
+             hx-get="{{ base_url }}/wishlist/sources/{{ book_id }}?only_body=true"
              hx-trigger="load"
              hx-target="#sources"
              hx-swap="outerHTML">
@@ -119,7 +122,7 @@
                                        type="checkbox"
                                        hx-trigger="click"
                                        hx-target="this"
-                                       hx-post="{{ base_url }}/wishlist/sources/{{ result.book.asin }}"
+                                       hx-post="{{ base_url }}/wishlist/sources/{{ book_id }}"
                                        hx-include="#form-{{ loop.index }}"
                                        hx-on::after-request="if (event.detail.successful) this.disabled = true" />
                                 <input type="hidden" name="indexer_id" value="{{ source.indexer_id }}" />
