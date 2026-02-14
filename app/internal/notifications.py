@@ -14,7 +14,6 @@ from app.internal.models import (
 from app.util import json_type
 from app.util.db import get_session
 from app.util.log import logger
-PLACEHOLDER_COVER_URL = "https://picsum.photos/id/24/500/500"
 
 
 def _replace_variables(
@@ -23,7 +22,6 @@ def _replace_variables(
     book_title: str | None = None,
     book_authors: str | None = None,
     book_narrators: str | None = None,
-    book_cover: str | None = None,
     event_type: str | None = None,
     other_replacements: dict[str, str] | None = None,
 ):
@@ -39,10 +37,6 @@ def _replace_variables(
         template = template.replace("{bookAuthors}", book_authors)
     if book_narrators:
         template = template.replace("{bookNarrators}", book_narrators)
-    if book_cover:
-        template = template.replace("{bookCover}", book_cover)
-    else:
-        template = template.replace("{bookCover}", PLACEHOLDER_COVER_URL)
     if event_type:
         template = template.replace("{eventType}", event_type)
 
@@ -91,7 +85,6 @@ async def send_notification(
     book_title = None
     book_authors = None
     book_narrators = None
-    book_cover = None
     if book_asin:
         book = session.exec(
             select(Audiobook).where(Audiobook.asin == book_asin)
@@ -100,7 +93,6 @@ async def send_notification(
             book_title = book.title
             book_authors = ",".join(book.authors)
             book_narrators = ",".join(book.narrators)
-            book_cover = book.cover_image
 
     body = _replace_variables(
         notification.body,
@@ -108,7 +100,6 @@ async def send_notification(
         book_title,
         book_authors,
         book_narrators,
-        book_cover,
         notification.event.value,
         other_replacements,
     )
@@ -199,7 +190,6 @@ async def send_manual_notification(
             book.title,
             book_authors,
             book_narrators,
-            None,
             notification.event.value,
             other_replacements,
         )
