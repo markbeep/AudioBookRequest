@@ -131,11 +131,9 @@ async def update_security_settings(
         if body.oidc_username_claim:
             oidc_config.set(session, "oidc_username_claim", body.oidc_username_claim)
         if body.oidc_redirect_scheme is not None:
-            oidc_config.set(
-                session,
-                "oidc_redirect_scheme",
-                body.oidc_redirect_scheme if body.oidc_redirect_scheme in ("http", "https") else "auto",
-            )
+            scheme = body.oidc_redirect_scheme
+            value = scheme if scheme in ("http", "https") else "auto"
+            oidc_config.set(session, "oidc_redirect_scheme", value)
         if body.oidc_logout_url:
             oidc_config.set(session, "oidc_logout_url", body.oidc_logout_url)
         if body.oidc_group_claim is not None:
