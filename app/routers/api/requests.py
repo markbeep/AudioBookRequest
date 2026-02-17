@@ -40,6 +40,11 @@ from app.internal.notifications import (
 from app.internal.prowlarr.prowlarr import start_download
 from app.internal.prowlarr.util import ProwlarrMisconfigured, prowlarr_config
 from app.internal.query import QueryResult, background_start_query, query_sources
+from app.internal.readarr.client import (
+    background_readarr_add_and_search,
+    readarr_add_and_search,
+)
+from app.internal.readarr.config import ReadarrMisconfigured, readarr_config
 from app.internal.ranking.quality import quality_config
 from app.util.censor import censor
 from app.util.connection import get_connection
@@ -109,7 +114,10 @@ async def create_request(
         book_asin=asin,
     )
 
-    if quality_config.get_auto_download(session) and user.is_above(GroupEnum.trusted):
+    if readarr_config.is_valid(session):
+        # hand off to Readarr immediately — it manages the full pipeline
+        background_task.add_task(background_readarr_add_and_search, asin=asin)
+    elif quality_config.get_auto_download(session) and user.is_above(GroupEnum.trusted):
         # start querying and downloading if auto download is enabled
         background_task.add_task(
             background_start_query,
@@ -351,25 +359,46 @@ async def download_book(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
-    try:
-        resp = await start_download(
-            session=session,
-            client_session=client_session,
-            guid=body.guid,
-            indexer_id=body.indexer_id,
-            requester=admin_user,
-            book_asin=asin,
-        )
-    except ProwlarrMisconfigured as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    if not resp.ok:
-        raise HTTPException(status_code=500, detail="Failed to start download")
+    download_success = False
 
-    book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
-    if book:
-        book.downloaded = True
-        session.add(book)
-        session.commit()
+    # Try Readarr first if configured
+    if readarr_config.is_valid(session):
+        book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
+        if book:
+            try:
+                download_success = await readarr_add_and_search(
+                    session, client_session, book
+                )
+            except (ReadarrMisconfigured, Exception) as e:
+                logger.warning(
+                    "Readarr download failed, falling back to Prowlarr",
+                    asin=asin,
+                    error=str(e),
+                )
+
+    # Fallback to Prowlarr direct download
+    if not download_success:
+        try:
+            resp = await start_download(
+                session=session,
+                client_session=client_session,
+                guid=body.guid,
+                indexer_id=body.indexer_id,
+                requester=admin_user,
+                book_asin=asin,
+            )
+        except ProwlarrMisconfigured as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        if not resp.ok:
+            raise HTTPException(status_code=500, detail="Failed to start download")
+        download_success = True
+
+    if download_success:
+        book = session.exec(select(Audiobook).where(Audiobook.asin == asin)).first()
+        if book:
+            book.downloaded = True
+            session.add(book)
+            session.commit()
 
     if abs_config.is_valid(session):
         background_task.add_task(background_abs_trigger_scan)
