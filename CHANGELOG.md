@@ -1,5 +1,69 @@
 # Changelog
 
+## [1.10.0](https://github.com/markbeep/AudioBookRequest/compare/v1.9.0...v1.10.0) (2026-02-22)
+
+
+### Features
+
+* add ability for querying custom categories on prowlarr ([8fee7b8](https://github.com/markbeep/AudioBookRequest/commit/8fee7b84fac18c460ba7192c45d109686e284a6b))
+* Add bookCover as possible notification attribute. Use placeholder for manual and test notifications. ([3dd2442](https://github.com/markbeep/AudioBookRequest/commit/3dd244264cc2ce7815cfe5aa8166d17dee510b99))
+* add button for admin to more easily see who requested what. Closes [#149](https://github.com/markbeep/AudioBookRequest/issues/149) ([86065ef](https://github.com/markbeep/AudioBookRequest/commit/86065ef5f319ecafb68a2c9979bf232f6ad84365))
+* add option to query sources for manuel requests ([c94cac9](https://github.com/markbeep/AudioBookRequest/commit/c94cac9b9d445542a01888e22d13c738d0fb6a8c))
+* add placeholder to prowlarr settings for clarity. Closes [#179](https://github.com/markbeep/AudioBookRequest/issues/179) ([54554a3](https://github.com/markbeep/AudioBookRequest/commit/54554a36db85527a74da0dead841e4a480f3c13d))
+* automatic OIDC protocol detection with proxy header validation ([f9d1bb7](https://github.com/markbeep/AudioBookRequest/commit/f9d1bb72f5461bb27e3b6b323a0d4575f0515420))
+* censor usernames in log messages by default to make it easier and less personal to share logs ([2dd8559](https://github.com/markbeep/AudioBookRequest/commit/2dd855951d795d96536092da3e46061994beda3f))
+* update API endpoints to support both API key auth and session ([ed62d5e](https://github.com/markbeep/AudioBookRequest/commit/ed62d5e7a1d8aaf7ffe10a9c4ed88bfca1e60b1a))
+
+
+### Bug Fixes
+
+* add more strict heuristic for ranking ([386d835](https://github.com/markbeep/AudioBookRequest/commit/386d8353fae14a08ce187812c2bde3fc6b49bc57))
+* Cannot change password if none or oidc login type is used. Closes [#68](https://github.com/markbeep/AudioBookRequest/issues/68) ([a0d6e67](https://github.com/markbeep/AudioBookRequest/commit/a0d6e67188fa9298f2f2357fc79b6caab41bd8e0))
+* fix book cards crashing the page when auto-download is enabled ([de88aea](https://github.com/markbeep/AudioBookRequest/commit/de88aea061d445179d571e907870655829deec3a))
+* fix forced oidc login type not redirecting correctly. Closes [#143](https://github.com/markbeep/AudioBookRequest/issues/143) ([ae7c679](https://github.com/markbeep/AudioBookRequest/commit/ae7c67922ce3a48734ad09d51f2e04e9afb5cd6f))
+* fix group by clause breaking popular recommendations for postgres. Closes [#187](https://github.com/markbeep/AudioBookRequest/issues/187) ([a24dbda](https://github.com/markbeep/AudioBookRequest/commit/a24dbda0167135008b71216d1341c21da8a2ea47))
+* fix long names from breaking index page ([9ed4e4a](https://github.com/markbeep/AudioBookRequest/commit/9ed4e4a0c606a045502f1dc7fc68d7244ce7ff3e))
+* fix oidc flow not redirecting correctly with base url set. Closes [#159](https://github.com/markbeep/AudioBookRequest/issues/159) ([f5256f1](https://github.com/markbeep/AudioBookRequest/commit/f5256f1adb6e74fcc8689976b5024fe26c43ee5b))
+* fix sources page crashing ([8fee7b8](https://github.com/markbeep/AudioBookRequest/commit/8fee7b84fac18c460ba7192c45d109686e284a6b))
+* remove dependency on audimeta/audnexus ([fd159b0](https://github.com/markbeep/AudioBookRequest/commit/fd159b06739bbaff70a85976a520851da555f878))
+
+
+### Performance Improvements
+
+* vastly reduce the amount of outgoing requests to audible when searching/viewing recommendations ([fd159b0](https://github.com/markbeep/AudioBookRequest/commit/fd159b06739bbaff70a85976a520851da555f878))
+
+
+### Dependencies
+
+* update dependencies in response to the vulnerability in the cryptography library ([f573fb1](https://github.com/markbeep/AudioBookRequest/commit/f573fb1e698b51ba8ba334d60b7524eed78960b8))
+* update vulnerable python-multipart dependency ([7d83db7](https://github.com/markbeep/AudioBookRequest/commit/7d83db76e14bac00655f1f792d1ce629246d2a6d))
+
+
+### Documentation
+
+* add small example for authelia oidc. Closes [#150](https://github.com/markbeep/AudioBookRequest/issues/150) ([6f85ed5](https://github.com/markbeep/AudioBookRequest/commit/6f85ed58967094f04db126c5a5313b455847f3e0))
+* fix README links leading to wiki ([60dd0e4](https://github.com/markbeep/AudioBookRequest/commit/60dd0e497418c33e382a3fd6d32671a0aa076098))
+* remove hugo docs and migrate to github wiki ([a7d4cb3](https://github.com/markbeep/AudioBookRequest/commit/a7d4cb3f781046c48f341386a3f44d6d97f81344))
+
+
+### Miscellaneous Chores
+
+* add bug report template ([f8306b2](https://github.com/markbeep/AudioBookRequest/commit/f8306b2f7417c4cae0c95bc466e7143fb85b1498))
+* add contribution guidelines ([#181](https://github.com/markbeep/AudioBookRequest/issues/181)) ([cc15d3c](https://github.com/markbeep/AudioBookRequest/commit/cc15d3c1ce63d93445456ff2a023cf45f445b7d5))
+* group grid of buttons on wishlist pages ([4e2ddc9](https://github.com/markbeep/AudioBookRequest/commit/4e2ddc9f1e77b405048a2100449e6f40737c7e85))
+
+
+### Code Refactoring
+
+* update templating library to jinjax and reorganize file structure. Closes [#186](https://github.com/markbeep/AudioBookRequest/issues/186) ([0e13e1a](https://github.com/markbeep/AudioBookRequest/commit/0e13e1a1dec8ccdba58f8a1c7ad4fd653cc3da86))
+
+
+### Continuous Integration
+
+* add jinjax tests to prevent undefined variable usage ([b735134](https://github.com/markbeep/AudioBookRequest/commit/b7351341a5cbafcdcc4b897f53e601f57d786399))
+* fix wrong types and incorrectly formatted files ([2735079](https://github.com/markbeep/AudioBookRequest/commit/273507915c23e6df3ba810e63377b45e378fb87a))
+* run build/test pipeline on pull requests ([f5de040](https://github.com/markbeep/AudioBookRequest/commit/f5de040b08edbe2c6b36199feb2919790b123400))
+
 ## [1.9.0](https://github.com/markbeep/AudioBookRequest/compare/v1.8.0...v1.9.0) (2026-01-24)
 
 
