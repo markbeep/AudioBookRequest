@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.1](https://github.com/markbeep/AudioBookRequest/compare/v1.10.0...v1.10.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* fix audiobook with missing cover not being handled correctly ([91e3fcc](https://github.com/markbeep/AudioBookRequest/commit/91e3fcc1ad7861f3a100096b2734cffde242f0a7))
+* **home:** fix books not being correctly linked to audible on home-page book cards. Closes [#197](https://github.com/markbeep/AudioBookRequest/issues/197) ([6aba7aa](https://github.com/markbeep/AudioBookRequest/commit/6aba7aae7a1a81ffd154541aa186c524ef528756))
+* **settings:** fix headers JSON being incorrectly displayed when editing a notification ([75944df](https://github.com/markbeep/AudioBookRequest/commit/75944dfaee6236973246ccd7e44d192401b6548a))
+
 ## [1.10.0](https://github.com/markbeep/AudioBookRequest/compare/v1.9.0...v1.10.0) (2026-02-22)
 
 
