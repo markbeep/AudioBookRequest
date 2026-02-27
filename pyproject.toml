@@ -1,6 +1,6 @@
 [project]
 name = "AudioBookRequest"
-version = "1.10.1"
+version = "1.10.2"
 requires-python = ">= 3.14"
 readme = "README.md"
 dependencies = [

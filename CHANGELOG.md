@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.10.2](https://github.com/markbeep/AudioBookRequest/compare/v1.10.1...v1.10.2) (2026-02-27)
+
+
+### Features
+
+* **notifications:** add {joinedUsers} and {joinedUsersExtraData} for ", "-joined strings of all requesters ([c582ecb](https://github.com/markbeep/AudioBookRequest/commit/c582ecbb798a046c42a5e010da5d190f1df7917a))
+
+
+### Bug Fixes
+
+* **notifications:** fill in {eventUser} and {eventUserExtraData} with first requester. Closes [#194](https://github.com/markbeep/AudioBookRequest/issues/194) ([c582ecb](https://github.com/markbeep/AudioBookRequest/commit/c582ecbb798a046c42a5e010da5d190f1df7917a))
+* **search:** fix search not correctly refreshing requests when cached ([77a96fb](https://github.com/markbeep/AudioBookRequest/commit/77a96fb7569155298118af78e24ce0eccd2d748d))
+
+
+### Continuous Integration
+
+* remove deprecated set-output from build action ([d8d4b0a](https://github.com/markbeep/AudioBookRequest/commit/d8d4b0aac149504a4ec1d24c95630e45e50dd4b2))
+
 ## [1.10.1](https://github.com/markbeep/AudioBookRequest/compare/v1.10.0...v1.10.1) (2026-02-25)
 
 
