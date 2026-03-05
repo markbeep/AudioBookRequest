@@ -1,0 +1,101 @@
+# AudioBookRequest – production compose file
+#
+# Usage:
+#   1. Copy .env.example to .env and fill in your values
+#   2. docker compose up -d --build
+#
+# To run with PostgreSQL instead of SQLite, uncomment the `postgres`
+# service and the `ABR_DB__*` env vars in the `abr` service.
+
+services:
+
+  abr:
+    build:
+      context: .
+      args:
+        VERSION: local   # replace with a tag e.g. git rev-parse --short HEAD
+    image: audiobookrequest:local
+    container_name: audiobookrequest
+    restart: unless-stopped
+
+    ports:
+      - "${ABR_PORT:-8000}:8000"
+
+    volumes:
+      - abr-config:/config   # persists SQLite DB, session secret, and cached data
+
+    environment:
+      # ── Application ───────────────────────────────────────────────
+      ABR_APP__PORT: "8000"
+      ABR_APP__CONFIG_DIR: /config
+
+      # Set this if ABR sits behind a reverse proxy at a sub-path
+      # e.g. "http://192.168.1.10/abr" or just "/abr"
+      ABR_APP__BASE_URL: "${ABR_BASE_URL:-}"
+
+      # Audible region for metadata lookups: us ca uk au fr de jp it in es br
+      ABR_APP__DEFAULT_REGION: "${ABR_DEFAULT_REGION:-us}"
+
+      # Log level: DEBUG INFO WARNING ERROR
+      ABR_APP__LOG_LEVEL: "${ABR_LOG_LEVEL:-INFO}"
+
+      # Comma-separated list of trusted reverse-proxy IPs for X-Forwarded-For
+      # Set to "*" to trust all (only safe inside a private Docker network)
+      ABR_APP__FORWARDED_ALLOW_IPS: "${ABR_FORWARDED_ALLOW_IPS:-127.0.0.1}"
+
+      # Pre-create an admin account on first start (optional but handy)
+      ABR_APP__INIT_ROOT_USERNAME: "${ABR_INIT_ROOT_USERNAME:-}"
+      ABR_APP__INIT_ROOT_PASSWORD: "${ABR_INIT_ROOT_PASSWORD:-}"
+
+      # ── Database – SQLite (default) ────────────────────────────────
+      # Path is relative to ABR_APP__CONFIG_DIR, or absolute
+      ABR_DB__SQLITE_PATH: "${ABR_DB__SQLITE_PATH:-db.sqlite}"
+
+      # ── Database – PostgreSQL (optional) ──────────────────────────
+      # Uncomment these AND the `postgres` service below to switch to Postgres.
+      # ABR_DB__USE_POSTGRES: "true"
+      # ABR_DB__POSTGRES_HOST: postgres
+      # ABR_DB__POSTGRES_PORT: "5432"
+      # ABR_DB__POSTGRES_DB: "${POSTGRES_DB:-audiobookrequest}"
+      # ABR_DB__POSTGRES_USER: "${POSTGRES_USER:-abr}"
+      # ABR_DB__POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
+      # ABR_DB__POSTGRES_SSL_MODE: "prefer"
+
+    # depends_on:               # uncomment when using postgres
+    #   postgres:
+    #     condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+
+  # ── Optional: PostgreSQL ─────────────────────────────────────────────
+  # Uncomment this entire block to use Postgres instead of SQLite,
+  # and also uncomment the ABR_DB__* vars in the `abr` service above.
+
+  # postgres:
+  #   image: postgres:17-alpine
+  #   container_name: abr-postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: "${POSTGRES_USER:-abr}"
+  #     POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
+  #     POSTGRES_DB: "${POSTGRES_DB:-audiobookrequest}"
+  #   volumes:
+  #     - abr-postgres:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-abr}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+
+volumes:
+  abr-config:
+    driver: local
+  # abr-postgres:   # uncomment with the postgres service
+  #   driver: local
