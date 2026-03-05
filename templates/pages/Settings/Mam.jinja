@@ -1,0 +1,90 @@
+{#def
+    user: DetailedUser,
+    mam_session_id_set: bool,
+    ttl_minutes: int,
+    trusted_visible: bool,
+#}
+
+<SettingsLayout user={{ user }} page="mam" title="Settings - MaM">
+
+<div class="flex flex-col gap-4">
+    <h2 class="text-lg">MyAnonamouse (MaM)</h2>
+
+    <p class="text-sm opacity-70">
+        Configure the MaM session cookie for freeleech browsing. The same session ID
+        is also used by the MaM indexer in <a href="{{ base_url }}/settings/indexers"
+        class="underline">Settings &rsaquo; Indexers</a>.
+    </p>
+
+    {# ── Session ID ── #}
+    <label for="mam-session-id">Session Cookie (mam_id)</label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/mam/hx-session-id"
+          hx-disabled-elt="#mam-id-btn">
+        <input id="mam-session-id"
+               name="mam_session_id"
+               type="password"
+               {% if mam_session_id_set %}placeholder="●●●●●●●●●●●●●●●●●"{% else %}placeholder="Paste your mam_id cookie value here"{% endif %}
+               class="input join-item w-full"
+               minlength="1"
+               required />
+        <button id="mam-id-btn" class="join-item btn">
+            {% if mam_session_id_set %}Update{% else %}Save{% endif %}
+        </button>
+    </form>
+    <p class="text-xs opacity-60">
+        Find your mam_id cookie by logging in to
+        <a href="https://www.myanonamouse.net" target="_blank" class="underline">myanonamouse.net</a>
+        and copying the value of the <code>mam_id</code> cookie from your browser's DevTools.
+    </p>
+
+    <hr class="my-2 border-base-200" />
+
+    {# ── Cache TTL ── #}
+    <label for="mam-ttl">Freeleech cache TTL (minutes)</label>
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/mam/hx-ttl"
+          hx-disabled-elt="#mam-ttl-btn">
+        <input id="mam-ttl"
+               name="ttl_minutes"
+               type="number"
+               value="{{ ttl_minutes }}"
+               min="1"
+               max="1440"
+               class="input join-item w-32"
+               required />
+        <button id="mam-ttl-btn" class="join-item btn">Update</button>
+    </form>
+    <p class="text-xs opacity-60">How long to cache MaM freeleech results before re-fetching (default: 15 minutes).</p>
+
+    <hr class="my-2 border-base-200" />
+
+    {# ── Visibility toggle ── #}
+    <div class="flex flex-col gap-1">
+        <h3 class="font-semibold">Freeleech page visibility</h3>
+        <form hx-post="{{ base_url }}/settings/mam/hx-trusted-toggle"
+              hx-disabled-elt="#trusted-toggle-btn">
+            <label class="label cursor-pointer justify-start gap-4">
+                <input type="checkbox"
+                       name="trusted_visible"
+                       value="true"
+                       class="toggle toggle-primary"
+                       {% if trusted_visible %}checked{% endif %}
+                       onchange="this.form.requestSubmit()" />
+                <span class="label-text">Allow Trusted users to see the Freeleech page</span>
+            </label>
+            <button id="trusted-toggle-btn" class="hidden" type="submit"></button>
+        </form>
+        <p class="text-xs opacity-60">
+            When disabled, only Admins can access <code>/freeleech</code>.
+        </p>
+    </div>
+
+    <hr class="my-2 border-base-200" />
+
+    <a href="{{ base_url }}/freeleech" class="btn btn-primary self-start">
+        Open Freeleech Page
+    </a>
+</div>
+
+</SettingsLayout>

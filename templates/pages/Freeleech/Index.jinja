@@ -1,0 +1,215 @@
+{#def
+    user: DetailedUser,
+    result: MamFreeleechResult,
+    ttl_minutes: int,
+#}
+
+<BaseLayout title="MaM Freeleech" user={{ user }}>
+
+<div class="w-screen flex flex-col items-center p-6 sm:p-8 overflow-x-hidden gap-6">
+
+    {# ── Header ── #}
+    <div class="w-full max-w-7xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+            <h1 class="text-3xl font-bold">MaM Freeleech</h1>
+            <p class="opacity-70 text-sm">
+                Current freeleech audiobooks on MyAnonamouse
+                {% if result.fetched_at %}
+                    &mdash; last updated {{ result.last_updated_str }}
+                    (refreshes every {{ ttl_minutes }} min)
+                {% endif %}
+            </p>
+        </div>
+        <div class="flex gap-2 items-center">
+            {# Auto-refresh toggle #}
+            <label class="label cursor-pointer gap-2 text-sm">
+                <span class="label-text opacity-70">Auto-refresh</span>
+                <input id="auto-refresh-toggle"
+                       type="checkbox"
+                       class="toggle toggle-sm toggle-primary"
+                       onchange="toggleAutoRefresh(this.checked)" />
+            </label>
+            {# Manual refresh #}
+            <a href="?force_refresh=true"
+               class="btn btn-ghost btn-square"
+               title="Refresh now">
+                <icons.Refresh />
+            </a>
+        </div>
+    </div>
+
+    {# ── Error banner ── #}
+    {% if result.error %}
+        <div class="w-full max-w-7xl alert alert-error">
+            <icons.InfoCircle />
+            <span>{{ result.error }}</span>
+            {% if user.is_admin() %}
+                <a href="{{ base_url }}/settings/mam"
+                   class="btn btn-sm btn-ghost underline">
+                    Go to MaM Settings
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# ── Filter bar ── #}
+    {% if result.items %}
+        <div class="w-full max-w-7xl flex flex-col sm:flex-row gap-3">
+            <input id="fl-search"
+                   type="text"
+                   placeholder="Filter by title or author…"
+                   class="input input-bordered w-full sm:max-w-xs"
+                   oninput="filterRows(this.value)" />
+            <select id="fl-sort"
+                    class="select select-bordered"
+                    onchange="sortRows(this.value)">
+                <option value="date_desc">Newest first</option>
+                <option value="seeders_desc">Most seeded</option>
+                <option value="size_desc">Largest first</option>
+                <option value="size_asc">Smallest first</option>
+            </select>
+        </div>
+    {% endif %}
+
+    {# ── Table ── #}
+    {% if result.items %}
+        <div class="w-full max-w-7xl overflow-x-auto">
+            <table id="fl-table" class="table table-zebra w-full text-sm">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th class="hidden sm:table-cell">Author(s)</th>
+                        <th class="hidden md:table-cell">Narrator(s)</th>
+                        <th>Size</th>
+                        <th>Seeds</th>
+                        <th>Type</th>
+                        <th class="hidden lg:table-cell">Added</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in result.items %}
+                        <tr class="fl-row"
+                            data-title="{{ item.title | lower }}"
+                            data-authors="{{ item.authors | join(', ') | lower }}"
+                            data-seeders="{{ item.seeders }}"
+                            data-size="{{ item.size_bytes }}"
+                            data-added="{{ item.added.isoformat() }}">
+                            <td class="max-w-xs">
+                                <a href="{{ item.torrent_url }}"
+                                   target="_blank"
+                                   class="font-semibold text-primary hover:underline line-clamp-2"
+                                   title="{{ item.title }}">
+                                    {{ item.title }}
+                                </a>
+                                {% if item.filetype %}
+                                    <div class="opacity-50 text-xs">{{ item.filetype }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="hidden sm:table-cell opacity-80">
+                                {% if item.authors %}
+                                    <span title="{{ item.authors | join(', ') }}">
+                                        {{ item.authors[:2] | join(', ') }}
+                                        {% if item.authors | length > 2 %}
+                                            <span class="opacity-50">+{{ item.authors | length - 2 }}</span>
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="opacity-40">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="hidden md:table-cell opacity-80">
+                                {% if item.narrators %}
+                                    <span title="{{ item.narrators | join(', ') }}">
+                                        {{ item.narrators[:1] | join(', ') }}
+                                        {% if item.narrators | length > 1 %}
+                                            <span class="opacity-50">+{{ item.narrators | length - 1 }}</span>
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="opacity-40">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="whitespace-nowrap opacity-70">{{ item.size_mb }} MB</td>
+                            <td>
+                                <span class="{% if item.seeders > 5 %}text-success{% elif item.seeders > 0 %}text-warning{% else %}text-error{% endif %} font-semibold">
+                                    {{ item.seeders }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-success badge-sm whitespace-nowrap">
+                                    {{ item.freeleech_label }}
+                                </span>
+                            </td>
+                            <td class="hidden lg:table-cell opacity-60 whitespace-nowrap">
+                                {{ item.added.strftime('%Y-%m-%d') }}
+                            </td>
+                            <td>
+                                {# Request button: opens search pre-filled with this title #}
+                                <a href="{{ base_url }}/search?q={{ item.title }}"
+                                   class="btn btn-xs btn-info whitespace-nowrap"
+                                   title="Search for '{{ item.title }}' to request it">
+                                    <icons.Plus />
+                                    Request
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p id="fl-no-results" class="text-center opacity-60 py-8 hidden">No results match your filter.</p>
+        </div>
+
+        <script>
+            let autoRefreshTimer = null;
+
+            function filterRows(query) {
+                const q = query.toLowerCase();
+                let visible = 0;
+                document.querySelectorAll(".fl-row").forEach(row => {
+                    const title = row.dataset.title || "";
+                    const authors = row.dataset.authors || "";
+                    const match = !q || title.includes(q) || authors.includes(q);
+                    row.style.display = match ? "" : "none";
+                    if (match) visible++;
+                });
+                document.getElementById("fl-no-results").classList.toggle("hidden", visible > 0);
+            }
+
+            function sortRows(mode) {
+                const tbody = document.querySelector("#fl-table tbody");
+                const rows = Array.from(tbody.querySelectorAll(".fl-row"));
+                rows.sort((a, b) => {
+                    if (mode === "seeders_desc") return parseInt(b.dataset.seeders) - parseInt(a.dataset.seeders);
+                    if (mode === "size_desc") return parseInt(b.dataset.size) - parseInt(a.dataset.size);
+                    if (mode === "size_asc") return parseInt(a.dataset.size) - parseInt(b.dataset.size);
+                    // date_desc (default)
+                    return new Date(b.dataset.added) - new Date(a.dataset.added);
+                });
+                rows.forEach(r => tbody.appendChild(r));
+            }
+
+            function toggleAutoRefresh(enabled) {
+                if (autoRefreshTimer) {
+                    clearInterval(autoRefreshTimer);
+                    autoRefreshTimer = null;
+                }
+                if (enabled) {
+                    const ttlMs = {{ ttl_minutes }} * 60 * 1000;
+                    autoRefreshTimer = setInterval(() => {
+                        window.location.reload();
+                    }, ttlMs);
+                }
+            }
+        </script>
+
+    {% elif not result.error %}
+        <div class="text-center py-16 opacity-70">
+            <p class="text-xl">No freeleech audiobooks found right now.</p>
+            <p class="text-sm mt-2">MaM may have no active freeleech offers at this time.</p>
+            <a href="?force_refresh=true" class="btn btn-primary mt-4">Try refreshing</a>
+        </div>
+    {% endif %}
+
+</div>
+</BaseLayout>

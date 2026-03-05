@@ -117,6 +117,14 @@
                                 <icons.Gift />
                             </span>
                         </a>
+                        {% if user and user.can_download() %}
+                            <a preload
+                               href="{{ base_url }}/freeleech"
+                               class="btn btn-ghost btn-square"
+                               title="MaM Freeleech">
+                                <icons.Download />
+                            </a>
+                        {% endif %}
                     </div>
                     <div class="flex-none flex pr-4">
                         <button class="btn btn-ghost btn-square light-dark-toggle"
