@@ -1,12 +1,13 @@
 from typing import Annotated
 
 from aiohttp import ClientSession
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from sqlmodel import Session
 
 from app.internal.audible.types import get_region_tld_from_settings
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.ranking.quality import quality_config
+from app.internal.recommendations.config import recommendation_config
 from app.routers.api.recommendations import (
     get_user_recommendations as api_get_user_recommendations,
 )
@@ -25,6 +26,12 @@ async def get_for_you_recommendations(
     page: int = 1,
     per_page: int = 10,
 ):
+    if not recommendation_config.get_enabled(session):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recommendations are disabled",
+        )
+
     result = await api_get_user_recommendations(
         session=session,
         client_session=client_session,

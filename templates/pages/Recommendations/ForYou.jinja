@@ -33,18 +33,33 @@
                 {% endif %}
             </p>
         </div>
-        <a href="{{ base_url }}/search"
-           class="btn btn-primary flex items-center gap-2"
-           title="Search for books">
-            Search
-            <icons.Search />
-        </a>
+        <div class="flex items-center gap-2">
+            <button class="btn btn-ghost btn-square"
+                    title="Refresh recommendations"
+                    onclick="window.location.reload()">
+                <icons.Refresh />
+            </button>
+            <a href="{{ base_url }}/search"
+               class="btn btn-primary flex items-center gap-2"
+               title="Search for books">
+                Search
+                <icons.Search />
+            </a>
+        </div>
     </div>
     <div class="w-full max-w-7xl">
         {% if recommendations %}
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 {% for rec in recommendations %}
-                    <BookCard book_with_requests={{ rec.book }} region_tld={{ region_tld }} auto_start_download={{ auto_start_download }} user={{ user }} />
+                    <div class="flex flex-col gap-1">
+                        <BookCard book_with_requests={{ rec.book }} region_tld={{ region_tld }} auto_start_download={{ auto_start_download }} user={{ user }} />
+                        {% if rec.reason %}
+                            <span class="badge badge-ghost text-[0.6rem] leading-tight w-full text-center truncate"
+                                  title="{{ rec.reason }}">
+                                {{ rec.reason }}
+                            </span>
+                        {% endif %}
+                    </div>
                 {% endfor %}
             </div>
         {% else %}

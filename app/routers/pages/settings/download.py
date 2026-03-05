@@ -6,6 +6,7 @@ from sqlmodel import Session
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.models import GroupEnum
 from app.internal.ranking.quality import IndexerFlag, QualityRange, quality_config
+from app.internal.recommendations.config import recommendation_config
 from app.routers.api.settings.download import (
     UpdateDownloadSettings,
 )
@@ -33,6 +34,7 @@ def read_download(
     name_ratio = quality_config.get_name_exists_ratio(session)
     title_ratio = quality_config.get_title_exists_ratio(session)
     flags = quality_config.get_indexer_flags(session)
+    recommendations_enabled = recommendation_config.get_enabled(session)
 
     return catalog_response(
         "Settings.Download.Index",
@@ -47,6 +49,7 @@ def read_download(
         name_ratio=name_ratio,
         title_ratio=title_ratio,
         indexer_flags=flags,
+        recommendations_enabled=recommendations_enabled,
     )
 
 
@@ -136,6 +139,17 @@ def add_indexer_flag(
         "Settings.Download.IndexerFlags",
         indexer_flags=flags,
     )
+
+
+@router.post("/hx-recommendations-toggle")
+def toggle_recommendations(
+    session: Annotated[Session, Depends(get_session)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    recommendations_enabled: Annotated[bool, Form()] = False,
+):
+    _ = admin_user
+    recommendation_config.set_enabled(session, recommendations_enabled)
+    return Response(status_code=204, headers={"HX-Refresh": "true"})
 
 
 @router.delete("/hx-flags/{flag}")

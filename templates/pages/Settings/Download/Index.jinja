@@ -10,6 +10,7 @@
     name_ratio: int,
     title_ratio: int,
     indexer_flags: list[IndexerFlags],
+    recommendations_enabled: bool,
 #}
 
 <SettingsLayout user={{ user }} page="download" title="Settings - Download">
@@ -54,6 +55,28 @@
     <hr class="my-4 border-base-200" />
 
     <Settings.Download.IndexerFlags indexer_flags={{ indexer_flags }} />
+    <hr class="my-4 border-base-200" />
+
+    <div class="flex flex-col gap-2">
+        <h2 class="text-lg">
+            Features
+        </h2>
+        <form hx-post="{{ base_url }}/settings/download/hx-recommendations-toggle"
+              hx-disabled-elt="#rec-toggle-btn">
+            <label class="label cursor-pointer justify-start gap-4">
+                <input type="checkbox"
+                       name="recommendations_enabled"
+                       value="true"
+                       class="toggle toggle-primary"
+                       {% if recommendations_enabled %}checked{% endif %}
+                       onchange="this.form.requestSubmit()" />
+                <span class="label-text">
+                    Enable "For You" recommendations page
+                </span>
+            </label>
+            <button id="rec-toggle-btn" class="hidden" type="submit"></button>
+        </form>
+    </div>
     <hr class="my-4 border-base-200" />
     <div class="flex flex-col gap-2">
         <h2 class="text-lg text-error">
