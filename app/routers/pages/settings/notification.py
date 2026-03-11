@@ -102,9 +102,9 @@ def update_notification(
     url: Annotated[str, Form()],
     event_type: Annotated[str, Form()],
     body_type: Annotated[NotificationBodyTypeEnum, Form()],
-    headers: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    headers: Annotated[str, Form()] = "{}",
     body: Annotated[str, Form()] = "{}",
 ):
     try:

@@ -24,6 +24,7 @@ from app.internal.prowlarr.util import ProwlarrMisconfigured
 from app.routers import api, pages
 from app.util.db import get_session
 from app.util.fetch_js import fetch_scripts
+from app.util.log import logger
 from app.util.redirect import BaseUrlRedirectResponse
 from app.util.templates import catalog_response
 from app.util.toast import ToastException
@@ -165,6 +166,14 @@ async def throw_toast_exception(
                 return str(b)
 
         body = "".join([to_string(x) async for x in response.body_iterator])
+
+        logger.error(
+            "Error response",
+            status_code=response.status_code,
+            path=request.url.path,
+            method=request.method,
+            detail=body,
+        )
         try:
             parsed = json.loads(body)  # pyright: ignore[reportAny]
             if "detail" not in parsed or not isinstance(parsed["detail"], str):
