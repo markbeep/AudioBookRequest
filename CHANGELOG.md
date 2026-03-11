@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.3](https://github.com/markbeep/AudioBookRequest/compare/v1.10.2...v1.10.3) (2026-03-11)
+
+
+### Bug Fixes
+
+* **notifications:** fix two `onSuccessfulDownload` notifications being sent out when downloading a source ([4d3cfd4](https://github.com/markbeep/AudioBookRequest/commit/4d3cfd480135298386332d0f83bd444ec53f9cc0))
+* **settings:** fix setting errors not properly showing in console ([1d70dbe](https://github.com/markbeep/AudioBookRequest/commit/1d70dbe329976df7ea7cc17c2b32f16d5463da48))
+* **settings:** fix updating notifications not allowing for empty headers ([1d70dbe](https://github.com/markbeep/AudioBookRequest/commit/1d70dbe329976df7ea7cc17c2b32f16d5463da48))
+
 ## [1.10.2](https://github.com/markbeep/AudioBookRequest/compare/v1.10.1...v1.10.2) (2026-02-27)
 
 
