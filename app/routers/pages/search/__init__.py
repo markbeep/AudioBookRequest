@@ -68,7 +68,7 @@ async def read_search(
 
     except Exception as e:
         session.rollback()
-        logger.exception("Error during search", error=e)
+        logger.error("Error during search", error=e)
         raise ToastException(
             "An error occurred while searching for books. Please try again later."
         ) from e

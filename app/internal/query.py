@@ -6,7 +6,7 @@ import aiohttp
 import pydantic
 from aiohttp import ClientSession
 from fastapi import HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.internal.audiobookshelf.client import abs_trigger_scan
 from app.internal.audiobookshelf.config import abs_config
@@ -15,6 +15,7 @@ from app.internal.prowlarr.prowlarr import query_prowlarr, start_download
 from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.download_ranking import rank_sources
 from app.util.db import get_session
+from app.util.log import logger
 
 querying: set[str] = set()
 
@@ -95,23 +96,16 @@ async def query_sources(
                 client_session=client_session,
                 guid=ranked[0].guid,
                 indexer_id=ranked[0].indexer_id,
-                book_asin=asin_or_uuid,
+                asin_or_uuid=asin_or_uuid,
                 prowlarr_source=ranked[0],
             )
             if resp.ok:
-                same_books = session.exec(
-                    select(Audiobook).where(Audiobook.asin == asin_or_uuid)
-                ).all()
-                for b in same_books:
-                    b.downloaded = True
-                    session.add(b)
-                session.commit()
                 # Try to trigger an ABS scan to pick up new media
                 try:
                     if abs_config.is_valid(session):
                         await abs_trigger_scan(session, client_session)
                 except Exception:
-                    pass
+                    logger.error("Failed to trigger ABS scan after starting download")
             else:
                 raise HTTPException(status_code=500, detail="Failed to start download")
 

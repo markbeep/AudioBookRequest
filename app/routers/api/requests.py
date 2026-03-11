@@ -354,42 +354,12 @@ async def download_book(
             client_session=client_session,
             guid=body.guid,
             indexer_id=body.indexer_id,
-            book_asin=asin_or_uuid,
+            asin_or_uuid=asin_or_uuid,
         )
     except ProwlarrMisconfigured as e:
         raise HTTPException(status_code=500, detail=str(e))
     if not resp.ok:
         raise HTTPException(status_code=500, detail="Failed to start download")
-
-    # Check if this was a manual request (UUID)
-    try:
-        uuid_obj = uuid.UUID(asin_or_uuid)
-        book_req = session.get(ManualBookRequest, uuid_obj)
-        if book_req:
-            book_req.downloaded = True
-            session.add(book_req)
-            session.commit()
-
-            background_task.add_task(
-                send_all_manual_notifications,
-                event_type=EventEnum.on_successful_download,
-                book_request=ManualBookRequest.model_validate(book_req),
-            )
-
-    except ValueError:
-        book = session.exec(
-            select(Audiobook).where(Audiobook.asin == asin_or_uuid)
-        ).first()
-        if book:
-            book.downloaded = True
-            session.add(book)
-            session.commit()
-
-            background_task.add_task(
-                send_all_notifications,
-                event_type=EventEnum.on_successful_download,
-                book_asin=asin_or_uuid,
-            )
 
     if abs_config.is_valid(session):
         background_task.add_task(background_abs_trigger_scan)

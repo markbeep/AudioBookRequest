@@ -2,13 +2,14 @@ import html
 import json
 import posixpath
 import time
+import uuid
 from datetime import datetime
 from typing import Literal
 from urllib.parse import urlencode
 
 from aiohttp import ClientResponse, ClientSession
 from pydantic import BaseModel, TypeAdapter
-from sqlmodel import Session
+from sqlmodel import Session, select
 from torf import BdecodeError, MetainfoError, ReadError, Torrent
 
 from app.internal.indexers.abstract import SessionContainer
@@ -21,7 +22,10 @@ from app.internal.models import (
     TorrentSource,
     UsenetSource,
 )
-from app.internal.notifications import send_all_notifications
+from app.internal.notifications import (
+    send_all_manual_notifications,
+    send_all_notifications,
+)
 from app.internal.prowlarr.source_metadata import edit_source_metadata
 from app.internal.prowlarr.util import (
     prowlarr_config,
@@ -55,12 +59,13 @@ async def _get_torrent_info_hash(
 
 
 async def start_download(
+    *,
     session: Session,
     client_session: ClientSession,
     guid: str,
     indexer_id: int,
-    book_asin: str,
     prowlarr_source: ProwlarrSource | None = None,
+    asin_or_uuid: str | None = None,
 ) -> ClientResponse:
     prowlarr_config.raise_if_invalid(session)
     base_url = prowlarr_config.get_base_url(session)
@@ -70,6 +75,13 @@ async def start_download(
     url = posixpath.join(base_url, "api/v1/search")
     logger.debug("Starting download", guid=guid)
     headers = {"X-Api-Key": api_key, "User-Agent": USER_AGENT}
+
+    manual_book_request: ManualBookRequest | None = None
+    try:
+        uuid_obj = uuid.UUID(asin_or_uuid)
+        manual_book_request = session.get(ManualBookRequest, uuid_obj)
+    except ValueError:
+        pass
 
     async with client_session.post(
         url,
@@ -83,18 +95,31 @@ async def start_download(
                 response=response,
                 text=await response.text(),
             )
-            await send_all_notifications(
-                EventEnum.on_failed_download,
-                book_asin,
-                {
-                    "errorStatus": str(response.status),
-                    "errorReason": response.reason or "<unknown>",
-                },
-            )
+
+            if manual_book_request:
+                await send_all_manual_notifications(
+                    EventEnum.on_failed_download,
+                    manual_book_request,
+                    {
+                        "errorStatus": str(response.status),
+                        "errorReason": response.reason or "<unknown>",
+                    },
+                )
+            else:
+                await send_all_notifications(
+                    EventEnum.on_failed_download,
+                    asin_or_uuid,
+                    {
+                        "errorStatus": str(response.status),
+                        "errorReason": response.reason or "<unknown>",
+                    },
+                )
             return response
 
         # Find additional metadata/replacements to pass along notifications
-        additional_replacements: dict[str, str] = {"bookASIN": book_asin}
+        additional_replacements: dict[str, str] = (
+            {"bookASIN": asin_or_uuid} if asin_or_uuid else {}
+        )
         if prowlarr_source:
             if prowlarr_source.download_url and prowlarr_source.protocol == "torrent":
                 if info_hash := await _get_torrent_info_hash(
@@ -113,11 +138,28 @@ async def start_download(
             additional_replacements["sourceProtocol"] = prowlarr_source.protocol
 
         logger.debug("Download successfully started", guid=guid)
-        await send_all_notifications(
-            EventEnum.on_successful_download,
-            book_asin,
-            additional_replacements,
-        )
+        if manual_book_request:
+            manual_book_request.downloaded = True
+            session.add(manual_book_request)
+            session.commit()
+            await send_all_manual_notifications(
+                EventEnum.on_successful_download,
+                manual_book_request,
+                additional_replacements,
+            )
+        else:
+            same_books = session.exec(
+                select(Audiobook).where(Audiobook.asin == asin_or_uuid)
+            ).all()
+            for b in same_books:
+                b.downloaded = True
+                session.add(b)
+
+            await send_all_notifications(
+                EventEnum.on_successful_download,
+                asin_or_uuid,
+                additional_replacements,
+            )
 
         return response
 
