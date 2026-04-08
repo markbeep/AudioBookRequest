@@ -4,33 +4,33 @@ version = "1.10.3"
 requires-python = ">= 3.14"
 readme = "README.md"
 dependencies = [
-    "aiohttp>=3.13.3",
+    "aiohttp>=3.13.5",
     "alembic>=1.18.4",
     "apscheduler>=3.11.2",
     "argon2-cffi>=25.1.0",
     "argon2-cffi-bindings>=25.1.0",
-    "cryptography>=46.0.5",
-    "fastapi[standard]>=0.128.7",
+    "cryptography>=46.0.7",
+    "fastapi[standard]>=0.135.3",
     "itsdangerous>=2.2.0",
     "jinja2>=3.1.6",
-    "jinja2-fragments>=1.11.0",
+    "jinja2-fragments>=1.12.0",
     "jinja2-htmlmin>=1.0.1",
     "jinjax>=0.63",
     "markdown>=3.10.2",
     "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.5",
     "pydantic-core>=2.41.5",
-    "pydantic-settings>=2.12.0",
-    "pyjwt>=2.11.0",
-    "python-multipart>=0.0.22",
-    "rapidfuzz>=3.14.3",
-    "requests>=2.32.5",
-    "sqlmodel>=0.0.32",
+    "pydantic-settings>=2.13.1",
+    "pyjwt>=2.12.1",
+    "python-multipart>=0.0.24",
+    "rapidfuzz>=3.14.5",
+    "requests>=2.33.1",
+    "sqlmodel>=0.0.38",
     "structlog>=25.5.0",
     "terminaltables>=3.1.10",
     "torf>=4.3.1",
     "torrent-parser>=0.4.1",
-    "typer>=0.21.2",
+    "typer>=0.24.1",
     "urllib3>=2.6.3",
 ]
 
@@ -63,7 +63,7 @@ allowedUntypedLibraries = ["apscheduler", "torrent_parser", "jinjax"]
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.37.4",
+    "basedpyright>=1.39.0",
     "djlint>=1.36.4",
-    "ruff>=0.15.0",
+    "ruff>=0.15.9",
 ]
