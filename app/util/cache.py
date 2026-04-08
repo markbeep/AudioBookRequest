@@ -1,5 +1,4 @@
 import time
-from abc import ABC
 from typing import overload
 
 from sqlmodel import Session, select
@@ -35,7 +34,7 @@ class SimpleCache[VT, *KTs]:
         self._cache = {}
 
 
-class StringConfigCache[L: str](ABC):
+class StringConfigCache[L: str]:
     _cache: dict[L, str] = {}
 
     @overload

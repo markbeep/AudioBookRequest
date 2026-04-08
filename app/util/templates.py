@@ -35,20 +35,20 @@ def _to_js_string(val: str | int | float) -> str:
 # filters
 templates.env.filters["toJSstring"] = _to_js_string
 # globals
-templates.env.globals["getattr"] = getattr
-templates.env.globals["version"] = Settings().app.version
-templates.env.globals["json_regexp"] = (
+templates.env.globals["getattr"] = getattr  # pyright: ignore[reportArgumentType]
+templates.env.globals["version"] = Settings().app.version  # pyright: ignore[reportArgumentType]
+templates.env.globals["json_regexp"] = (  # pyright: ignore[reportArgumentType]
     r'^\{\s*(?:"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*(?:,\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*)*)?\}$'
 )
-templates.env.globals["base_url"] = Settings().app.base_url.rstrip("/")
+templates.env.globals["base_url"] = Settings().app.base_url.rstrip("/")  # pyright: ignore[reportArgumentType]
 
 with open("CHANGELOG.md", "r") as file:
     changelog_content = file.read()
-templates.env.globals["changelog"] = markdown.markdown(changelog_content)
+templates.env.globals["changelog"] = markdown.markdown(changelog_content)  # pyright: ignore[reportArgumentType]
 
 
 templates.env.add_extension(JinjaX)
-catalog = Catalog(jinja_env=templates.env)  # pyright: ignore[reportUnknownArgumentType]
+catalog = Catalog(jinja_env=templates.env)
 catalog.add_folder("templates/components")
 catalog.add_folder("templates/pages")
 catalog.add_folder("templates/layouts")
