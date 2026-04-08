@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.4](https://github.com/markbeep/AudioBookRequest/compare/v1.10.3...v1.10.4) (2026-04-08)
+
+
+### Dependencies
+
+* update vulnerable dependencies ([dcc962e](https://github.com/markbeep/AudioBookRequest/commit/dcc962e8be73448f628e1abe5a2f16ad43a4e9f2))
+
 ## [1.10.3](https://github.com/markbeep/AudioBookRequest/compare/v1.10.2...v1.10.3) (2026-03-11)
 
 
