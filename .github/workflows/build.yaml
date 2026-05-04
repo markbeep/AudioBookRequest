@@ -61,7 +61,7 @@ jobs:
         run: uv run basedpyright
 
       - name: Check if Jinjax parameters are defined
-        run: uv run app/util/test_jinjax.py templates -g getattr version json_regexp base_url changelog content -f toJSstring
+        run: uv run app/util/test_jinjax.py templates -g content base_url json_regexp audible_regions version changelog getattr -f toJSstring
 
       - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
 
