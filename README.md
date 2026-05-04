@@ -52,7 +52,8 @@ It is not intended as a full replacement for Readarr/Chaptarr, but instead inten
   - Combinations:
     - _Know of or have an app or script that works with ABR? Open an issue and I'll add it here or to the docs._
   - Alternatives:
-    - _I'd love to add alternatives for ABR here. If you know of any good ones, open an issue!_
+    - [Listenarr](https://github.com/Listenarrs/Listenarr): A more all-in-one approach with built-in file organization.
+    - _I'd love to add more alternatives for ABR here. If you know of any good ones, open an issue!_
 
 ---
 
