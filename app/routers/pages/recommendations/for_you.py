@@ -4,7 +4,7 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Security
 from sqlmodel import Session
 
-from app.internal.audible.types import get_region_tld_from_settings
+from app.internal.audible.types import get_region_from_settings
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.ranking.quality import quality_config
 from app.routers.api.recommendations import (
@@ -42,6 +42,6 @@ async def get_for_you_recommendations(
         per_page=per_page,
         has_next=has_next,
         total_items=result.total,
-        region_tld=get_region_tld_from_settings(),
+        region=get_region_from_settings(),
         auto_start_download=quality_config.get_auto_download(session),
     )

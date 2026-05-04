@@ -13,6 +13,7 @@ from jinjax import Catalog
 from jinjax.jinjax import JinjaX
 from starlette.background import BackgroundTask
 
+from app.internal.audible.types import audible_regions
 from app.internal.env_settings import Settings
 
 templates = Jinja2Blocks(
@@ -41,6 +42,7 @@ templates.env.globals["json_regexp"] = (  # pyright: ignore[reportArgumentType]
     r'^\{\s*(?:"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*(?:,\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"\s*)*)?\}$'
 )
 templates.env.globals["base_url"] = Settings().app.base_url.rstrip("/")  # pyright: ignore[reportArgumentType]
+templates.env.globals["audible_regions"] = audible_regions  # pyright: ignore[reportArgumentType]
 
 with open("CHANGELOG.md", "r") as file:
     changelog_content = file.read()

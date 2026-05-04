@@ -71,7 +71,11 @@ async def create_request(
     book = session.get(Audiobook, asin_or_uuid)
     if not book:
         try:
-            book = await get_single_book(client_session, asin=asin_or_uuid)
+            book = await get_single_book(
+                client_session,
+                asin=asin_or_uuid,
+                audible_region=region,
+            )
             if book:
                 session.add(book)
                 session.commit()

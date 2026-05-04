@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.sql.functions import count
 from sqlmodel import Session, select
 
-from app.internal.audible.types import audible_region_type, get_region_tld_from_settings
+from app.internal.audible.types import audible_region_type, get_region_from_settings
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.models import AudiobookRequest, AudiobookWithRequests
 from app.internal.ranking.quality import quality_config
@@ -53,7 +53,7 @@ def read_root(
     return catalog_response(
         "Index.Index",
         user=user,
-        region_tld=get_region_tld_from_settings(),
+        region=get_region_from_settings(),
         auto_download=quality_config.get_auto_download(session),
         show_popular=show_popular,
     )
@@ -83,7 +83,7 @@ async def get_user_recommendations(
         view_more="/recommendations/for-you",
         description="Personalized recommendations based on your requests",
         empty="No recommendations available at this time. Request some books to start getting recommendations.",
-        region_tld=get_region_tld_from_settings(),
+        region=get_region_from_settings(),
         auto_download=quality_config.get_auto_download(session),
     )
 
@@ -111,7 +111,7 @@ async def get_popular_recommendations(
         reasons=result,
         description="The most popular books on the instance",
         empty="No popular recommendations available at this time. Request some books to start getting recommendations.",
-        region_tld=get_region_tld_from_settings(),
+        region=get_region_from_settings(),
         auto_download=quality_config.get_auto_download(session),
     )
 
@@ -130,10 +130,12 @@ async def get_category_recommendations(
         audible_region=audible_region,
     )
 
+    region = audible_region or get_region_from_settings()
+
     return catalog_response(
         "Index.Categories",
         categories=result,
-        region_tld=get_region_tld_from_settings(),
+        region=region,
         auto_start_download=quality_config.get_auto_download(session),
         user=user,
     )
@@ -179,7 +181,7 @@ async def get_recently_requested_recommendations(
         user=user,
         description="Books that have been recently requested by users on the instance",
         empty="No recently requested recommendations available at this time. Request some books to start getting recommendations.",
-        region_tld=get_region_tld_from_settings(),
+        region=get_region_from_settings(),
         auto_download=quality_config.get_auto_download(session),
     )
 
@@ -207,13 +209,15 @@ async def get_fallback_recommendations(
         for book in result
     ]
 
+    region = audible_region or get_region_from_settings()
+
     return catalog_response(
         "Index.PopularSection",
         reasons=reasons,
         user=user,
         description="Popular books from Audible",
         empty="No fallback recommendations available at this time.",
-        region_tld=get_region_tld_from_settings(),
+        region=region,
         auto_download=quality_config.get_auto_download(session),
     )
 
@@ -242,13 +246,15 @@ async def get_popular_authors_recommendations(
         _AudiobookReasonWrapper(book=book, reason="Popular author") for book in result
     ]
 
+    region = audible_region or get_region_from_settings()
+
     return catalog_response(
         "Index.PopularSection",
         reasons=reasons,
         user=user,
         description="Books from popular authors",
         empty="No popular author recommendations available at this time. Request some books to start getting recommendations.",
-        region_tld=get_region_tld_from_settings(),
+        region=region,
         auto_download=quality_config.get_auto_download(session),
     )
 
@@ -277,12 +283,14 @@ async def get_popular_narrators_recommendations(
         _AudiobookReasonWrapper(book=book, reason="Popular narrator") for book in result
     ]
 
+    region = audible_region or get_region_from_settings()
+
     return catalog_response(
         "Index.PopularSection",
         reasons=reasons,
         user=user,
         description="Books from popular narrators",
         empty="No popular narrator recommendations available at this time. Request some books to start getting recommendations.",
-        region_tld=get_region_tld_from_settings(),
+        region=region,
         auto_download=quality_config.get_auto_download(session),
     )

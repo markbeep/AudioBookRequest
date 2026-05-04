@@ -4,7 +4,7 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Security
 from sqlmodel import Session
 
-from app.internal.audible.types import audible_region_type, get_region_tld_from_settings
+from app.internal.audible.types import audible_region_type, get_region_from_settings
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.ranking.quality import quality_config
 from app.routers.api.requests import create_request
@@ -44,10 +44,12 @@ async def add_request(
         )
         raise ToastException(e.detail) from e
 
+    resolved_region = region or get_region_from_settings()
+
     return catalog_response(
         "BookCard",
         book_with_requests=book,
         auto_start_download=quality_config.get_auto_download(session),
-        region_tld=get_region_tld_from_settings(),
+        region=resolved_region,
         user=user,
     )

@@ -1,7 +1,7 @@
 {#def
     user: DetailedUser,
     auto_download: bool,
-    region_tld: str,
+    region: audible_region_type,
     show_popular: bool, # no need to show popular if sole user with requests
 #}
 
@@ -28,11 +28,11 @@
         </div>
     </div>
 
-    <Index.PopularSection title="For You" user={{ user }} view_more="/recommendations/for-you" lazy_url="/hx-for-you" description="Personalized recommendations based on your requests" empty="No recommendations available at this time. Request some books to start getting recommendations." region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} />
+    <Index.PopularSection title="For You" user={{ user }} view_more="/recommendations/for-you" lazy_url="/hx-for-you" description="Personalized recommendations based on your requests" empty="No recommendations available at this time. Request some books to start getting recommendations." region={{ region }} auto_start_download={{ auto_download }} />
     {% if show_popular %}
-        <Index.PopularSection title="Popular" user={{ user }} lazy_url="/hx-popular" description="The most popular books on the instance" empty="No popular recommendations available at this time. Request some books to start getting recommendations." region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} />
+        <Index.PopularSection title="Popular" user={{ user }} lazy_url="/hx-popular" description="The most popular books on the instance" empty="No popular recommendations available at this time. Request some books to start getting recommendations." region={{ region }} auto_start_download={{ auto_download }} />
     {% endif %}
-    <Index.Categories lazy_load={{ True }} region_tld="{{ region_tld }}" auto_start_download={{ auto_download }} user={{ user }} />
+    <Index.Categories lazy_load={{ True }} region={{ region }} auto_start_download={{ auto_download }} user={{ user }} />
 
 </div>
 </BaseLayout>

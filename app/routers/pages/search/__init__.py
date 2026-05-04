@@ -4,11 +4,7 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Query, Security
 from sqlmodel import Session
 
-from app.internal.audible.types import (
-    audible_region_type,
-    audible_regions,
-    get_region_from_settings,
-)
+from app.internal.audible.types import audible_region_type, get_region_from_settings
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.models import GroupEnum
 from app.internal.prowlarr.util import prowlarr_config
@@ -58,7 +54,6 @@ async def read_search(
             user=user,
             search_term=query or "",
             search_results=results,
-            regions=audible_regions,
             selected_region=region,
             page=page,
             auto_start_download=quality_config.get_auto_download(session)
