@@ -117,9 +117,7 @@ async def start_download(
             return response
 
         # Find additional metadata/replacements to pass along notifications
-        additional_replacements: dict[str, str] = (
-            {"bookASIN": asin_or_uuid} if asin_or_uuid else {}
-        )
+        additional_replacements: dict[str, str] = {}
         if prowlarr_source:
             if prowlarr_source.download_url and prowlarr_source.protocol == "torrent":
                 if info_hash := await _get_torrent_info_hash(

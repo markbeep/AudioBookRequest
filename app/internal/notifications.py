@@ -112,6 +112,9 @@ async def send_notification(
             book_cover = book.cover_image
             requesters = [req.user for req in book.requests]
 
+        if "bookASIN" not in other_replacements:
+            other_replacements["bookASIN"] = book_asin
+
     body = _replace_variables(
         notification.body,
         users=requesters,
