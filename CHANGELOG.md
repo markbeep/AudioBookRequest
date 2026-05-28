@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.10.5](https://github.com/markbeep/AudioBookRequest/compare/v1.10.4...v1.10.5) (2026-05-28)
+
+
+### Bug Fixes
+
+* fix selected region not being propagated to internal search. Closes [#210](https://github.com/markbeep/AudioBookRequest/issues/210) ([976d2fc](https://github.com/markbeep/AudioBookRequest/commit/976d2fc93922586e4f50cab4c2e5ebb97d887b58))
+* send along ASIN in notifications for requests. Closes [#215](https://github.com/markbeep/AudioBookRequest/issues/215) ([95ceba2](https://github.com/markbeep/AudioBookRequest/commit/95ceba2c3625c9adcbc8de801463967b5424deeb))
+
+
+### Dependencies
+
+* update python dependencies ([a262d81](https://github.com/markbeep/AudioBookRequest/commit/a262d816b2f9b52885874fb0fc956d3829093a18))
+* update python dependencies ([27e0985](https://github.com/markbeep/AudioBookRequest/commit/27e0985172bddda97ea04d49cf694296a747b65a))
+
+
+### Documentation
+
+* add listenarr as an alternative. Closes [#211](https://github.com/markbeep/AudioBookRequest/issues/211) ([e6688ad](https://github.com/markbeep/AudioBookRequest/commit/e6688ad3565ad01ea1e2eed2eaa9c589685e7cdf))
+
+
+### Continuous Integration
+
+* update jinja test script ([b81443d](https://github.com/markbeep/AudioBookRequest/commit/b81443ddbb33ccd75dd5d350ca5e966baecd6c52))
+
 ## [1.10.4](https://github.com/markbeep/AudioBookRequest/compare/v1.10.3...v1.10.4) (2026-04-08)
 
 
