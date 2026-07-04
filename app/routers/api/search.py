@@ -10,6 +10,7 @@ from app.internal.audible.types import (
     audible_regions,
     get_region_from_settings,
 )
+from app.internal.audiobookshelf.client import abs_mark_downloaded_flags
 from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.models import Audiobook, AudiobookWithRequests
 from app.util.connection import get_connection
@@ -47,6 +48,9 @@ async def search_books(
     merged: list[Audiobook] = []
     for res in results:
         merged.append(session.merge(res))
+
+    # Check ABS for existing books and mark as downloaded if found
+    await abs_mark_downloaded_flags(session, client_session, merged)
 
     return [
         AudiobookWithRequests(
