@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.10.6](https://github.com/markbeep/AudioBookRequest/compare/v1.10.5...v1.10.6) (2026-07-21)
+
+
+### Bug Fixes
+
+* ABS downloaded-check was not invoked ([0c43e54](https://github.com/markbeep/AudioBookRequest/commit/0c43e54bb390931affa42977c1e2f688d842c95a))
+
+
+### Dependencies
+
+* update dependencies ([c93c45c](https://github.com/markbeep/AudioBookRequest/commit/c93c45cb3427e8ab0a8490d23fabc15b7f69dfd7))
+
 ## [1.10.5](https://github.com/markbeep/AudioBookRequest/compare/v1.10.4...v1.10.5) (2026-05-28)
 
 
