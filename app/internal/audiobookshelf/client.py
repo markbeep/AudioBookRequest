@@ -261,6 +261,11 @@ async def abs_book_exists(
         )
         q = f"{book.title}".strip()
         candidates = await _abs_search(session, client_session, q)
+        logger.debug(
+            "ABS: title search results",
+            title=book.title,
+            candidate_count=len(candidates),
+        )
 
     if not candidates:
         return False
