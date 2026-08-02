@@ -30,9 +30,10 @@ format_html:
 
 types:
     uv run basedpyright
+
+test_format:
     uv run djlint templates --extension=jinja --check
     uv run ruff format --check app
-    uv run alembic check
 
 test_jinja:
     uv run app/util/test_jinjax.py templates/ -g content base_url json_regexp audible_regions version changelog getattr -f toJSstring

@@ -44,24 +44,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.8.22"
-
-      - name: Install sqlite3
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y sqlite3
+      - uses: jdx/mise-action@v4
 
       - run: uv sync --all-extras
 
-      - name: Run Type Checks
-        run: uv run basedpyright
+      - name: Run Type and format checks
+        run: just types
 
       - name: Check if Jinjax parameters are defined
-        run: uv run app/util/test_jinjax.py templates -g content base_url json_regexp audible_regions version changelog getattr -f toJSstring
+        run: just test_jinja
 
       - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
 

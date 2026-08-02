@@ -15,18 +15,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.8.22"
+      - uses: jdx/mise-action@v4
 
       - run: uv sync --all-extras
 
       - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
 
       - name: Check Template Formats
-        run: uv run djlint templates/
-
-      - name: Check Template Formats
-        run: uv run ruff format --check app/
+        run: just test_format
