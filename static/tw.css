@@ -90,3 +90,20 @@
 .changelog a {
   @apply underline;
 }
+
+.book-cover-modal .modal-box {
+  width: auto;
+  max-width: min(90vw, 40rem);
+  padding: 0.5rem;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.book-cover-modal img {
+  width: auto;
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: var(--radius-box);
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+}

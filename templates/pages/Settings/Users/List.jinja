@@ -88,8 +88,9 @@
                                    hx-swap="outerHTML" />
                         </td>
                         <td {% if u.root %}title="Can't delete the root admin" {% elif u.is_self(user.username) %} title="Can't delete yourself" {% endif %}>
-                            <button class="btn btn-square btn-ghost" onclick="delete_modal_{{ loop.index }}.showModal()" {% if
-                                u.is_self(user.username) or u.root %}disabled{% endif %}>
+                            <button class="btn btn-square btn-ghost"
+                                    onclick="delete_modal_{{ loop.index }}.showModal()"
+                                    {% if u.is_self(user.username) or u.root %}disabled{% endif %}>
                                 <icons.Trash />
                             </button>
                             <dialog id="delete_modal_{{ loop.index }}" class="modal">
@@ -99,8 +100,7 @@
                                     </h3>
                                     <div class="grid grid-cols-2 py-4">
                                         <span class="font-semibold mr-2">Username</span><span class="font-mono">{{ u.username }}</span>
-                                        <span class="font-semibold mr-2">Group</span><span class="font-mono">{{ u.group.value.capitalize() 
-                                        }}</span>
+                                        <span class="font-semibold mr-2">Group</span><span class="font-mono">{{ u.group.value.capitalize() }}</span>
                                     </div>
                                     <form method="dialog" class="flex justify-between">
                                         <button class="btn">

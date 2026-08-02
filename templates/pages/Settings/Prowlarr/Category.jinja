@@ -41,8 +41,7 @@
         </option>
         <template x-for="sel in Object.keys(categories)">
             <template x-if="!selected.includes(Number(sel))">
-                <option x-text="`${String(sel).padStart(4, '0')} - ${categories[sel]}`"
-                        x-bind:value="sel">
+                <option x-text="`${String(sel).padStart(4, '0')} - ${categories[sel]}`" x-bind:value="sel">
                 </option>
             </template>
         </template>

@@ -191,7 +191,7 @@ wheels = [
 
 [[package]]
 name = "audiobookrequest"
-version = "1.10.5"
+version = "1.10.6"
 source = { virtual = "." }
 dependencies = [
     { name = "aiohttp" },

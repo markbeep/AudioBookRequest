@@ -11,11 +11,21 @@
 <div class="book-card flex flex-col">
     <div class="relative w-32 h-32 sm:w-40 sm:h-40 rounded-md overflow-hidden shadow shadow-black items-center justify-center flex">
         {% if book.cover_image %}
-            <img class="object-cover w-full h-full hover:scale-110 transition-transform duration-500 ease-in-out"
+            <img class="object-cover w-full h-full cursor-pointer hover:scale-110 transition-transform duration-500 ease-in-out"
                  height="128"
                  width="128"
                  src="{{ book.cover_image }}"
-                 alt="{{ book.title }}" />
+                 alt="{{ book.title }}"
+                 title="Click to enlarge"
+                 onclick="bookCoverModal{{ book.asin }}.showModal()" />
+            <dialog id="bookCoverModal{{ book.asin }}" class="modal book-cover-modal">
+                <div class="modal-box">
+                    <img src="{{ book.cover_image }}" alt="{{ book.title }}" />
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button aria-label="Close">close</button>
+                </form>
+            </dialog>
         {% else %}
             <icons.PhotoOff />
         {% endif %}
