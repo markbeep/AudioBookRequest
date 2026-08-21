@@ -152,6 +152,7 @@ async def start_download(
             for b in same_books:
                 b.downloaded = True
                 session.add(b)
+            session.commit()
 
             await send_all_notifications(
                 EventEnum.on_successful_download,
