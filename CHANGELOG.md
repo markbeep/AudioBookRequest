@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.10.7](https://github.com/markbeep/AudioBookRequest/compare/v1.10.6...v1.11.0) (2026-08-21)
+
+
+### Features
+
+* add 'Click to enlarge' for covers ([d9e5c3e](https://github.com/markbeep/AudioBookRequest/commit/d9e5c3e9e5c7f17d24aad4a06c2affdfa135ee79))
+
+
+### Bug Fixes
+
+* add missing commit to start_download. Closes [#221](https://github.com/markbeep/AudioBookRequest/issues/221) ([92f7098](https://github.com/markbeep/AudioBookRequest/commit/92f70984e6e45eff9c2577388ddc0a62d20019c2))
+
+
+### Continuous Integration
+
+* update github action to use mise packages and just ([6e73bf3](https://github.com/markbeep/AudioBookRequest/commit/6e73bf32d5e8711ab2d8df8999de78fbbf3aa0ba))
+
 ## [1.10.6](https://github.com/markbeep/AudioBookRequest/compare/v1.10.5...v1.10.6) (2026-07-21)
 
 
