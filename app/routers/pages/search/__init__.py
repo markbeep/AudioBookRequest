@@ -33,6 +33,7 @@ async def read_search(
     num_results: int = 20,
     page: int = 0,
     region: audible_region_type | None = None,
+    search_type: str = "all",
 ):
     if region is None:
         region = get_region_from_settings()
@@ -45,6 +46,7 @@ async def read_search(
             num_results=num_results,
             page=page,
             region=region,
+            search_type=search_type,
         )
 
         prowlarr_configured = prowlarr_config.is_valid(session)
@@ -55,6 +57,7 @@ async def read_search(
             search_term=query or "",
             search_results=results,
             selected_region=region,
+            selected_search_type=search_type,
             page=page,
             auto_start_download=quality_config.get_auto_download(session)
             and user.is_above(GroupEnum.trusted),

@@ -35,6 +35,7 @@ class CacheQuery(BaseModel, frozen=True):
     num_results: int
     page: int
     audible_region: audible_region_type
+    search_type: str = "all"
 
 
 class CacheResult[T](BaseModel, frozen=True):
@@ -135,6 +136,7 @@ async def search_audible_books(
     num_results: int = 20,
     page: int = 0,
     audible_region: audible_region_type | None = None,
+    search_type: str = "all",
 ) -> list[Audiobook]:
     """
     https://audible.readthedocs.io/en/latest/misc/external_api.html#get--1.0-catalog-products
@@ -149,6 +151,7 @@ async def search_audible_books(
         num_results=num_results,
         page=page,
         audible_region=audible_region,
+        search_type=search_type,
     )
     cache_result = search_cache.get(cache_key)
 
@@ -161,9 +164,9 @@ async def search_audible_books(
     params = {
         "num_results": num_results,
         "products_sort_by": "Relevance",
-        "keywords": query,
         "page": page,
         "response_groups": ["media"],
+        "keywords": query,
     }
 
     try:
@@ -184,8 +187,14 @@ async def search_audible_books(
         )
         return []
 
-    # do not fetch book results we already have locally
     books = audible_response.audiobooks()
+
+    if search_type == "title":
+        query_lower = query.lower()
+        books = [b for b in books if query_lower in b.title.lower()]
+    elif search_type == "author":
+        query_lower = query.lower()
+        books = [b for b in books if any(query_lower in author.lower() for author in b.authors)]
 
     logger.debug(
         "Search results fetched",

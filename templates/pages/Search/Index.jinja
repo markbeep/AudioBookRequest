@@ -2,6 +2,7 @@
     user: DetailedUser,
     search_term: str,
     selected_region: audible_region_type,
+    selected_search_type: str = "all",
     search_results: list[AudiobookSearchResult],
     page: int,
     auto_start_download: bool,
@@ -12,11 +13,14 @@
 <BaseLayout title="Search" user={{ user }}>
 <script>
     const onSearch = () => {
-        const search_term = document.querySelector("input").value;
+        const form = document.querySelector("form");
+        const search_term = form.querySelector("input").value;
+        const search_type = form.querySelector("select[name='search_type']").value;
+        const region = form.querySelector("select[name='region']").value;
         document.getElementById("search").disabled = true;
         document.getElementById("search-text").style.display = "none";
         document.getElementById("search-spinner").style.display = "inline-block";
-        window.location.href = `/search?q=${encodeURIComponent(search_term)}`;
+        window.location.href = `/search?q=${encodeURIComponent(search_term)}&search_type=${encodeURIComponent(search_type)}&region=${encodeURIComponent(region)}`;
     };
     const onPageChange = page => {
         const url = new URL(window.location);
@@ -53,6 +57,13 @@
                    hx-trigger="keyup changed delay:100ms" />
 
             <Search.Suggestions id="search-suggestions" suggestions={{ suggestions }} />
+
+            <select class="select join-item max-w-24 sm:max-w-28 focus:z-10"
+                    name="search_type">
+                <option value="all" {% if selected_search_type.__eq__("all") %}selected="selected"{% endif %}>All</option>
+                <option value="title" {% if selected_search_type.__eq__("title") %}selected="selected"{% endif %}>Title</option>
+                <option value="author" {% if selected_search_type.__eq__("author") %}selected="selected"{% endif %}>Author</option>
+            </select>
 
             <select class="select join-item max-w-16 sm:max-w-20 focus:z-10"
                     name="region">
