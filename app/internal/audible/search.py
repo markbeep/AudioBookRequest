@@ -194,7 +194,11 @@ async def search_audible_books(
         books = [b for b in books if query_lower in b.title.lower()]
     elif search_type == "author":
         query_lower = query.lower()
-        books = [b for b in books if any(query_lower in author.lower() for author in b.authors)]
+        books = [
+            b
+            for b in books
+            if any(query_lower in author.lower() for author in b.authors)
+        ]
 
     logger.debug(
         "Search results fetched",
