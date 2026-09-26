@@ -7,7 +7,9 @@ from app.internal.models import Config
 
 
 class SimpleCache[VT, *KTs]:
-    _cache: dict[tuple[*KTs], tuple[int, VT]] = {}
+    def __init__(self) -> None:
+        # per instance, otherwise every cache in the app shares one dict
+        self._cache: dict[tuple[*KTs], tuple[int, VT]] = {}
 
     def get(self, source_ttl: int, *query: *KTs) -> VT | None:
         hit = self._cache.get(query)
@@ -35,7 +37,9 @@ class SimpleCache[VT, *KTs]:
 
 
 class StringConfigCache[L: str]:
-    _cache: dict[L, str] = {}
+    def __init__(self) -> None:
+        # per instance, otherwise every config in the app shares one dict
+        self._cache: dict[L, str] = {}
 
     @overload
     def get(self, session: Session, key: L) -> str | None: ...
