@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.8](https://github.com/markbeep/AudioBookRequest/compare/v1.10.7...v1.10.8) (2026-09-26)
+
+
+### Bug Fixes
+
+* **cache:** give each cache instance its own dict ([663fa5e](https://github.com/markbeep/AudioBookRequest/commit/663fa5e0f6576588ccbabdfd6143ff867573e5fd))
+
 ## [1.10.7](https://github.com/markbeep/AudioBookRequest/compare/v1.10.6...v1.11.0) (2026-08-21)
 
 
