@@ -54,6 +54,44 @@ class DownloadSourceBody(BaseModel):
     indexer_id: int
 
 
+# NOTE: /manual has to be declared before /{asin_or_uuid} or the catch-all
+# claims it and the request is treated as an ASIN
+class ManualRequest(BaseModel):
+    title: str
+    author: str
+    narrator: str | None = None
+    subtitle: str | None = None
+    publish_date: str | None = None
+    info: str | None = None
+
+
+@router.post("/manual", status_code=201)
+async def create_manual_request(
+    body: ManualRequest,
+    session: Annotated[Session, Depends(get_session)],
+    background_task: BackgroundTasks,
+    user: Annotated[DetailedUser, Security(AnyAuth())],
+):
+    book_request = ManualBookRequest(
+        user_username=user.username,
+        title=body.title,
+        authors=body.author.split(","),
+        narrators=body.narrator.split(",") if body.narrator else [],
+        subtitle=body.subtitle,
+        publish_date=body.publish_date,
+        additional_info=body.info,
+    )
+    session.add(book_request)
+    session.commit()
+
+    background_task.add_task(
+        send_all_manual_notifications,
+        event_type=EventEnum.on_new_request,
+        book_request=ManualBookRequest.model_validate(book_request),
+    )
+    return Response(status_code=201)
+
+
 @router.post("/{asin_or_uuid}", response_model=Audiobook)
 async def create_request(
     session: Annotated[Session, Depends(get_session)],
@@ -197,42 +235,6 @@ async def list_manual_requests(
         )
         .order_by(asc(ManualBookRequest.downloaded))
     ).all()
-
-
-class ManualRequest(BaseModel):
-    title: str
-    author: str
-    narrator: str | None = None
-    subtitle: str | None = None
-    publish_date: str | None = None
-    info: str | None = None
-
-
-@router.post("/manual", status_code=201)
-async def create_manual_request(
-    body: ManualRequest,
-    session: Annotated[Session, Depends(get_session)],
-    background_task: BackgroundTasks,
-    user: Annotated[DetailedUser, Security(AnyAuth())],
-):
-    book_request = ManualBookRequest(
-        user_username=user.username,
-        title=body.title,
-        authors=body.author.split(","),
-        narrators=body.narrator.split(",") if body.narrator else [],
-        subtitle=body.subtitle,
-        publish_date=body.publish_date,
-        additional_info=body.info,
-    )
-    session.add(book_request)
-    session.commit()
-
-    background_task.add_task(
-        send_all_manual_notifications,
-        event_type=EventEnum.on_new_request,
-        book_request=ManualBookRequest.model_validate(book_request),
-    )
-    return Response(status_code=201)
 
 
 @router.put("/manual/{id}", status_code=204)
