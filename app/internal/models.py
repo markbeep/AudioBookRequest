@@ -61,6 +61,15 @@ class User(BaseSQLModel, table=True):
         return self.username == username
 
 
+class FavoriteAuthor(BaseSQLModel, table=True):
+    user_username: str = Field(
+        primary_key=True,
+        foreign_key="user.username",
+        ondelete="CASCADE",
+    )
+    author: str = Field(primary_key=True)
+
+
 class Audiobook(BaseSQLModel, table=True):
     """A cached Audible audiobook result. Used for both the search results and also linked to via a foreign key for requests."""
 

@@ -28,6 +28,7 @@ async def search_books(
     num_results: int = 20,
     page: int = 0,
     region: audible_region_type | None = None,
+    search_type: str = "all",
 ):
     if region is None:
         region = get_region_from_settings()
@@ -40,6 +41,7 @@ async def search_books(
             num_results=num_results,
             page=page,
             audible_region=region,
+            search_type=search_type,
         )
     else:
         results = []

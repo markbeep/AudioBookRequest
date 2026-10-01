@@ -1,0 +1,21 @@
+{#def
+    user: DetailedUser,
+    authors: list[str],
+#}
+
+<BaseLayout title="Favorite authors" user={{ user }}>
+    <main class="p-6 sm:p-8">
+        <h1 class="text-3xl font-bold">Favorite authors</h1>
+        <ul class="mt-4 list-disc pl-6">
+            {% for author in authors %}
+                <li>
+                    <a class="link link-primary"
+                       preload
+                       href="{{ base_url }}/search?q={{ author | urlencode }}&search_type=author">{{ author }}</a>
+                </li>
+            {% else %}
+                <li class="list-none opacity-60">No favorite authors saved.</li>
+            {% endfor %}
+        </ul>
+    </main>
+</BaseLayout>
