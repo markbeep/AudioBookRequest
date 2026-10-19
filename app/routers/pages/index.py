@@ -3,13 +3,13 @@ from typing import Annotated
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, Query, Security
 from pydantic import BaseModel
-from sqlalchemy.sql.functions import count
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.internal.audible.types import audible_region_type, get_region_from_settings
 from app.internal.auth.authentication import ABRAuth, DetailedUser
-from app.internal.models import AudiobookRequest, AudiobookWithRequests
+from app.internal.models import AudiobookWithRequests
 from app.internal.ranking.quality import quality_config
+from app.internal.recommendations.local import get_popular_books
 from app.routers.api.recommendations import (
     get_category_recommendations as api_get_category_recommendations,
 )
@@ -43,12 +43,13 @@ def read_root(
     user: Annotated[DetailedUser, Security(ABRAuth())],
     session: Annotated[Session, Depends(get_session)],
 ):
-    # no need to show the popular tab if there are no requests from other users
-    show_popular = (
-        0
-        < session.exec(
-            select(count("*")).where(AudiobookRequest.user_username != user.username)
-        ).one()
+    # hide the section when the same query used by /hx-popular would return nothing
+    show_popular = bool(
+        get_popular_books(
+            session,
+            limit=1,
+            exclude_requested_username=user.username,
+        )
     )
     return catalog_response(
         "Index.Index",
