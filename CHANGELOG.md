@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.10.8](https://github.com/markbeep/AudioBookRequest/compare/v1.10.7...v1.10.8) (2026-10-19)
+
+
+### Bug Fixes
+
+* adapt to SQLAlchemy 2.1 and Postgres ([6a682b1](https://github.com/markbeep/AudioBookRequest/commit/6a682b14166e78e99586a117b2c492f1a8657e8f))
+* allow clearing indexer config and bare static URLs ([ee64a57](https://github.com/markbeep/AudioBookRequest/commit/ee64a574a191dd306866f2f9e2f6a73a2d4ac0c4))
+* **api:** add missing response models for API docs ([6e26083](https://github.com/markbeep/AudioBookRequest/commit/6e260833972e078b033dde7646659ed5434896d8))
+* **cache:** give each cache instance its own dict ([663fa5e](https://github.com/markbeep/AudioBookRequest/commit/663fa5e0f6576588ccbabdfd6143ff867573e5fd))
+* fix api endpoints for recommendations having wrong response-model listed ([f96d7e3](https://github.com/markbeep/AudioBookRequest/commit/f96d7e38747ba25ed3d5c733703a992cff17f125))
+* fix manual request being overshadowed by /{asin} endpoint ([f96d7e3](https://github.com/markbeep/AudioBookRequest/commit/f96d7e38747ba25ed3d5c733703a992cff17f125))
+* hide popular section when it has no books to show ([86d3476](https://github.com/markbeep/AudioBookRequest/commit/86d34765ff01dd2efcd8c506a175830303674337))
+* render recommendation sections and guard empty search terms. Closes [#237](https://github.com/markbeep/AudioBookRequest/issues/237) ([2f499ef](https://github.com/markbeep/AudioBookRequest/commit/2f499ef45abb0dc59d556b910f5916775f859fc1))
+* return 400 for misconfigured Audiobookshelf ([a778159](https://github.com/markbeep/AudioBookRequest/commit/a7781595ba1fa6f46f81b37b783eab04c9770c25))
+* return JSON errors from API endpoints instead of toasts ([1536aeb](https://github.com/markbeep/AudioBookRequest/commit/1536aebc49620478d6d88236dbe820bcf12b1010))
+* surface Prowlarr download errors and handle magnet redirects. Closes [#229](https://github.com/markbeep/AudioBookRequest/issues/229), [#220](https://github.com/markbeep/AudioBookRequest/issues/220) ([da5d876](https://github.com/markbeep/AudioBookRequest/commit/da5d8765495a4514d7250aebdf06635bcf06e109))
+
+
+### Styles
+
+* fix ruff 0.17 findings ([0eefd0d](https://github.com/markbeep/AudioBookRequest/commit/0eefd0dd0eca469f809509449cd5c04e31bdabaf))
+
+
+### Miscellaneous Chores
+
+* **deps:** upgrade dependencies ([8f53d62](https://github.com/markbeep/AudioBookRequest/commit/8f53d62364b2313285d6141ebae1619c5776f828))
+
+
+### Tests
+
+* add pytest endpoint and unit testing ([d771e70](https://github.com/markbeep/AudioBookRequest/commit/d771e702b3d4b578530e329418996ad92e910bd2))
+
 ## [1.10.7](https://github.com/markbeep/AudioBookRequest/compare/v1.10.6...v1.11.0) (2026-08-21)
 
 
