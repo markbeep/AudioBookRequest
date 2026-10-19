@@ -58,6 +58,8 @@ async def update_indexer(
         raise HTTPException(status_code=400, detail=e.message)
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON body")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return Response(status_code=204)
 
 

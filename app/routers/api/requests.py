@@ -54,7 +54,44 @@ class DownloadSourceBody(BaseModel):
     indexer_id: int
 
 
-@router.post("/{asin_or_uuid}", response_model=Audiobook)
+class ManualRequest(BaseModel):
+    title: str
+    author: str
+    narrator: str | None = None
+    subtitle: str | None = None
+    publish_date: str | None = None
+    info: str | None = None
+
+
+# Must be declared before /{asin_or_uuid}, otherwise "manual" is parsed as an ASIN.
+@router.post("/manual", status_code=201)
+async def create_manual_request(
+    body: ManualRequest,
+    session: Annotated[Session, Depends(get_session)],
+    background_task: BackgroundTasks,
+    user: Annotated[DetailedUser, Security(AnyAuth())],
+):
+    book_request = ManualBookRequest(
+        user_username=user.username,
+        title=body.title,
+        authors=body.author.split(","),
+        narrators=body.narrator.split(",") if body.narrator else [],
+        subtitle=body.subtitle,
+        publish_date=body.publish_date,
+        additional_info=body.info,
+    )
+    session.add(book_request)
+    session.commit()
+
+    background_task.add_task(
+        send_all_manual_notifications,
+        event_type=EventEnum.on_new_request,
+        book_request=ManualBookRequest.model_validate(book_request),
+    )
+    return Response(status_code=201)
+
+
+@router.post("/{asin_or_uuid}", response_model=AudiobookWithRequests)
 async def create_request(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
@@ -118,6 +155,9 @@ async def create_request(
             asin_or_uuid=asin_or_uuid,
             auto_download=True,
         )
+
+    # commit() expires the book; reload it so the response has its fields
+    session.refresh(book)
 
     requests = session.exec(
         select(AudiobookRequest).where(AudiobookRequest.asin == asin_or_uuid)
@@ -197,42 +237,6 @@ async def list_manual_requests(
         )
         .order_by(asc(ManualBookRequest.downloaded))
     ).all()
-
-
-class ManualRequest(BaseModel):
-    title: str
-    author: str
-    narrator: str | None = None
-    subtitle: str | None = None
-    publish_date: str | None = None
-    info: str | None = None
-
-
-@router.post("/manual", status_code=201)
-async def create_manual_request(
-    body: ManualRequest,
-    session: Annotated[Session, Depends(get_session)],
-    background_task: BackgroundTasks,
-    user: Annotated[DetailedUser, Security(AnyAuth())],
-):
-    book_request = ManualBookRequest(
-        user_username=user.username,
-        title=body.title,
-        authors=body.author.split(","),
-        narrators=body.narrator.split(",") if body.narrator else [],
-        subtitle=body.subtitle,
-        publish_date=body.publish_date,
-        additional_info=body.info,
-    )
-    session.add(book_request)
-    session.commit()
-
-    background_task.add_task(
-        send_all_manual_notifications,
-        event_type=EventEnum.on_new_request,
-        book_request=ManualBookRequest.model_validate(book_request),
-    )
-    return Response(status_code=201)
 
 
 @router.put("/manual/{id}", status_code=204)

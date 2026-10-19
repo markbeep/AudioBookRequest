@@ -10,7 +10,7 @@ from app.internal.audible.category import (
 )
 from app.internal.audible.types import audible_region_type, get_region_from_settings
 from app.internal.auth.authentication import AnyAuth, DetailedUser
-from app.internal.models import Audiobook, AudiobookWithRequests
+from app.internal.models import AudiobookWithRequests
 from app.internal.recommendations.local import (
     AudiobookPopularity,
     get_most_popular_authors,
@@ -64,7 +64,7 @@ async def get_popular_recommendations(
     )
 
 
-@router.get("/recent", response_model=Sequence[Audiobook])
+@router.get("/recent", response_model=Sequence[AudiobookWithRequests])
 async def get_recently_requested_recommendations(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(AnyAuth())],
@@ -81,7 +81,7 @@ async def get_recently_requested_recommendations(
     )
 
 
-@router.get("/fallback", response_model=list[Audiobook])
+@router.get("/fallback", response_model=list[AudiobookWithRequests])
 async def get_fallback_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
@@ -114,7 +114,7 @@ async def get_fallback_recommendations(
     )
 
 
-@router.get("/categories", response_model=dict[str, list[Audiobook]])
+@router.get("/categories", response_model=dict[str, list[AudiobookWithRequests]])
 async def get_category_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
@@ -162,7 +162,7 @@ async def get_popular_authors_recommendations(
     )
 
 
-@router.get("/narrators", response_model=list[Audiobook])
+@router.get("/narrators", response_model=list[AudiobookWithRequests])
 async def get_popular_narrators_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
