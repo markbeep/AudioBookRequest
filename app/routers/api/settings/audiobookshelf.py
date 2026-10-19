@@ -29,7 +29,7 @@ class ABSResponse(BaseModel):
     abs_libraries: list[ABSLibrary]
 
 
-@router.get("")
+@router.get("", response_model=ABSResponse)
 async def read_abs(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
@@ -103,7 +103,7 @@ class TestResponse(BaseModel):
     sample_items: list[str]
 
 
-@router.get("/test-connection")
+@router.get("/test-connection", response_model=TestResponse)
 async def test_abs_connection(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],

@@ -160,7 +160,7 @@ async def test_notification_id(
     return Response(status_code=200)
 
 
-@router.patch("/{id}/enable")
+@router.patch("/{id}/enable", response_model=Notification)
 def toggle_notification(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
