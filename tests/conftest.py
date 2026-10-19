@@ -5,7 +5,7 @@ import os
 import shutil
 import tempfile
 from collections.abc import Iterator
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -94,7 +94,7 @@ def _seed() -> None:
                 authors=["Mock Author"],
                 narrators=["Mock Narrator"],
                 cover_image=None,
-                release_date=datetime(2020, 1, 1),
+                release_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
                 runtime_length_min=600,
                 downloaded=False,
             )
@@ -107,7 +107,7 @@ def _seed() -> None:
                 authors=["Mock Author"],
                 narrators=["Mock Narrator"],
                 cover_image=None,
-                release_date=datetime(2020, 1, 1),
+                release_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
                 runtime_length_min=300,
                 downloaded=True,
             )

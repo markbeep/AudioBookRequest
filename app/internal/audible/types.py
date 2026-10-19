@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel
@@ -65,6 +65,10 @@ class AudibleProduct(BaseModel):
             if covers:  # default to first cover other than the one keyed by "500"
                 cover_image = covers[0]
 
+        release_date = datetime.fromisoformat(self.release_date)
+        if release_date.tzinfo is None:
+            release_date = release_date.replace(tzinfo=timezone.utc)
+
         return Audiobook(
             asin=self.asin,
             title=self.title,
@@ -72,7 +76,7 @@ class AudibleProduct(BaseModel):
             authors=[author.name for author in self.authors],
             narrators=[narrator.name for narrator in self.narrators],
             cover_image=cover_image,
-            release_date=datetime.fromisoformat(self.release_date),
+            release_date=release_date,
             runtime_length_min=self.runtime_length_min,
         )
 

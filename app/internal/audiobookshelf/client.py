@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import posixpath
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 
 from aiohttp import ClientSession
@@ -163,10 +163,12 @@ async def abs_list_library_items(
                     release_date = datetime.fromisoformat(
                         metadata.publishedDate.replace("Z", "+00:00")
                     )
+                    if release_date.tzinfo is None:
+                        release_date = release_date.replace(tzinfo=timezone.utc)
                 except Exception:
-                    release_date = datetime.now()
+                    release_date = datetime.now(timezone.utc)
             else:
-                release_date = datetime.now()
+                release_date = datetime.now(timezone.utc)
 
             if not metadata.asin or not title:
                 logger.warning(

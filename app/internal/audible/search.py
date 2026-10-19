@@ -22,7 +22,7 @@ def clear_old_book_caches(session: Session):
     """Deletes outdated cached audiobooks that haven't been requested by anyone"""
     delete_query = delete(Audiobook).where(
         col(Audiobook.updated_at) < datetime.fromtimestamp(time.time() - REFETCH_TTL),
-        col(Audiobook.asin).not_in(select(col(AudiobookRequest.asin).distinct())),
+        col(Audiobook.asin).not_in(select(col(AudiobookRequest.asin)).distinct()),
         not_(Audiobook.downloaded),
     )
     result = cast(CursorResult[Audiobook], session.execute(delete_query))

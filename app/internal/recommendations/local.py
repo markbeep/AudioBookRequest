@@ -93,16 +93,28 @@ def get_recently_requested_books(
     """Get recently requested books within the specified time frame."""
     cutoff_date = datetime.now() - timedelta(days=days_back)
 
-    query = (
-        select(Audiobook)
-        .join(AudiobookRequest)
+    max_updated_at = func.max(col(AudiobookRequest.updated_at)).label("max_updated_at")
+    recent_requests = (
+        select(col(AudiobookRequest.asin), max_updated_at)
         .where(
             AudiobookRequest.updated_at >= cutoff_date,
             AudiobookRequest.user_username != exclude_requested_username,
         )
-        .order_by(col(AudiobookRequest.updated_at).desc())
+        .group_by(col(AudiobookRequest.asin))
+        .order_by(max_updated_at.desc())
         .limit(limit)
-        .distinct()
+        .subquery()
+    )
+
+    query = (
+        select(Audiobook)
+        .join(recent_requests, col(Audiobook.asin) == recent_requests.c.asin)
+        .order_by(
+            cast(
+                KeyedColumnElement[datetime],
+                recent_requests.c.max_updated_at,
+            ).desc()
+        )
     )
 
     if exclude_downloaded:
@@ -134,11 +146,14 @@ def get_most_popular_authors(
 ) -> AuthorNarrators:
     """Get the most popular authors based on how many users have requested their books."""
 
-    query = select(Audiobook).join(AudiobookRequest).distinct()
+    requested_asins = select(col(AudiobookRequest.asin)).distinct()
+    if username:
+        requested_asins = requested_asins.where(
+            AudiobookRequest.user_username == username
+        )
+    query = select(Audiobook).where(col(Audiobook.asin).in_(requested_asins))
     if exclude_downloaded:
         query = query.where(~col(Audiobook.downloaded))
-    if username:
-        query = query.where(AudiobookRequest.user_username == username)
     audiobooks = session.exec(query).all()
     author_counter = Counter[str]()
     narrator_counter = Counter[str]()

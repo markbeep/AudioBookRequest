@@ -1,6 +1,6 @@
 import asyncio
 from collections import OrderedDict, defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import chain
 from typing import Counter, Iterable
 
@@ -135,7 +135,7 @@ async def get_user_sims_recommendations(
 
     def _recent_component(b: Audiobook) -> float:
         try:
-            age_days = max(0.0, (datetime.now() - b.release_date).days)
+            age_days = max(0.0, (datetime.now(timezone.utc) - b.release_date).days)
             # Newer books get up to ~1.0 bonus, decaying over ~2 years
             return max(0.0, 1.0 - (age_days / 730.0))
         except Exception:
