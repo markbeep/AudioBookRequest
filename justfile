@@ -1,14 +1,14 @@
 # https://just.systems
 
 alias d := dev
-alias m := migrate
+alias m := upgrade
 alias cr := create_revision
 alias tw := tailwind
 
-dev: migrate
+dev: upgrade
     uv run fastapi dev
 
-migrate:
+upgrade:
     uv run alembic upgrade heads
 
 create_revision *MESSAGE:
@@ -22,8 +22,9 @@ tailwind:
     tailwindcss -i static/tw.css -o static/globals.css --watch
 
 # update all uv packages
-upgrade:
-    uvx uv-upgrade
+upgrade-deps:
+    uv lock --upgrade
+    uv sync
 
 format_html:
     uv run djlint templates --extension=jinja --reformat

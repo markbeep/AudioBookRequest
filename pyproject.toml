@@ -4,34 +4,34 @@ version = "1.10.7"
 requires-python = ">= 3.14"
 readme = "README.md"
 dependencies = [
-    "aiohttp>=3.14.2",
-    "alembic>=1.18.5",
+    "aiohttp>=3.14.5",
+    "alembic>=1.20.0",
     "apscheduler>=3.11.3",
     "argon2-cffi>=25.1.0",
-    "argon2-cffi-bindings>=25.1.0",
-    "cryptography>=49.0.0",
-    "fastapi[standard]>=0.139.2",
+    "argon2-cffi-bindings>=26.1.0",
+    "cryptography>=50.0.2",
+    "fastapi[standard]>=0.147.0",
     "itsdangerous>=2.2.0",
     "jinja2>=3.1.6",
     "jinja2-fragments>=1.12.0",
     "jinja2-htmlmin>=1.1.0",
-    "jinjax>=0.65",
-    "markdown>=3.10.2",
-    "psycopg2-binary>=2.9.12",
-    "pydantic>=2.13.4",
-    "pydantic-core>=2.46.4",
-    "pydantic-settings>=2.14.2",
-    "pyjwt>=2.13.0",
+    "jinjax>=0.66",
+    "markdown>=3.11.1",
+    "psycopg2-binary>=2.9.13",
+    "pydantic>=2.14.1",
+    "pydantic-core>=2.50.1",
+    "pydantic-settings>=2.16.0",
+    "pyjwt>=2.15.1",
     "python-multipart>=0.0.32",
-    "rapidfuzz>=3.14.5",
+    "rapidfuzz>=3.14.6",
     "requests>=2.34.2",
-    "sqlmodel>=0.0.39",
+    "sqlmodel>=0.0.48",
     "structlog>=26.1.0",
     "terminaltables>=3.1.10",
     "torf>=4.3.1",
     "torrent-parser>=0.4.1",
-    "typer>=0.27.0",
-    "urllib3>=2.7.0",
+    "typer>=0.27.3",
+    "urllib3>=2.8.0",
 ]
 
 # setuptools by default expects a "src" folder structure
@@ -63,9 +63,10 @@ allowedUntypedLibraries = ["apscheduler", "torrent_parser", "jinjax"]
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.39.9",
-    "djlint>=1.42.1",
+    "basedpyright>=1.40.2",
+    # 1.45+ quotes unquoted Jinjax props (users={{ users }}), turning typed args into strings.
+    "djlint==1.42.1",
     "httpx2>=2.14.0",
     "pytest>=9.1.1",
-    "ruff>=0.15.22",
+    "ruff>=0.17.1",
 ]
