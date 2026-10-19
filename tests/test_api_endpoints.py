@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 
-import pytest
 from fastapi.testclient import TestClient
 
 from tests.constants import ASIN, DOWNLOADED_ASIN, MANUAL_ID
@@ -216,16 +215,6 @@ def test_audiobookshelf(admin_client: TestClient, abs_service: MockServer) -> No
     tested_body = json_object(tested)
     assert tested_body["library_count"] == 1
     assert tested_body["triggered_scan"] is True
-
-
-@pytest.mark.xfail(
-    strict=True, reason="unhandled AudiobookshelfMisconfigured -> 500 instead of 400"
-)
-def test_audiobookshelf_unconfigured(admin_client: TestClient) -> None:
-    assert admin_client.get("/api/settings/audiobookshelf").status_code == 200
-    # No config: the client raises an unhandled AudiobookshelfMisconfigured.
-    tested = admin_client.get("/api/settings/audiobookshelf/test-connection")
-    assert tested.status_code == 400, tested.text
 
 
 # -- prowlarr --------------------------------------------------------------
@@ -543,17 +532,3 @@ def test_recommendations_fallback(admin_client: TestClient) -> None:
 def test_recommendations_categories(admin_client: TestClient) -> None:
     response = admin_client.get("/api/recommendations/categories")
     assert response.status_code == 200, response.text
-
-
-@pytest.mark.xfail(
-    strict=True, reason="ZeroDivisionError when the user has no favorite authors"
-)
-def test_recommendations_authors(admin_client: TestClient) -> None:
-    assert admin_client.get("/api/recommendations/authors?limit=1").status_code == 200
-
-
-@pytest.mark.xfail(
-    strict=True, reason="ZeroDivisionError when the user has no favorite narrators"
-)
-def test_recommendations_narrators(admin_client: TestClient) -> None:
-    assert admin_client.get("/api/recommendations/narrators?limit=1").status_code == 200

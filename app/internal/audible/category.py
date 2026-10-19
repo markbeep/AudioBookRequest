@@ -19,6 +19,8 @@ async def list_combined_audible_books(
     exclude_requested_username: str | None = None,
 ) -> list[AudiobookWithRequests]:
     all_books: list[Audiobook] = []
+    if not search_terms:
+        return []
     books_per_term = max(1, num_results // len(search_terms))
 
     if exclude_requested_username:

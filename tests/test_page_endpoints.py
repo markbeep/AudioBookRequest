@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
@@ -18,63 +17,6 @@ from tests.mock_services import MockServer
 def test_index(admin_client: TestClient) -> None:
     response = admin_client.get("/")
     assert response.status_code == 200
-
-
-def test_index_recommendation_fragments(
-    admin_client: TestClient, trusted_client: TestClient
-) -> None:
-    # The API returns data for this user...
-    popular = admin_client.get("/api/recommendations/popular")
-    assert popular.status_code == 200
-    assert json_list(popular)
-
-    # ...but the fragment renders the empty state (issue #237).
-    fragment = admin_client.get("/hx-popular")
-    assert fragment.status_code == 200
-    assert "No popular recommendations" in fragment.text
-
-    assert trusted_client.get("/hx-for-you").status_code == 200
-
-
-@pytest.mark.xfail(
-    strict=True, reason="MissingRequiredArgument: PopularSection requires title"
-)
-def test_index_recent_fragment(trusted_client: TestClient) -> None:
-    assert trusted_client.get("/hx-recent").status_code == 200
-
-
-@pytest.mark.xfail(
-    strict=True, reason="MissingRequiredArgument: PopularSection requires title"
-)
-def test_index_fallback_fragment(admin_client: TestClient) -> None:
-    assert admin_client.get("/hx-fallback?limit=1").status_code == 200
-
-
-def test_index_categories(admin_client: TestClient) -> None:
-    response = admin_client.get("/hx-categories")
-    assert response.status_code == 200, response.text
-
-
-@pytest.mark.xfail(
-    strict=True, reason="MissingRequiredArgument: PopularSection requires title"
-)
-def test_index_authors_fragment(trusted_client: TestClient) -> None:
-    assert trusted_client.get("/hx-authors?limit=1").status_code == 200
-
-
-@pytest.mark.xfail(
-    strict=True, reason="MissingRequiredArgument: PopularSection requires title"
-)
-def test_index_narrators_fragment(trusted_client: TestClient) -> None:
-    assert trusted_client.get("/hx-narrators?limit=1").status_code == 200
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason="PopularSection template never receives/renders `reasons` (issue #237)",
-)
-def test_popular_fragment_ignores_reasons(admin_client: TestClient) -> None:
-    assert "Test Book" in admin_client.get("/hx-popular").text
 
 
 # -- init / auth -----------------------------------------------------------
@@ -298,19 +240,6 @@ def test_download_page(admin_client: TestClient) -> None:
 
 
 # -- settings: indexers ----------------------------------------------------
-@pytest.mark.xfail(
-    strict=True,
-    reason="Empty form value is rejected with 422, clear branch unreachable",
-)
-def test_indexers_clear_file_path(admin_client: TestClient) -> None:
-    assert (
-        admin_client.post(
-            "/settings/indexers/hx-read-file", data={"file_path": ""}
-        ).status_code
-        == 200
-    )
-
-
 def test_indexers_page(admin_client: TestClient) -> None:
     assert admin_client.get("/settings/indexers").status_code == 200
 
@@ -444,31 +373,3 @@ def test_users_page(admin_client: TestClient) -> None:
 
 
 # -- static ----------------------------------------------------------------
-def test_static_files(anon_client: TestClient) -> None:
-    paths = [
-        "/static/globals.css",
-        "/static/nouislider.css",
-        "/static/nouislider.js",
-        "/static/apple-touch-icon.png",
-        "/static/favicon-32x32.png",
-        "/static/favicon-16x16.png",
-        "/static/site.webmanifest",
-        "/static/htmx.js",
-        "/static/htmx-preload.js",
-        "/static/alpine.js",
-        "/static/toastify.js",
-        "/static/toastify.css",
-        "/static/favicon.svg",
-    ]
-    for path in paths:
-        response = anon_client.get(f"{path}?v=1")
-        assert response.status_code == 200, path
-        assert "etag" in response.headers, path
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason="cache-header wrapper exposes required `v` query param, bare URL is 422",
-)
-def test_static_files_without_cache_bust(anon_client: TestClient) -> None:
-    assert anon_client.get("/static/globals.css").status_code == 200

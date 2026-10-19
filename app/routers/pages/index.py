@@ -84,7 +84,7 @@ async def get_user_recommendations(
         description="Personalized recommendations based on your requests",
         empty="No recommendations available at this time. Request some books to start getting recommendations.",
         region=get_region_from_settings(),
-        auto_download=quality_config.get_auto_download(session),
+        auto_start_download=quality_config.get_auto_download(session),
     )
 
 
@@ -112,7 +112,7 @@ async def get_popular_recommendations(
         description="The most popular books on the instance",
         empty="No popular recommendations available at this time. Request some books to start getting recommendations.",
         region=get_region_from_settings(),
-        auto_download=quality_config.get_auto_download(session),
+        auto_start_download=quality_config.get_auto_download(session),
     )
 
 
@@ -177,12 +177,13 @@ async def get_recently_requested_recommendations(
 
     return catalog_response(
         "Index.PopularSection",
+        title="Recently Requested",
         reasons=reasons,
         user=user,
         description="Books that have been recently requested by users on the instance",
         empty="No recently requested recommendations available at this time. Request some books to start getting recommendations.",
         region=get_region_from_settings(),
-        auto_download=quality_config.get_auto_download(session),
+        auto_start_download=quality_config.get_auto_download(session),
     )
 
 
@@ -213,12 +214,13 @@ async def get_fallback_recommendations(
 
     return catalog_response(
         "Index.PopularSection",
+        title="Popular on Audible",
         reasons=reasons,
         user=user,
         description="Popular books from Audible",
         empty="No fallback recommendations available at this time.",
         region=region,
-        auto_download=quality_config.get_auto_download(session),
+        auto_start_download=quality_config.get_auto_download(session),
     )
 
 
@@ -250,12 +252,13 @@ async def get_popular_authors_recommendations(
 
     return catalog_response(
         "Index.PopularSection",
+        title="Popular Authors",
         reasons=reasons,
         user=user,
         description="Books from popular authors",
         empty="No popular author recommendations available at this time. Request some books to start getting recommendations.",
         region=region,
-        auto_download=quality_config.get_auto_download(session),
+        auto_start_download=quality_config.get_auto_download(session),
     )
 
 
@@ -287,10 +290,11 @@ async def get_popular_narrators_recommendations(
 
     return catalog_response(
         "Index.PopularSection",
+        title="Popular Narrators",
         reasons=reasons,
         user=user,
         description="Books from popular narrators",
         empty="No popular narrator recommendations available at this time. Request some books to start getting recommendations.",
         region=region,
-        auto_download=quality_config.get_auto_download(session),
+        auto_start_download=quality_config.get_auto_download(session),
     )
