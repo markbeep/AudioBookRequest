@@ -20,17 +20,17 @@
 
     {% if toast_error %}
         <script>
-            toast("{{toast_error|safe}}", "error");
+            toast({{ toast_error|tojson }}, "error");
         </script>
     {% endif %}
     {% if toast_success %}
         <script>
-            toast("{{toast_success|safe}}", "success");
+            toast({{ toast_success|tojson }}, "success");
         </script>
     {% endif %}
     {% if toast_info %}
         <script>
-            toast("{{toast_info|safe}}", "info");
+            toast({{ toast_info|tojson }}, "info");
         </script>
     {% endif %}
 </div>

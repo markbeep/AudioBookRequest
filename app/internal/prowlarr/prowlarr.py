@@ -4,10 +4,10 @@ import posixpath
 import time
 import uuid
 from datetime import datetime
-from typing import Literal
-from urllib.parse import urlencode
+from typing import Literal, cast
+from urllib.parse import parse_qs, urlencode, urlparse
 
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import ClientResponse, ClientSession, NonHttpUrlRedirectClientError
 from pydantic import BaseModel, TypeAdapter
 from sqlmodel import Session, select
 from torf import BdecodeError, MetainfoError, ReadError, Torrent
@@ -36,26 +36,58 @@ from app.util.connection import USER_AGENT
 from app.util.log import logger
 
 
+class DownloadFailed(Exception):
+    status: int
+    message: str
+
+    def __init__(self, status: int, message: str) -> None:
+        super().__init__(message)
+        self.status = status
+        self.message = message
+
+
+def _info_hash_from_magnet(magnet_url: str) -> str | None:
+    query = parse_qs(urlparse(magnet_url).query)
+    prefix = "urn:btih:"
+    for xt in query.get("xt", []):
+        if xt.lower().startswith(prefix):
+            return xt[len(prefix) :]
+    return None
+
+
 async def _get_torrent_info_hash(
     client_session: ClientSession, download_url: str
 ) -> str | None:
     logger.debug("Fetching torrent info hash", download_url=download_url)
-    async with client_session.get(
-        download_url, headers={"User-Agent": USER_AGENT}
-    ) as r:
-        if not r.ok:
-            logger.error("Failed to fetch torrent", download_url=download_url)
-            return None
-        content = await r.read()
-        try:
-            tor = Torrent.read_stream(content)
-            return tor.infohash
-        except (MetainfoError, ReadError, BdecodeError) as e:
-            logger.error(
-                "Error reading torrent info hash",
-                download_url=download_url,
-                error=str(e),
-            )
+    try:
+        async with client_session.get(
+            download_url, headers={"User-Agent": USER_AGENT}
+        ) as r:
+            if not r.ok:
+                logger.error("Failed to fetch torrent", download_url=download_url)
+                return None
+            content = await r.read()
+            try:
+                tor = Torrent.read_stream(content)
+                return tor.infohash
+            except (MetainfoError, ReadError, BdecodeError) as e:
+                logger.error(
+                    "Error reading torrent info hash",
+                    download_url=download_url,
+                    error=str(e),
+                )
+    except NonHttpUrlRedirectClientError as e:
+        # Some indexers redirect the torrent URL to a magnet URI.
+        location = str(cast(object, e.args[0])) if e.args else ""
+        logger.debug(
+            "Torrent download redirected",
+            download_url=download_url,
+            location=location,
+        )
+        return _info_hash_from_magnet(location)
+    except Exception as e:
+        logger.error("Failed to fetch torrent", download_url=download_url, error=str(e))
+    return None
 
 
 async def start_download(
@@ -89,32 +121,49 @@ async def start_download(
         headers=headers,
     ) as response:
         if not response.ok:
+            body = await response.text()
+            message = response.reason or "<unknown>"
+            try:
+                parsed = cast(object, json.loads(body))
+                if isinstance(parsed, dict):
+                    raw_message = cast(dict[str, object], parsed).get("message")
+                    if isinstance(raw_message, str) and raw_message.strip():
+                        message = raw_message.strip()
+            except ValueError:
+                if body.strip():
+                    message = body.strip()
+
             logger.error(
                 "Failed to start download",
                 guid=guid,
                 response=response,
-                text=await response.text(),
+                message=message,
             )
 
-            if manual_book_request:
-                await send_all_manual_notifications(
-                    EventEnum.on_failed_download,
-                    manual_book_request,
-                    {
-                        "errorStatus": str(response.status),
-                        "errorReason": response.reason or "<unknown>",
-                    },
+            replacements = {
+                "errorStatus": str(response.status),
+                "errorReason": message,
+            }
+            try:
+                if manual_book_request:
+                    await send_all_manual_notifications(
+                        EventEnum.on_failed_download,
+                        manual_book_request,
+                        replacements,
+                    )
+                else:
+                    await send_all_notifications(
+                        EventEnum.on_failed_download,
+                        asin_or_uuid,
+                        replacements,
+                    )
+            except Exception as e:
+                logger.error(
+                    "Failed to send download failure notification",
+                    guid=guid,
+                    error=str(e),
                 )
-            else:
-                await send_all_notifications(
-                    EventEnum.on_failed_download,
-                    asin_or_uuid,
-                    {
-                        "errorStatus": str(response.status),
-                        "errorReason": response.reason or "<unknown>",
-                    },
-                )
-            return response
+            raise DownloadFailed(response.status, message)
 
         # Find additional metadata/replacements to pass along notifications
         additional_replacements: dict[str, str] = {}
@@ -125,10 +174,8 @@ async def start_download(
                 ):
                     additional_replacements["torrentInfoHash"] = info_hash
             elif prowlarr_source.magnet_url and prowlarr_source.protocol == "torrent":
-                info_hash = prowlarr_source.magnet_url.replace("magnet:?", "")
-                info_hash = info_hash.replace("xt=urn:btih:", "")
-                info_hash = info_hash.split("&")[0]
-                additional_replacements["torrentInfoHash"] = info_hash
+                if info_hash := _info_hash_from_magnet(prowlarr_source.magnet_url):
+                    additional_replacements["torrentInfoHash"] = info_hash
 
             additional_replacements["sourceSizeMB"] = str(prowlarr_source.size_MB)
             additional_replacements["sourceTitle"] = prowlarr_source.title

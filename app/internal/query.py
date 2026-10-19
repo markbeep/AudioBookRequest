@@ -11,7 +11,11 @@ from sqlmodel import Session
 from app.internal.audiobookshelf.client import abs_trigger_scan
 from app.internal.audiobookshelf.config import abs_config
 from app.internal.models import Audiobook, ManualBookRequest, ProwlarrSource
-from app.internal.prowlarr.prowlarr import query_prowlarr, start_download
+from app.internal.prowlarr.prowlarr import (
+    DownloadFailed,
+    query_prowlarr,
+    start_download,
+)
 from app.internal.prowlarr.util import prowlarr_config
 from app.internal.ranking.download_ranking import rank_sources
 from app.util.db import get_session
@@ -91,23 +95,24 @@ async def query_sources(
 
         # start download if requested
         if start_auto_download and not book.downloaded and len(ranked) > 0:
-            resp = await start_download(
-                session=session,
-                client_session=client_session,
-                guid=ranked[0].guid,
-                indexer_id=ranked[0].indexer_id,
-                asin_or_uuid=asin_or_uuid,
-                prowlarr_source=ranked[0],
-            )
-            if resp.ok:
-                # Try to trigger an ABS scan to pick up new media
-                try:
-                    if abs_config.is_valid(session):
-                        await abs_trigger_scan(session, client_session)
-                except Exception:
-                    logger.error("Failed to trigger ABS scan after starting download")
-            else:
-                raise HTTPException(status_code=500, detail="Failed to start download")
+            try:
+                await start_download(
+                    session=session,
+                    client_session=client_session,
+                    guid=ranked[0].guid,
+                    indexer_id=ranked[0].indexer_id,
+                    asin_or_uuid=asin_or_uuid,
+                    prowlarr_source=ranked[0],
+                )
+            except DownloadFailed as e:
+                raise HTTPException(status_code=500, detail=e.message) from e
+
+            # Try to trigger an ABS scan to pick up new media
+            try:
+                if abs_config.is_valid(session):
+                    await abs_trigger_scan(session, client_session)
+            except Exception:
+                logger.error("Failed to trigger ABS scan after starting download")
 
         return QueryResult(
             sources=ranked,

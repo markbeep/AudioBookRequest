@@ -36,7 +36,7 @@ from app.internal.notifications import (
     send_all_manual_notifications,
     send_all_notifications,
 )
-from app.internal.prowlarr.prowlarr import start_download
+from app.internal.prowlarr.prowlarr import DownloadFailed, start_download
 from app.internal.prowlarr.util import ProwlarrMisconfigured, prowlarr_config
 from app.internal.query import QueryResult, background_start_query, query_sources
 from app.internal.ranking.quality import quality_config
@@ -357,17 +357,17 @@ async def download_book(
 ):
     _ = admin_user
     try:
-        resp = await start_download(
+        await start_download(
             session=session,
             client_session=client_session,
             guid=body.guid,
             indexer_id=body.indexer_id,
             asin_or_uuid=asin_or_uuid,
         )
+    except DownloadFailed as e:
+        raise HTTPException(status_code=500, detail=e.message) from e
     except ProwlarrMisconfigured as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    if not resp.ok:
-        raise HTTPException(status_code=500, detail="Failed to start download")
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
     if abs_config.is_valid(session):
         background_task.add_task(background_abs_trigger_scan)
