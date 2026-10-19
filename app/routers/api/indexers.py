@@ -14,8 +14,6 @@ from app.internal.indexers.indexer_util import (
 from app.internal.models import BaseSQLModel, GroupEnum
 from app.util.connection import get_connection
 from app.util.db import get_session
-from app.util.log import logger
-from app.util.toast import ToastException
 
 router = APIRouter(prefix="/indexers", tags=["Indexers"])
 
@@ -53,9 +51,6 @@ async def update_indexer(
             client_session,
             ignore_missing_booleans=True,
         )
-    except ToastException as e:
-        logger.error(f"Error updating indexer {indexer}: {e.message}")
-        raise HTTPException(status_code=400, detail=e.message)
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON body")
     except ValueError as e:

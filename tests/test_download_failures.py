@@ -12,6 +12,7 @@ from app.internal.models import (
     NotificationBodyTypeEnum,
 )
 from tests.constants import ASIN
+from tests.http import json_object
 from tests.mock_services import MockServer
 
 
@@ -80,4 +81,30 @@ def test_issue_229_notification_failure_does_not_mask_error(
 
     response = _grab(admin_client)
     assert response.status_code == 500
+    assert "VIP" in response.text
+
+
+def test_api_auto_download_returns_json_error(
+    admin_client: TestClient, prowlarr: MockServer
+) -> None:
+    prowlarr.state["grab_status"] = 409
+    prowlarr.state["grab_body"] = {"message": "Download blocked: VIP torrent"}
+
+    response = admin_client.post(f"/api/requests/{ASIN}/auto-download")
+    assert response.status_code == 500
+    assert response.headers["content-type"].startswith("application/json")
+    assert json_object(response)["detail"] == "Download blocked: VIP torrent"
+
+
+def test_page_auto_download_still_returns_toast(
+    admin_client: TestClient, prowlarr: MockServer
+) -> None:
+    prowlarr.state["grab_status"] = 409
+    prowlarr.state["grab_body"] = {"message": "Download blocked: VIP torrent"}
+
+    response = admin_client.post(
+        f"/wishlist/hx-auto-download/{ASIN}", headers={"HX-Request": "true"}
+    )
+    assert response.status_code < 500
+    assert "toast(" in response.text
     assert "VIP" in response.text

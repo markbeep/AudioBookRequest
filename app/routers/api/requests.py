@@ -44,7 +44,6 @@ from app.util.censor import censor
 from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.log import logger
-from app.util.toast import ToastException
 
 router = APIRouter(prefix="/requests", tags=["Requests"])
 
@@ -383,14 +382,11 @@ async def start_auto_download_endpoint(
     trusted_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.trusted))],
 ):
     _ = trusted_user
-    try:
-        await query_sources(
-            asin_or_uuid=asin_or_uuid,
-            start_auto_download=True,
-            session=session,
-            client_session=client_session,
-        )
-    except HTTPException as e:
-        raise ToastException(e.detail) from None
+    await query_sources(
+        asin_or_uuid=asin_or_uuid,
+        start_auto_download=True,
+        session=session,
+        client_session=client_session,
+    )
 
     return Response(status_code=204)
