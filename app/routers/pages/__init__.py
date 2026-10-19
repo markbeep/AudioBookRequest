@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from . import (
     auth,
+    favorite_authors,
     index,
     init,
     login,
@@ -16,6 +17,7 @@ from . import (
 router = APIRouter()
 
 router.include_router(auth.router)
+router.include_router(favorite_authors.router)
 router.include_router(index.router)
 router.include_router(init.router)
 router.include_router(login.router)

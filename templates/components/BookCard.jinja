@@ -78,7 +78,7 @@
     <div class="text-xs font-semibold line-clamp-1"
          title="Authors: {{ book.authors | join(", ") }}">
         {% for author in book.authors[:2] %}
-            <a href="{{ base_url }}/search?q={{ author }}"
+            <a href="{{ base_url }}/search?q={{ author | urlencode }}&search_type=author"
                title="Search for {{ author }}"
                class="hover:underline">
                 {{ author }}

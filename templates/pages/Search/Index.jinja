@@ -2,21 +2,26 @@
     user: DetailedUser,
     search_term: str,
     selected_region: audible_region_type,
+    selected_search_type: str = "all",
     search_results: list[AudiobookSearchResult],
     page: int,
     auto_start_download: bool,
     prowlarr_configured: bool,
+    is_favorite: bool = False,
     suggestions: list[str] = [],
 #}
 
 <BaseLayout title="Search" user={{ user }}>
 <script>
     const onSearch = () => {
-        const search_term = document.querySelector("input").value;
+        const form = document.querySelector("form");
+        const search_term = form.querySelector("input").value;
+        const search_type = form.querySelector("select[name='search_type']").value;
+        const region = form.querySelector("select[name='region']").value;
         document.getElementById("search").disabled = true;
         document.getElementById("search-text").style.display = "none";
         document.getElementById("search-spinner").style.display = "inline-block";
-        window.location.href = `/search?q=${encodeURIComponent(search_term)}`;
+        window.location.href = `/search?q=${encodeURIComponent(search_term)}&search_type=${encodeURIComponent(search_type)}&region=${encodeURIComponent(region)}`;
     };
     const onPageChange = page => {
         const url = new URL(window.location);
@@ -54,6 +59,13 @@
 
             <Search.Suggestions id="search-suggestions" suggestions={{ suggestions }} />
 
+            <select class="select join-item max-w-24 sm:max-w-28 focus:z-10"
+                    name="search_type">
+                <option value="all" {% if selected_search_type.__eq__("all") %}selected="selected"{% endif %}>All</option>
+                <option value="title" {% if selected_search_type.__eq__("title") %}selected="selected"{% endif %}>Title</option>
+                <option value="author" {% if selected_search_type.__eq__("author") %}selected="selected"{% endif %}>Author</option>
+            </select>
+
             <select class="select join-item max-w-16 sm:max-w-20 focus:z-10"
                     name="region">
                 {% for region in audible_regions.keys() %}
@@ -68,6 +80,14 @@
                 <span id="search-spinner" class="loading hidden"></span>
             </button>
         </form>
+        {% if search_term and selected_search_type == "author" %}
+            <form method="post" action="{{ base_url }}/search/favorite-author">
+                <input type="hidden" name="author" value="{{ search_term }}" />
+                <button class="btn btn-sm" type="submit" {% if is_favorite %}disabled{% endif %}>
+                    {{ "Author saved" if is_favorite else "Save author as favorite" }}
+                </button>
+            </form>
+        {% endif %}
         {% block book_results %}
             <div id="book-results"
                  class="min-w-[60vw] max-w-[90vw] sm:max-w-[80vw] h-full grid gap-1 gap-y-2 sm:gap-y-4 sm:gap-2 p-1 grid-flow-row grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7">
