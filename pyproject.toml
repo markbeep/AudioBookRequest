@@ -56,7 +56,7 @@ ignore_case=true
 
 [tool.basedpyright]
 typeCheckingMode = "all"
-include = ["app"]
+include = ["app", "tests"]
 reportDeprecated = false
 reportUnusedCallResult = false
 allowedUntypedLibraries = ["apscheduler", "torrent_parser", "jinjax"]
@@ -65,5 +65,7 @@ allowedUntypedLibraries = ["apscheduler", "torrent_parser", "jinjax"]
 dev = [
     "basedpyright>=1.39.9",
     "djlint>=1.42.1",
+    "httpx2>=2.14.0",
+    "pytest>=9.1.1",
     "ruff>=0.15.22",
 ]

@@ -31,6 +31,9 @@ format_html:
 types:
     uv run basedpyright
 
+test:
+    uv run pytest tests
+
 test_format:
     uv run djlint templates --extension=jinja --check
     uv run ruff format --check app

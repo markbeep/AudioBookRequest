@@ -41,6 +41,9 @@ class StringConfigCache[L: str]:
         # per instance, otherwise every config in the app shares one dict
         self._cache: dict[L, str] = {}
 
+    def flush(self):
+        self._cache = {}
+
     @overload
     def get(self, session: Session, key: L) -> str | None: ...
 
