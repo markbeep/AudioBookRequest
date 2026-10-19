@@ -16,9 +16,8 @@ root = Path("static")
 etag_cache: dict[PathLike[str] | str, str] = {}
 
 
-def add_cache_headers(func: Callable[..., FileResponse]):
-    def wrapper(v: object):
-        _ = v
+def add_cache_headers(func: Callable[[], FileResponse]) -> Callable[[], FileResponse]:
+    def wrapper() -> FileResponse:
         file = func()
         etag = etag_cache.get(file.path)
         if not etag or Settings().app.debug:

@@ -131,13 +131,13 @@ async def read_indexers(
 
 @router.post("/hx-read-file")
 async def read_file_configuration(
-    file_path: Annotated[str, Form()],
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    file_path: Annotated[str | None, Form()] = None,
 ):
     _ = admin_user
-    if file_path.strip() == "":
+    if file_path is None or file_path.strip() == "":
         indexer_configuration_cache.set(session, "indexers_configuration_file", "")
         raise ToastException("Configuration file cleared", "success")
     try:
