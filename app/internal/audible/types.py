@@ -1,9 +1,8 @@
 from abc import ABCMeta, abstractmethod
-from datetime import datetime, timezone
-from typing import Literal
+from datetime import UTC, datetime
+from typing import Literal, override
 
 from pydantic import BaseModel
-from typing_extensions import override
 
 from app.internal.env_settings import Settings
 from app.internal.models import Audiobook
@@ -67,7 +66,7 @@ class AudibleProduct(BaseModel):
 
         release_date = datetime.fromisoformat(self.release_date)
         if release_date.tzinfo is None:
-            release_date = release_date.replace(tzinfo=timezone.utc)
+            release_date = release_date.replace(tzinfo=UTC)
 
         return Audiobook(
             asin=self.asin,

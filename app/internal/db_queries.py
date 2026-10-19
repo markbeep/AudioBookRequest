@@ -1,4 +1,5 @@
-from typing import Literal, Sequence, cast
+from collections.abc import Sequence
+from typing import Literal, cast
 
 from pydantic import BaseModel
 from sqlalchemy import func

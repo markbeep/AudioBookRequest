@@ -53,7 +53,7 @@ async def read_prowlarr(
         selected_categories=selected,
         indexers=indexers,
         selected_indexers=selected_indexers,
-        prowlarr_misconfigured=True if prowlarr_misconfigured else False,
+        prowlarr_misconfigured=bool(prowlarr_misconfigured),
     )
 
 

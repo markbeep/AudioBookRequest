@@ -1,5 +1,5 @@
 import asyncio
-from typing import Awaitable
+from collections.abc import Awaitable
 
 from aiohttp import ClientSession
 from sqlmodel import Session, select
@@ -123,7 +123,7 @@ async def list_category_audible_books(
         coros.append(_fetch_category(category_name))
     await asyncio.gather(*coros)
 
-    for _, v in recommendations.items():
+    for v in recommendations.values():
         for b in v:
             for r in b.book.requests:
                 session.refresh(r)

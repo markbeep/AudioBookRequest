@@ -2,7 +2,7 @@ import json
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Literal, Union, cast
+from typing import Annotated, Literal, cast
 
 from pydantic import BaseModel, ConfigDict
 from sqlmodel import JSON, Column, DateTime, Field, SQLModel, func
@@ -43,11 +43,9 @@ class User(BaseSQLModel, table=True):
 
     def is_above(self, group: GroupEnum) -> bool:
         if group == "admin":
-            if self.group != GroupEnum.admin:
-                return False
-        elif group == "trusted":
-            if self.group not in [GroupEnum.admin, GroupEnum.trusted]:
-                return False
+            return self.group == GroupEnum.admin
+        if group == "trusted":
+            return self.group in [GroupEnum.admin, GroupEnum.trusted]
         return True
 
     def can_download(self):
@@ -83,7 +81,7 @@ class Audiobook(BaseSQLModel, table=True):
     )
     downloaded: bool = False
 
-    requests: list["AudiobookRequest"] = Relationship(back_populates="audiobook")  # pyright: ignore[reportAny]
+    requests: list[AudiobookRequest] = Relationship(back_populates="audiobook")  # pyright: ignore[reportAny]
 
     model_config: SQLModelConfig = cast(
         SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))
@@ -215,7 +213,7 @@ class UsenetSource(BaseSource):
 
 
 ProwlarrSource = Annotated[
-    Union[TorrentSource, UsenetSource], Field(discriminator="protocol")
+    TorrentSource | UsenetSource, Field(discriminator="protocol")
 ]
 
 

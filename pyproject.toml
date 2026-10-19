@@ -61,6 +61,10 @@ reportDeprecated = false
 reportUnusedCallResult = false
 allowedUntypedLibraries = ["apscheduler", "torrent_parser", "jinjax"]
 
+[tool.ruff.lint]
+# External service calls intentionally degrade to fallbacks on any error.
+ignore = ["BLE001"]
+
 [dependency-groups]
 dev = [
     "basedpyright>=1.40.2",

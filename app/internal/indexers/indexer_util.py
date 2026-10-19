@@ -1,6 +1,7 @@
 # pyright: reportExplicitAny=false
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from aiohttp import ClientSession
 from pydantic import BaseModel
@@ -45,7 +46,7 @@ async def get_indexer_contexts(
     for Indexer in indexers:
         try:
             configuration = await Indexer.get_configurations(container)
-            filtered_configuration: dict[str, IndexerConfiguration[Any]] = dict()
+            filtered_configuration: dict[str, IndexerConfiguration[Any]] = {}
             for k, v in vars(configuration).items():  # pyright: ignore[reportAny]
                 if isinstance(v, IndexerConfiguration):
                     filtered_configuration[k] = v
@@ -123,11 +124,7 @@ async def update_single_indexer(
         else:
             indexer_configuration_cache.set(session, key, str(value))
 
-    if "enabled" in values and (
-        isinstance(e := values["enabled"], str)
-        or isinstance(e, bool)
-        or isinstance(e, int)
-    ):
+    if "enabled" in values and isinstance(e := values["enabled"], (str, bool, int)):
         logger.debug("Setting enabled state", enabled=values["enabled"])
         enabled = get_bool(e) or False
         await updated_context.indexer.set_enabled(

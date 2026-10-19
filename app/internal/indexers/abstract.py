@@ -28,7 +28,6 @@ class AbstractIndexer[T: Configurations](ABC):
         Returns a list of configuration options that will be configurable on the frontend.
         This should not execute any slow operations.
         """
-        pass
 
     async def is_enabled(
         self,
@@ -66,14 +65,12 @@ class AbstractIndexer[T: Configurations](ABC):
         a general search feature, a general search can be executed here
         and later used to check against individual sources.
         """
-        pass
 
     @abstractmethod
     async def is_matching_source(
         self, source: ProwlarrSource, container: SessionContainer
     ) -> bool:
         """Given a source from Prowlarr, returns true if that source matches this indexer."""
-        pass
 
     @abstractmethod
     async def edit_source_metadata(
@@ -84,4 +81,3 @@ class AbstractIndexer[T: Configurations](ABC):
 
         This can be used in combiniation with the data from `setup` to match up books more accurately.
         """
-        pass

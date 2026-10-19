@@ -1,4 +1,5 @@
-from typing import final
+from typing import ClassVar, final
+
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
@@ -17,7 +18,7 @@ class DynamicSessionMiddleware:
         self,
         app: ASGIApp,
         secret_key: str,
-        linker: "DynamicMiddlewareLinker",
+        linker: DynamicMiddlewareLinker,
         max_age: Second | None = None,
     ):
         self.app = app
@@ -58,7 +59,7 @@ class DynamicMiddlewareLinker:
     the options to take effect immediately instead of having to restart the server
     """
 
-    middlewares: list[DynamicSessionMiddleware] = []
+    middlewares: ClassVar[list[DynamicSessionMiddleware]] = []
 
     def add_middleware(self, middleware: DynamicSessionMiddleware):
         self.middlewares.append(middleware)

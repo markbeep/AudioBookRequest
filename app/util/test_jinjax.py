@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+import sys
 from pathlib import Path
 from types import EllipsisType
 from typing import cast
@@ -42,7 +43,7 @@ def main():
     args = argparser.parse_args()
 
     templates_dir = cast(str, args.templates_dir)
-    extensions = set(["." + x.lstrip(".") for x in cast(list[str], args.extensions)])
+    extensions = {"." + x.lstrip(".") for x in cast(list[str], args.extensions)}
     global_vars = set(cast(list[str], args.globals))
     filters = set(cast(list[str], args.filters))
 
@@ -80,7 +81,7 @@ def main():
         print(f"\t[yellow]Unused global variable:[/yellow] {g}")
 
     if failed > 0:
-        exit(1)
+        sys.exit(1)
 
 
 env = Environment(loader=FileSystemLoader("templates"))

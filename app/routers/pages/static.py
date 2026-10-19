@@ -1,7 +1,7 @@
 import hashlib
+from collections.abc import Callable
 from os import PathLike
 from pathlib import Path
-from typing import Callable
 
 from fastapi import APIRouter
 from fastapi.responses import FileResponse

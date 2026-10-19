@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import posixpath
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
 from aiohttp import ClientSession
@@ -153,22 +153,20 @@ async def abs_list_library_items(
             cover_image = posixpath.join(base_url, f"api/items/{item.id}/cover")
             # Duration in seconds -> minutes
             try:
-                runtime_length_min = int(round(item.media.duration / 60))
+                runtime_length_min = round(item.media.duration / 60)
             except Exception:
                 runtime_length_min = 0
 
             if metadata.publishedDate:
                 try:
                     # Try ISO format
-                    release_date = datetime.fromisoformat(
-                        metadata.publishedDate.replace("Z", "+00:00")
-                    )
+                    release_date = datetime.fromisoformat(metadata.publishedDate)
                     if release_date.tzinfo is None:
-                        release_date = release_date.replace(tzinfo=timezone.utc)
+                        release_date = release_date.replace(tzinfo=UTC)
                 except Exception:
-                    release_date = datetime.now(timezone.utc)
+                    release_date = datetime.now(UTC)
             else:
-                release_date = datetime.now(timezone.utc)
+                release_date = datetime.now(UTC)
 
             if not metadata.asin or not title:
                 logger.warning(
@@ -282,11 +280,10 @@ async def abs_book_exists(
             logger.debug("ABS: search result missing title", item=it)
             continue
         authors = it.media.metadata.authors
-        if _normalize(title) == norm_title:
-            if not norm_authors or any(
-                _normalize(a.name) in norm_authors for a in authors
-            ):
-                return True
+        if _normalize(title) == norm_title and (
+            not norm_authors or any(_normalize(a.name) in norm_authors for a in authors)
+        ):
+            return True
     return False
 
 

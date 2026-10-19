@@ -205,7 +205,7 @@
 
 ### Code Refactoring
 
-* replace "older" `Optional` tyings with `|None` ([6727dc6](https://github.com/markbeep/AudioBookRequest/commit/6727dc67ba643e84de5cbc6e6b5259872e3cf9ed))
+* replace "older" `Optional` typings with `|None` ([6727dc6](https://github.com/markbeep/AudioBookRequest/commit/6727dc67ba643e84de5cbc6e6b5259872e3cf9ed))
 * rework how audiobooks are cached and how requests are handled ([#175](https://github.com/markbeep/AudioBookRequest/issues/175)) ([096d04e](https://github.com/markbeep/AudioBookRequest/commit/096d04e33d055a5bc0c28b4f4b41c5a783b53b40))
 
 

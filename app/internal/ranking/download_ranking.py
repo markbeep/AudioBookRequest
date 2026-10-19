@@ -1,6 +1,7 @@
 import asyncio
+from collections.abc import Callable
 from functools import cmp_to_key
-from typing import Callable, final
+from typing import final
 
 import pydantic
 from aiohttp import ClientSession

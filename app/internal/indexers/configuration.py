@@ -38,16 +38,12 @@ class Configurations(BaseModel):
     fields will be generated for them on the frontend.
     """
 
-    pass
-
 
 class ValuedConfigurations:
     """
     Field names need to be unique across all indexers
     and match up with the fields of the `Configurations` object.
     """
-
-    pass
 
 
 class ConfigurationException(ValueError):

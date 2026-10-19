@@ -2,7 +2,8 @@
 
 import html
 import json
-from typing import Any, Literal, Mapping
+from collections.abc import Mapping
+from typing import Any, Literal
 
 import markdown
 from fastapi.responses import HTMLResponse
@@ -29,7 +30,7 @@ templates = Jinja2Blocks(
 )
 
 
-def _to_js_string(val: str | int | float) -> str:
+def _to_js_string(val: str | float) -> str:
     return html.escape(f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'")
 
 

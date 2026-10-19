@@ -48,11 +48,13 @@ async def test_chaptarr_double(mock_server: MockServer) -> None:
 
 @pytest.mark.anyio
 async def test_notification_double(mock_server: MockServer) -> None:
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
+    async with (
+        aiohttp.ClientSession() as session,
+        session.post(
             f"{mock_server.base_url}/notify/test", json={"hello": "world"}
-        ) as r:
-            assert r.status == 200
+        ) as r,
+    ):
+        assert r.status == 200
 
     assert mock_server.requests_to("/notify/test")
     assert (

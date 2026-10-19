@@ -64,9 +64,9 @@ class oidcConfig(StringConfigCache[oidcConfigKey]):
                     ):
                         self.set(session, "oidc_logout_url", data.end_session_endpoint)
         except Exception as e:
-            logger.error(f"Failed to set OIDC endpoint: {endpoint}. Error: {str(e)}")
+            logger.error(f"Failed to set OIDC endpoint: {endpoint}. Error: {e!s}")
             raise InvalidOIDCConfiguration(
-                f"Failed to set OIDC endpoint: {endpoint}. Error: {str(e)}"
+                f"Failed to set OIDC endpoint: {endpoint}. Error: {e!s}"
             ) from None
 
     def get_redirect_scheme(self, session: Session) -> Literal["http", "https", "auto"]:

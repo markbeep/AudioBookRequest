@@ -5,7 +5,7 @@ import os
 import shutil
 import tempfile
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -29,39 +29,39 @@ os.environ.update(
 )
 os.chdir(ROOT)
 
-from fastapi.testclient import TestClient  # noqa: E402
-from sqlmodel import Session  # noqa: E402
+from fastapi.testclient import TestClient
+from sqlmodel import Session
 
-from app.internal import models  # noqa: E402
-from app.internal.audiobookshelf.config import abs_config  # noqa: E402
-from app.internal.audible.search import search_cache, search_suggestions_cache  # noqa: E402
-from app.internal.audible.similar import sims_cache  # noqa: E402
-from app.internal.auth.authentication import create_user  # noqa: E402
-from app.internal.auth.config import auth_config  # noqa: E402
-from app.internal.auth.login_types import LoginTypeEnum  # noqa: E402
-from app.internal.auth.oidc_config import oidc_config  # noqa: E402
-from app.internal.indexers.configuration import indexer_configuration_cache  # noqa: E402
-from app.internal.indexers.mam import MamIndexer  # noqa: E402
-from app.internal.models import (  # noqa: E402
+from app.internal import models
+from app.internal.audible.search import search_cache, search_suggestions_cache
+from app.internal.audible.similar import sims_cache
+from app.internal.audiobookshelf.config import abs_config
+from app.internal.auth.authentication import create_user
+from app.internal.auth.config import auth_config
+from app.internal.auth.login_types import LoginTypeEnum
+from app.internal.auth.oidc_config import oidc_config
+from app.internal.indexers.configuration import indexer_configuration_cache
+from app.internal.indexers.mam import MamIndexer
+from app.internal.models import (
     Audiobook,
     AudiobookRequest,
     GroupEnum,
     ManualBookRequest,
 )
-from app.internal.prowlarr.util import (  # noqa: E402
+from app.internal.prowlarr.util import (
     prowlarr_config,
     prowlarr_indexer_cache,
     prowlarr_source_cache,
 )
-from app.internal.ranking.quality import quality_config  # noqa: E402
-from app.util.db import engine  # noqa: E402
-from tests.constants import ASIN, DOWNLOADED_ASIN, MANUAL_ID  # noqa: E402
+from app.internal.ranking.quality import quality_config
+from app.util.db import engine
+from tests.constants import ASIN, DOWNLOADED_ASIN, MANUAL_ID
 
 # app.main performs DB work at import time, so the schema must exist first.
 models.BaseSQLModel.metadata.create_all(engine)
 
-import app.main  # noqa: E402
-from tests import mock_services  # noqa: E402
+import app.main
+from tests import mock_services
 
 
 def _flush_caches() -> None:
@@ -94,7 +94,7 @@ def _seed() -> None:
                 authors=["Mock Author"],
                 narrators=["Mock Narrator"],
                 cover_image=None,
-                release_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
+                release_date=datetime(2020, 1, 1, tzinfo=UTC),
                 runtime_length_min=600,
                 downloaded=False,
             )
@@ -107,7 +107,7 @@ def _seed() -> None:
                 authors=["Mock Author"],
                 narrators=["Mock Narrator"],
                 cover_image=None,
-                release_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
+                release_date=datetime(2020, 1, 1, tzinfo=UTC),
                 runtime_length_min=300,
                 downloaded=True,
             )

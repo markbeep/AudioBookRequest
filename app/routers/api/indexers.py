@@ -38,7 +38,7 @@ async def update_indexer(
         body = await request.json()  # pyright: ignore[reportAny]
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Body must be a JSON object")
-        for key in body.keys():  # pyright: ignore[reportUnknownVariableType]
+        for key in body:  # pyright: ignore[reportUnknownVariableType]
             if not isinstance(key, str):
                 raise HTTPException(
                     status_code=400, detail="All keys in the body must be strings"

@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 from pydantic import BaseModel, Field
@@ -22,7 +22,7 @@ class UserResponse(BaseModel):
     root: bool = Field(description="Whether this is the root admin user")
 
     @classmethod
-    def from_user(cls, user: User) -> "UserResponse":
+    def from_user(cls, user: User) -> UserResponse:
         return cls(
             username=user.username,
             group=user.group,
@@ -49,7 +49,7 @@ class UserUpdate(BaseModel):
 
 
 class UsersListResponse(BaseModel):
-    users: List[UserResponse] = Field(description="List of users")
+    users: list[UserResponse] = Field(description="List of users")
     total: int = Field(description="Total number of users")
 
 

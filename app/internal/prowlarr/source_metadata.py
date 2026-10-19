@@ -1,5 +1,5 @@
 import asyncio
-from typing import Awaitable
+from collections.abc import Awaitable
 
 from app.internal.indexers.abstract import SessionContainer
 from app.internal.indexers.indexer_util import get_indexer_contexts

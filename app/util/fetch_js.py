@@ -2,8 +2,9 @@
 To fetch javascript files for local development
 """
 
-import requests
 from pathlib import Path
+
+import requests
 
 files = {
     "htmx-preload.js": "https://unpkg.com/htmx-ext-preload@2.1.0/preload.js",
@@ -18,20 +19,20 @@ def fetch_scripts(debug: bool) -> None:
     root = Path("static")
 
     if debug:
-        if all((root / file_name).exists() for file_name in files.keys()):
+        if all((root / file_name).exists() for file_name in files):
             return
 
         for file_name, url in files.items():
             response = requests.get(url)
             if not response.ok:
-                raise Exception(
+                raise RuntimeError(
                     f"Failed to fetch {file_name} from {url}. Status code: {response.status_code}"
                 )
             with open(root / file_name, "w") as f:
                 f.write(response.text)
 
     else:
-        for file_name in files.keys():
+        for file_name in files:
             if not (root / file_name).exists():
                 raise FileNotFoundError(
                     f"{file_name} must be present in static directory for production. This is most likely an error with the docker image."

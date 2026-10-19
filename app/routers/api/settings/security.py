@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
 
 from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, HTTPException, Response, Security
@@ -72,16 +72,16 @@ def reset_auth_secret(
 
 class UpdateSecuritySettings(BaseModel):
     login_type: LoginTypeEnum
-    access_token_expiry: Optional[int] = None
-    min_password_length: Optional[int] = None
-    oidc_endpoint: Optional[str] = None
-    oidc_client_id: Optional[str] = None
-    oidc_client_secret: Optional[str] = None
-    oidc_scope: Optional[str] = None
-    oidc_username_claim: Optional[str] = None
-    oidc_group_claim: Optional[str] = None
-    oidc_redirect_scheme: Optional[Literal["http", "https", "auto"]] = None
-    oidc_logout_url: Optional[str] = None
+    access_token_expiry: int | None = None
+    min_password_length: int | None = None
+    oidc_endpoint: str | None = None
+    oidc_client_id: str | None = None
+    oidc_client_secret: str | None = None
+    oidc_scope: str | None = None
+    oidc_username_claim: str | None = None
+    oidc_group_claim: str | None = None
+    oidc_redirect_scheme: Literal["http", "https", "auto"] | None = None
+    oidc_logout_url: str | None = None
 
 
 @router.patch("", status_code=204)

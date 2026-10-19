@@ -167,16 +167,24 @@ async def start_download(
 
         # Find additional metadata/replacements to pass along notifications
         additional_replacements: dict[str, str] = {}
-        if prowlarr_source:
-            if prowlarr_source.download_url and prowlarr_source.protocol == "torrent":
-                if info_hash := await _get_torrent_info_hash(
+        if (
+            prowlarr_source
+            and prowlarr_source.download_url
+            and prowlarr_source.protocol == "torrent"
+            and (
+                info_hash := await _get_torrent_info_hash(
                     client_session, prowlarr_source.download_url
-                ):
-                    additional_replacements["torrentInfoHash"] = info_hash
-            elif prowlarr_source.magnet_url and prowlarr_source.protocol == "torrent":
-                if info_hash := _info_hash_from_magnet(prowlarr_source.magnet_url):
-                    additional_replacements["torrentInfoHash"] = info_hash
+                )
+            )
+        ) or (
+            prowlarr_source
+            and prowlarr_source.magnet_url
+            and prowlarr_source.protocol == "torrent"
+            and (info_hash := _info_hash_from_magnet(prowlarr_source.magnet_url))
+        ):
+            additional_replacements["torrentInfoHash"] = info_hash
 
+        if prowlarr_source:
             additional_replacements["sourceSizeMB"] = str(prowlarr_source.size_MB)
             additional_replacements["sourceTitle"] = prowlarr_source.title
             additional_replacements["indexerName"] = prowlarr_source.indexer

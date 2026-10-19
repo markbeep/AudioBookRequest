@@ -1,9 +1,10 @@
 import json
-import os
+from collections.abc import Mapping
 from contextlib import asynccontextmanager
-from typing import Annotated, Literal, Mapping, cast
+from typing import Annotated, Literal, cast
 
 from aiohttp import ClientSession
+from anyio import Path
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import APIRouter, Depends, FastAPI, Form, Request, Security
 from sqlmodel import Session
@@ -58,30 +59,29 @@ async def read_indexer_file(
     if not file_path:
         return
     try:
-        with open(file_path, "r") as f:
-            values = cast(object, json.load(f))
-            global last_modified
-            if (lm := os.path.getmtime(file_path)) == last_modified:
-                return
-            else:
-                last_modified = lm
+        config_path = Path(file_path)
+        values = cast(object, json.loads(await config_path.read_text()))
+        global last_modified
+        if (lm := (await config_path.stat()).st_mtime) == last_modified:
+            return
+        last_modified = lm
     except Exception as e:
         raise ValueError(f"Failed to read file: {e}")
 
     if not isinstance(values, dict):
-        raise ValueError("File does not contain a valid JSON object")
+        raise TypeError("File does not contain a valid JSON object")
 
-    for key in values.keys():  # pyright: ignore[reportUnknownVariableType]
+    for key in values:  # pyright: ignore[reportUnknownVariableType]
         if isinstance(key, str):
-            raise ValueError("File contains non-string keys")
+            raise TypeError("File contains non-string keys")
     values = cast(Mapping[str, object], values)
 
     for indexer, indexer_values in values.items():
         if not isinstance(indexer_values, dict):
-            raise ValueError(f"Indexer values for {indexer} is not a valid object/dict")
-        for key in indexer_values.keys():  # pyright: ignore[reportUnknownVariableType]
+            raise TypeError(f"Indexer values for {indexer} is not a valid object/dict")
+        for key in indexer_values:  # pyright: ignore[reportUnknownVariableType]
             if not isinstance(key, str):
-                raise ValueError(
+                raise TypeError(
                     f"Indexer values for {indexer} contains non-string keys"
                 )
         indexer_values = cast(Mapping[str, object], indexer_values)

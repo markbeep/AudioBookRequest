@@ -1,5 +1,6 @@
 import json
-from typing import Awaitable, Callable, cast
+from collections.abc import Awaitable, Callable
+from typing import cast
 from urllib.parse import quote_plus, urlencode
 
 from fastapi import FastAPI, HTTPException, Request, Response, status

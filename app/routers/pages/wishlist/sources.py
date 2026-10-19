@@ -38,7 +38,7 @@ async def list_sources(
             return BaseUrlRedirectResponse(
                 "/settings/prowlarr?prowlarr_misconfigured=1", status_code=302
             )
-        raise e
+        raise
 
     if only_body:
         return catalog_response(

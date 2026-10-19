@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 import json
-from typing import override
+from dataclasses import dataclass
+from typing import ClassVar, override
 from urllib.parse import urlencode, urljoin
 
 from pydantic import BaseModel
@@ -49,7 +49,7 @@ class _Result(BaseModel):
             return []
         content = json.loads(self.author_info)  # pyright: ignore[reportAny]
         if isinstance(content, dict):
-            return list(x for x in content.values() if isinstance(x, str))  # pyright: ignore[reportUnknownVariableType]
+            return [x for x in content.values() if isinstance(x, str)]  # pyright: ignore[reportUnknownVariableType]
         return []
 
     @property
@@ -58,7 +58,7 @@ class _Result(BaseModel):
             return []
         content = json.loads(self.narrator_info)  # pyright: ignore[reportAny]
         if isinstance(content, dict):
-            return list(x for x in content.values() if isinstance(x, str))  # pyright: ignore[reportUnknownVariableType]
+            return [x for x in content.values() if isinstance(x, str)]  # pyright: ignore[reportUnknownVariableType]
         return []
 
 
@@ -68,7 +68,7 @@ class _MamResponse(BaseModel):
 
 class MamIndexer(AbstractIndexer[MamConfigurations]):
     name: str = "MyAnonamouse"
-    results: dict[int, _Result] = dict()
+    results: ClassVar[dict[int, _Result]] = {}
 
     @override
     @staticmethod

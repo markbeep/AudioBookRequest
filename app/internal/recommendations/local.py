@@ -1,5 +1,7 @@
+from collections import Counter
+from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import Counter, Sequence, cast
+from typing import cast
 
 from pydantic import BaseModel
 from sqlalchemy.sql.elements import KeyedColumnElement

@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from sqlmodel import Session
 
@@ -38,7 +38,7 @@ class ABSConfig(StringConfigCache[ABSConfigKey]):
                 "Audiobookshelf check-downloaded disabled"
             )
 
-    def get_base_url(self, session: Session) -> Optional[str]:
+    def get_base_url(self, session: Session) -> str | None:
         path = self.get(session, "abs_base_url")
         if path:
             return path.rstrip("/")
@@ -47,13 +47,13 @@ class ABSConfig(StringConfigCache[ABSConfigKey]):
     def set_base_url(self, session: Session, base_url: str):
         self.set(session, "abs_base_url", base_url)
 
-    def get_api_token(self, session: Session) -> Optional[str]:
+    def get_api_token(self, session: Session) -> str | None:
         return self.get(session, "abs_api_token")
 
     def set_api_token(self, session: Session, token: str):
         self.set(session, "abs_api_token", token)
 
-    def get_library_id(self, session: Session) -> Optional[str]:
+    def get_library_id(self, session: Session) -> str | None:
         return self.get(session, "abs_library_id")
 
     def set_library_id(self, session: Session, library_id: str):
