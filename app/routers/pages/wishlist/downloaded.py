@@ -7,6 +7,7 @@ from app.internal.audiobookshelf.client import background_abs_trigger_scan
 from app.internal.audiobookshelf.config import abs_config
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.db_queries import get_wishlist_counts, get_wishlist_results
+from app.internal.download_backend import get_download_backend
 from app.internal.models import GroupEnum
 from app.routers.api.requests import mark_downloaded as api_mark_downloaded
 from app.util.db import get_session
@@ -28,6 +29,7 @@ async def downloaded(
         user=user,
         results=results,
         counts=counts,
+        show_sources=get_download_backend(session) == "prowlarr",
     )
 
 
@@ -53,5 +55,6 @@ async def update_downloaded(
         results=results,
         page="wishlist",
         counts=counts,
+        show_sources=get_download_backend(session) == "prowlarr",
         update_tablist=True,
     )

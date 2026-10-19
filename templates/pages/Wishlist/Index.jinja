@@ -2,10 +2,11 @@
     results: list[AudiobookWishlistResult],
     user: DetailedUser,
     counts: WishlistCounts,
+    show_sources: bool,
 #}
 
 <WishlistLayout title="Wishlist" user={{ user }} counts={{ counts }} page="wishlist">
 <div class="overflow-x-auto h-[75vh] border-b pb-2 border-b-base-200">
-    <Wishlist.Wishlist results={{ results }} user={{ user }} page="wishlist" counts={{ counts }} />
+    <Wishlist.Wishlist results={{ results }} user={{ user }} page="wishlist" counts={{ counts }} show_sources={{ show_sources }} />
 </div>
 </WishlistLayout>

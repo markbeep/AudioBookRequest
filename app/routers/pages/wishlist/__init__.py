@@ -6,6 +6,7 @@ from sqlmodel import Session
 
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.db_queries import get_wishlist_counts, get_wishlist_results
+from app.internal.download_backend import get_download_backend
 from app.internal.models import GroupEnum
 from app.routers.api.requests import delete_request as api_delete_request
 from app.routers.api.requests import start_auto_download_endpoint
@@ -35,6 +36,7 @@ async def wishlist(
         user=user,
         results=results,
         counts=counts,
+        show_sources=get_download_backend(session) == "prowlarr",
     )
 
 
@@ -56,6 +58,7 @@ async def start_auto_download(
         results=results,
         page="wishlist",
         counts=counts,
+        show_sources=get_download_backend(session) == "prowlarr",
         update_tablist=True,
     )
 
@@ -83,6 +86,7 @@ async def delete_request(
             results=results,
             page="downloaded",
             counts=counts,
+            show_sources=get_download_backend(session) == "prowlarr",
             update_tablist=True,
         )
     else:
@@ -97,5 +101,6 @@ async def delete_request(
             results=results,
             page="wishlist",
             counts=counts,
+            show_sources=get_download_backend(session) == "prowlarr",
             update_tablist=True,
         )

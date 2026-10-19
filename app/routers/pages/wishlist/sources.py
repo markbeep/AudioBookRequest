@@ -5,6 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Se
 from sqlmodel import Session
 
 from app.internal.auth.authentication import ABRAuth, DetailedUser
+from app.internal.download_backend import get_download_backend
 from app.internal.models import GroupEnum
 from app.routers.api.requests import DownloadSourceBody
 from app.routers.api.requests import download_book as api_download_book
@@ -25,6 +26,9 @@ async def list_sources(
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     only_body: bool = False,
 ):
+    if get_download_backend(session) == "chaptarr":
+        return BaseUrlRedirectResponse("/wishlist", status_code=302)
+
     try:
         result = await api_list_sources(
             asin,
@@ -63,6 +67,8 @@ async def download_book(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
+    if get_download_backend(session) == "chaptarr":
+        return BaseUrlRedirectResponse("/wishlist", status_code=302)
     body = DownloadSourceBody(guid=guid, indexer_id=indexer_id)
     return await api_download_book(
         background_task=background_task,

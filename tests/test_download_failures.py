@@ -96,6 +96,17 @@ def test_api_auto_download_returns_json_error(
     assert json_object(response)["detail"] == "Download blocked: VIP torrent"
 
 
+def test_page_auto_download_redirects_to_prowlarr_settings(
+    admin_client: TestClient,
+) -> None:
+    response = admin_client.post(
+        f"/wishlist/hx-auto-download/{ASIN}", headers={"HX-Request": "true"}
+    )
+    assert response.status_code == 400
+    assert response.headers["HX-Redirect"] == "/settings/prowlarr?prowlarr_misconfigured=1"
+    assert admin_client.get("/settings/prowlarr").status_code == 200
+
+
 def test_page_auto_download_still_returns_toast(
     admin_client: TestClient, prowlarr: MockServer
 ) -> None:

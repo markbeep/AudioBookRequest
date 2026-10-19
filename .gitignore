@@ -6,4 +6,5 @@ __pycache__
 config
 data
 result
+tmp
 .ruff_cache

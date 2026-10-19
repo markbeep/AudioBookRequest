@@ -6,6 +6,11 @@ from pydantic import BaseModel
 from sqlmodel import Session
 
 from app.internal.auth.authentication import AnyAuth, DetailedUser
+from app.internal.download_backend import (
+    DownloadBackend,
+    get_download_backend,
+    set_download_backend,
+)
 from app.internal.models import GroupEnum
 from app.internal.prowlarr.indexer_categories import indexer_categories
 from app.internal.prowlarr.prowlarr import IndexerResponse, get_indexers
@@ -17,6 +22,7 @@ router = APIRouter(prefix="/prowlarr")
 
 
 class ProwlarrSettings(BaseModel):
+    download_backend: DownloadBackend
     base_url: str
     api_key: str
     selected_categories: list[int]
@@ -33,6 +39,7 @@ async def get_prowlarr_settings(
 ):
     indexers = await get_indexers(session, client_session)
     return ProwlarrSettings(
+        download_backend=get_download_backend(session),
         base_url=prowlarr_config.get_base_url(session) or "",
         api_key=prowlarr_config.get_api_key(session) or "",
         selected_categories=prowlarr_config.get_categories(session),
@@ -40,6 +47,20 @@ async def get_prowlarr_settings(
         all_categories=indexer_categories,
         indexers=indexers,
     )
+
+
+class UpdateBackend(BaseModel):
+    backend: DownloadBackend
+
+
+@router.put("/backend", status_code=204)
+def update_download_backend(
+    body: UpdateBackend,
+    session: Annotated[Session, Depends(get_session)],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
+):
+    set_download_backend(session, body.backend)
+    return Response(status_code=204)
 
 
 class UpdateApiKey(BaseModel):

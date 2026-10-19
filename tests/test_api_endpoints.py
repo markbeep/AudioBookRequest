@@ -264,6 +264,7 @@ def test_prowlarr_settings(admin_client: TestClient, prowlarr: MockServer) -> No
     got = admin_client.get("/api/settings/prowlarr")
     assert got.status_code == 200, got.text
     data = json_object(got)
+    assert data["download_backend"] == "prowlarr"
     assert isinstance(data["base_url"], str)
     assert data["base_url"].endswith("/prowlarr")
     indexers = as_dict(data["indexers"])
@@ -289,6 +290,14 @@ def test_prowlarr_settings(admin_client: TestClient, prowlarr: MockServer) -> No
         ).status_code
         == 204
     )
+    assert (
+        admin_client.put(
+            "/api/settings/prowlarr/backend", json={"backend": "chaptarr"}
+        ).status_code
+        == 204
+    )
+    got = json_object(admin_client.get("/api/settings/prowlarr"))
+    assert got["download_backend"] == "chaptarr"
 
 
 def test_prowlarr_unconfigured(admin_client: TestClient) -> None:

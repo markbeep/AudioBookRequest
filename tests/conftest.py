@@ -40,6 +40,8 @@ from app.internal.auth.authentication import create_user
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.auth.oidc_config import oidc_config
+from app.internal.chaptarr.config import chaptarr_config
+from app.internal.download_backend import download_backend_config, set_download_backend
 from app.internal.indexers.configuration import indexer_configuration_cache
 from app.internal.indexers.mam import MamIndexer
 from app.internal.models import (
@@ -67,6 +69,8 @@ from tests import mock_services
 def _flush_caches() -> None:
     auth_config.flush()
     abs_config.flush()
+    chaptarr_config.flush()
+    download_backend_config.flush()
     oidc_config.flush()
     prowlarr_config.flush()
     quality_config.flush()
@@ -201,6 +205,17 @@ def prowlarr(
         prowlarr_config.set_api_key(session, "mock-api-key")
         prowlarr_config.set_categories(session, [3030])
         prowlarr_config.set_indexers(session, [])
+    yield mock_server
+
+
+@pytest.fixture
+def chaptarr(
+    mock_server: mock_services.MockServer,
+) -> Iterator[mock_services.MockServer]:
+    with Session(engine) as session:
+        chaptarr_config.set_base_url(session, f"{mock_server.base_url}/chaptarr")
+        chaptarr_config.set_api_key(session, "mock-api-key")
+        set_download_backend(session, "chaptarr")
     yield mock_server
 
 

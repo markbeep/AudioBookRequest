@@ -87,7 +87,7 @@ Auto-downloading enables requests by `Trusted` and `Admin` users to directly sta
 
 1. Ensure your Prowlarr instance is correctly set up with any indexers and download clients you want. [More info](https://prowlarr.com/).
 2. On Prowlarr, head to `Settings>General` and copy the `API Key`.
-3. On AudioBookRequest, head to `Settings>Prowlarr` and enter the API key as well as the base URL of your Prowlarr instance, i.e. `https://prowlarr.example.com`.
+3. On AudioBookRequest, head to `Settings>Prowlarr / Chaptarr`, select `Prowlarr` and enter the API key as well as the base URL of your Prowlarr instance, i.e. `https://prowlarr.example.com`.
 4. Head to `Settings>Download` to configure the automatic download settings:
    1. Enable `Auto Download` at the top.
    2. The remaining heuristics determine the ranking of any sources retrieved from Prowlarr.
@@ -115,6 +115,24 @@ Notes:
 - ABR searches ABS by ASIN and by “title + first author” to detect existing books; this is a best-effort match and may not catch every case depending on your metadata.
 - ABS is automatically asked to scan after successful downloads are marked in ABR. ABS typically auto-detects updates, but this helps pick up changes sooner.
 
+### Chaptarr Integration
+
+When Chaptarr is selected as the download backend, auto-downloads for Audible books are handed to Chaptarr by ASIN instead of going through Prowlarr directly. Chaptarr then searches its indexers, downloads through its download client, and imports and organizes the files into your library.
+
+Setup steps:
+
+1. In Chaptarr, add an audiobook root folder and confirm a quality profile exists.
+2. Copy the API key from Chaptarr's `Settings > General`.
+3. In ABR, go to `Settings > Prowlarr / Chaptarr`, select `Chaptarr`, and enter the base URL (e.g. `http://localhost:8789`) and the API key.
+
+Notes:
+
+- ABR uses only the selected backend. Selecting `Chaptarr` hides the Prowlarr settings, and Prowlarr is then not used by ABR.
+- The torrent sources view is Prowlarr-only, so it is hidden while `Chaptarr` is selected. Manual requests can still be created, but they need the Prowlarr backend to look up and download sources.
+- ABR looks the book up with `GET /api/v1/book/lookup?term=az:<ASIN>&mediaType=audiobook`, adds it with an automatic search enabled, and marks the request as downloaded once Chaptarr accepts the add.
+- The audiobook root folder and quality/metadata profiles are taken from Chaptarr's effective audiobook defaults, so ABR needs no further configuration.
+- Only Audible ASIN requests are handed off to Chaptarr.
+
 ### OpenID Connect
 
 Head to the [OpenID Connect](https://github.com/markbeep/AudioBookRequest/wiki/OpenID-Connect) page in the wiki to learn how to set up OIDC authentication with your favorite auth provider.
@@ -136,6 +154,29 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org) to
 ## Local Development
 
 Head to the [local development](https://github.com/markbeep/AudioBookRequest/wiki/Local-Development) page in the wiki.
+
+### Local test stack
+
+`docker compose --profile local up` starts ABR alongside Prowlarr, Chaptarr and qBittorrent:
+
+| Service     | URL                   | Notes                                        |
+| ----------- | --------------------- | -------------------------------------------- |
+| ABR         | http://localhost:8000 |                                              |
+| Prowlarr    | http://localhost:9696 |                                              |
+| Chaptarr    | http://localhost:8789 |                                              |
+| qBittorrent | http://localhost:8081 | temporary admin password printed in its logs |
+
+Service config is kept under `./data/<service>` (gitignored); downloads and the test audiobook library live in `./tmp/downloads` and `./tmp/audiobooks` (gitignored). Cross-container URLs are `http://prowlarr:9696` and `http://qbittorrent:8081`; use `http://localhost:<port>` when ABR runs on the host instead of in compose.
+
+To exercise the full Chaptarr flow, configure the stack once with the setup script:
+
+```bash
+python3 scripts/setup_local_stack.py
+```
+
+It reads the generated Prowlarr and Chaptarr API keys, sets a known qBittorrent password, adds the Chaptarr audiobook root folder and qBittorrent client, adds The Pirate Bay to Prowlarr, syncs indexers into Chaptarr, and points ABR at Chaptarr with auto-download enabled. The script is idempotent and waits for every service before configuring it. It logs in as `a`/`a`, which the compose stack initializes as the root account on first start (override with `ABR_APP__INIT_ROOT_USERNAME`/`ABR_APP__INIT_ROOT_PASSWORD` before starting if you want different credentials); if an existing `./config` database already has a different account, set `ABR_USER`/`ABR_PASSWORD` for the script.
+
+Requests by trusted/admin users are then handed to Chaptarr and the resulting files appear under `./tmp/audiobooks`.
 
 # Tools
 

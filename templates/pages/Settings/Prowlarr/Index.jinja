@@ -1,5 +1,6 @@
 {#def
     user: DetailedUser,
+    download_backend: str,
     prowlarr_base_url: str | None,
     prowlarr_api_key: str,
     indexer_categories: dict[int, str],
@@ -7,67 +8,171 @@
     indexers: IndexersResponse,
     selected_indexers: set[int],
     prowlarr_misconfigured: bool,
+    chaptarr_base_url: str,
+    chaptarr_api_key: str,
+    chaptarr_configured: bool,
+    chaptarr_connected: bool,
 #}
 
-<SettingsLayout user={{ user }} page="prowlarr" title="Settings - Prowlarr">
+<SettingsLayout user={{ user }} page="prowlarr" title="Settings - Prowlarr / Chaptarr">
 <js.AlpineJS />
 
 <div class="flex flex-col gap-2">
     <h2 class="text-lg">
-        Prowlarr
+        Prowlarr / Chaptarr
     </h2>
-    {% if prowlarr_misconfigured %}
-        <p class="text-red-400">
-            Prowlarr is misconfigured. Please configure it.
+    <div class="text-xs opacity-60 flex flex-col gap-1">
+        <p>
+            ABR uses one download backend at a time. You can choose between Prowlarr and Chaptarr.
         </p>
+        <p>
+            <strong>Prowlarr:</strong> ABR will try to find downloads using the indexers set up in Prowlarr,
+            and then send the download request to the download client configured in Prowlarr.
+            ABR does not handle any file moving.
+        </p>
+        <p>
+            <strong>Chaptarr:</strong> ABR simply hands over the ASIN of a book to Chaptarr.
+            Chaptarr will then try to find the book, download it, and handle any file moving.
+            ABR does not follow the full lifecycle of a download:
+            If Chaptarr successfully adds a requested book to its library, the ABR request will be deemed successful,
+            even if Chaptarr itself fails to download the book afterwards.
+        </p>
+    </div>
+
+    <form class="join w-full"
+          hx-put="{{ base_url }}/settings/prowlarr/hx-backend"
+          hx-trigger="change"
+          hx-swap="none">
+        <input type="radio"
+               name="backend"
+               value="prowlarr"
+               class="join-item btn"
+               aria-label="Prowlarr"
+               {% if download_backend == "prowlarr" %}checked{% endif %} />
+        <input type="radio"
+               name="backend"
+               value="chaptarr"
+               class="join-item btn"
+               aria-label="Chaptarr"
+               {% if download_backend == "chaptarr" %}checked{% endif %} />
+    </form>
+
+    {% if download_backend == "prowlarr" %}
+        {% if prowlarr_misconfigured %}
+            <p class="text-red-400">
+                Prowlarr is misconfigured. Please configure it.
+            </p>
+        {% endif %}
+        <label for="prowlarr-api-key">
+            API Key
+        </label>
+        <form class="join w-full"
+              hx-put="{{ base_url }}/settings/prowlarr/hx-api-key"
+              hx-disabled-elt="#api-button">
+            <input id="prowlarr-api-key"
+                   name="api_key"
+                   type="password"
+                   {% if prowlarr_api_key %}placeholder="●●●●●●●●●●●●●●●●●"{% endif %}
+                   class="input join-item w-full"
+                   minlength="1"
+                   required />
+            <button id="api-button" class="join-item btn">
+                {% if prowlarr_api_key %}
+                    Update
+                {% else %}
+                    Add
+                {% endif %}
+            </button>
+        </form>
+        <label for="prowlarr-base-url" class="pt-2">
+            Base URL
+        </label>
+        <form class="join w-full"
+              hx-put="{{ base_url }}/settings/prowlarr/hx-base-url"
+              hx-disabled-elt="#base-url-button">
+            <input id="prowlarr-base-url"
+                   name="base_url"
+                   type="url"
+                   value="{{ prowlarr_base_url or "" }}"
+                   placeholder="http://prowlarr:9696"
+                   class="input join-item w-full"
+                   minlength="1"
+                   required />
+            <button id="base-url-button" class="join-item btn">
+                {% if prowlarr_base_url %}
+                    Update
+                {% else %}
+                    Add
+                {% endif %}
+            </button>
+        </form>
+
+        <Settings.Prowlarr.Category indexer_categories={{ indexer_categories }} selected_categories={{ selected_categories }} />
+
+        <Settings.Prowlarr.Indexer indexers={{ indexers }} selected_indexers={{ selected_indexers }} />
+    {% else %}
+        {% if not chaptarr_configured %}
+            <p class="text-red-400">
+                Chaptarr is selected but not configured. Enter its base URL and API key.
+            </p>
+        {% endif %}
+        <p class="text-xs opacity-60">
+            Chaptarr needs an audiobook root folder and a quality profile configured.
+        </p>
+        <label for="chaptarr-api-key">
+            API Key
+        </label>
+        <form class="join w-full"
+              hx-put="{{ base_url }}/settings/chaptarr/hx-api-key"
+              hx-disabled-elt="#chaptarr-api-key-button">
+            <input id="chaptarr-api-key"
+                   name="api_key"
+                   type="password"
+                   {% if chaptarr_api_key %}placeholder="●●●●●●●●●●●●●●●●●"{% endif %}
+                   class="input join-item w-full"
+                   minlength="1"
+                   required />
+            <button id="chaptarr-api-key-button" class="join-item btn">
+                {% if chaptarr_api_key %}
+                    Update
+                {% else %}
+                    Add
+                {% endif %}
+            </button>
+        </form>
+        <label for="chaptarr-base-url" class="pt-2">
+            Base URL
+        </label>
+        <form class="join w-full"
+              hx-put="{{ base_url }}/settings/chaptarr/hx-base-url"
+              hx-disabled-elt="#chaptarr-base-url-button">
+            <input id="chaptarr-base-url"
+                   name="base_url"
+                   type="url"
+                   value="{{ chaptarr_base_url }}"
+                   placeholder="http://chaptarr:8789"
+                   class="input join-item w-full"
+                   minlength="1"
+                   required />
+            <button id="chaptarr-base-url-button" class="join-item btn">
+                {% if chaptarr_base_url %}
+                    Update
+                {% else %}
+                    Add
+                {% endif %}
+            </button>
+        </form>
+        {% if chaptarr_configured %}
+            <p class="text-xs pt-2">
+                Status:
+                {% if chaptarr_connected %}
+                    <span class="text-success">connected</span>
+                {% else %}
+                    <span class="text-error">unreachable</span>
+                {% endif %}
+            </p>
+        {% endif %}
     {% endif %}
-    <label for="prowlarr-api-key">
-        API Key
-    </label>
-    <form class="join w-full"
-          hx-put="{{ base_url }}/settings/prowlarr/hx-api-key"
-          hx-disabled-elt="#api-button">
-        <input id="prowlarr-api-key"
-               name="api_key"
-               type="password"
-               {% if prowlarr_api_key %}placeholder="●●●●●●●●●●●●●●●●●"{% endif %}
-               class="input join-item w-full"
-               minlength="1"
-               required />
-        <button id="api-button" class="join-item btn">
-            {% if prowlarr_api_key %}
-                Update
-            {% else %}
-                Add
-            {% endif %}
-        </button>
-    </form>
-    <label for="prowlarr-base-url" class="pt-2">
-        Base URL
-    </label>
-    <form class="join w-full"
-          hx-put="{{ base_url }}/settings/prowlarr/hx-base-url"
-          hx-disabled-elt="#base-url-button">
-        <input id="prowlarr-base-url"
-               name="base_url"
-               type="url"
-               value="{{ prowlarr_base_url or "" }}"
-               placeholder="http://prowlarr:9696"
-               class="input join-item w-full"
-               minlength="1"
-               required />
-        <button id="base-url-button" class="join-item btn">
-            {% if prowlarr_base_url %}
-                Update
-            {% else %}
-                Add
-            {% endif %}
-        </button>
-    </form>
-
-    <Settings.Prowlarr.Category indexer_categories={{ indexer_categories }} selected_categories={{ selected_categories }} />
-
-    <Settings.Prowlarr.Indexer indexers={{ indexers }} selected_indexers={{ selected_indexers }} />
 </div>
 
 </SettingsLayout>

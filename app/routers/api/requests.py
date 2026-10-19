@@ -24,6 +24,7 @@ from app.internal.audiobookshelf.client import background_abs_trigger_scan
 from app.internal.audiobookshelf.config import abs_config
 from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.db_queries import get_wishlist_results
+from app.internal.download_backend import get_download_backend
 from app.internal.models import (
     Audiobook,
     AudiobookRequest,
@@ -322,6 +323,11 @@ async def refresh_source(
     ] = False,
 ):
     _ = user
+    if get_download_backend(session) == "chaptarr":
+        raise HTTPException(
+            status_code=400,
+            detail="Sources require the Prowlarr download backend",
+        )
     # causes the sources to be placed into cache once they're done
     await query_sources(
         asin_or_uuid=asin_or_uuid,
@@ -343,6 +349,11 @@ async def list_sources(
     ] = False,
 ):
     _ = admin_user
+    if get_download_backend(session) == "chaptarr":
+        raise HTTPException(
+            status_code=400,
+            detail="Sources require the Prowlarr download backend",
+        )
     try:
         prowlarr_config.raise_if_invalid(session)
     except ProwlarrMisconfigured:
@@ -367,6 +378,11 @@ async def download_book(
     admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     _ = admin_user
+    if get_download_backend(session) == "chaptarr":
+        raise HTTPException(
+            status_code=400,
+            detail="Sources require the Prowlarr download backend",
+        )
     try:
         await start_download(
             session=session,

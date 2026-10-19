@@ -52,6 +52,8 @@ class MockState(TypedDict):
     notification_payloads: list[NotificationPayload]
     abs_libraries: list[dict[str, object]]
     oidc_userinfo: dict[str, object]
+    chaptarr_lookup: list[dict[str, object]]
+    chaptarr_added: list[dict[str, object]]
 
 
 DEFAULT_INDEXERS: list[dict[str, object]] = [
@@ -199,6 +201,25 @@ def default_state(base_url: str) -> MockState:
             "preferred_username": "oidc-user",
             "groups": ["admin"],
         },
+        "chaptarr_lookup": [
+            {
+                "id": 0,
+                "title": DEFAULT_SEARCH_TERM,
+                "foreignBookId": "hc:1",
+                "foreignEditionId": "az:B00TEST01",
+                "asin": "B00TEST01",
+                "audibleASIN": "B00TEST01",
+                "mediaType": "audiobook",
+                "addOptions": {"addType": "automatic", "searchForNewBook": False},
+                "author": {
+                    "id": 0,
+                    "foreignAuthorId": "hc:author1",
+                    "authorName": "Mock Author",
+                },
+                "editions": [{"foreignEditionId": "az:B00TEST01", "asin": "B00TEST01"}],
+            }
+        ],
+        "chaptarr_added": [],
     }
 
 
@@ -233,18 +254,45 @@ def install_prowlarr(mock: MockServer, prefix: str = "/prowlarr") -> None:
 
 
 def install_chaptarr(mock: MockServer, prefix: str = "/chaptarr") -> None:
-    """Readarr-compatible surface for the planned Chaptarr integration.
-
-    Reuses the Prowlarr-shaped handlers so a future Chaptarr client can be
-    exercised against the same fixtures.
-    """
+    """Chaptarr v1 API surface used by the app (book lookup, add, profiles)."""
 
     install_prowlarr(mock, prefix=prefix)
 
     async def status(_: web.Request) -> web.Response:
         return web.json_response({"version": "mock", "appName": "Chaptarr"})
 
+    async def lookup(_: web.Request) -> web.Response:
+        return web.json_response(mock.state["chaptarr_lookup"])
+
+    async def add_book(request: web.Request) -> web.Response:
+        value = cast(object, await request.json())
+        assert isinstance(value, dict)
+        mock.state["chaptarr_added"].append(cast(dict[str, object], value))
+        return web.json_response(1, status=201)
+
+    async def rootfolder(_: web.Request) -> web.Response:
+        return web.json_response(
+            [
+                {
+                    "id": 1,
+                    "path": "/audiobooks",
+                    "folderType": 1,
+                    "isEffectiveDefaultAudiobook": True,
+                    "audiobookQualityProfileId": 1,
+                    "audiobookMetadataProfileId": 1,
+                }
+            ]
+        )
+
+    async def profiles(_: web.Request) -> web.Response:
+        return web.json_response([{"id": 1, "name": "Audiobook"}])
+
     mock.add("GET", f"{prefix}/api/v1/system/status", status)
+    mock.add("GET", f"{prefix}/api/v1/book/lookup", lookup)
+    mock.add("POST", f"{prefix}/api/v1/book", add_book)
+    mock.add("GET", f"{prefix}/api/v1/rootfolder", rootfolder)
+    mock.add("GET", f"{prefix}/api/v1/qualityprofile", profiles)
+    mock.add("GET", f"{prefix}/api/v1/metadataprofile", profiles)
 
 
 def install_notifications(mock: MockServer, prefix: str = "/notify") -> None:

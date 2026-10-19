@@ -1,7 +1,21 @@
 services:
+  # chaptarr requires 1000:1000 dir perms, but also nice to have the config dir owned by the user
+  init:
+    profiles: [local]
+    image: alpine
+    user: "0:0"
+    volumes:
+      - ./data:/data
+      - ./config:/config
+    command: chown -R 1000:1000 /data /config
+
   web:
     # start with `docker-compose --profile local up`
     profiles: [local]
+    environment:
+      # a fresh clone has no config DB; initialize the root login the setup script expects
+      ABR_APP__INIT_ROOT_USERNAME: ${ABR_APP__INIT_ROOT_USERNAME:-a}
+      ABR_APP__INIT_ROOT_PASSWORD: ${ABR_APP__INIT_ROOT_PASSWORD:-a}
     build:
       context: .
       args:
@@ -10,13 +24,9 @@ services:
       - ./config:/config
     ports:
       - "8000:8000"
-
-  gotify:
-    image: gotify/server
-    ports:
-      - "8080:80"
-    volumes:
-      - ./data/gotify/data:/app/data
+    depends_on:
+      init:
+        condition: service_completed_successfully
 
   psql:
     image: postgres:17
@@ -28,3 +38,58 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  prowlarr:
+    profiles: [local]
+    image: lscr.io/linuxserver/prowlarr:latest
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ./data/prowlarr:/config
+    ports:
+      - "9696:9696"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  chaptarr:
+    profiles: [local]
+    image: chaptarr/chaptarr:latest
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ./data/chaptarr:/config
+      - ./data/audiobooks:/audiobooks
+      - ./data/downloads:/downloads
+    ports:
+      - "8789:8789"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  qbittorrent:
+    profiles: [local]
+    image: lscr.io/linuxserver/qbittorrent:latest
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: ${TZ:-UTC}
+      WEBUI_PORT: 8081
+      TORRENTING_PORT: 6881
+    volumes:
+      - ./data/qbittorrent:/config
+      - ./data/downloads:/downloads
+    ports:
+      - "8081:8081"
+      - "6881:6881"
+      - "6881:6881/udp"
+    depends_on:
+      init:
+        condition: service_completed_successfully
