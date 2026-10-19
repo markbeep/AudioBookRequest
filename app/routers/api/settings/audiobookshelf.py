@@ -10,7 +10,7 @@ from app.internal.audiobookshelf.client import (
     abs_list_library_items,
     abs_trigger_scan,
 )
-from app.internal.audiobookshelf.config import abs_config
+from app.internal.audiobookshelf.config import AudiobookshelfMisconfigured, abs_config
 from app.internal.audiobookshelf.types import ABSLibrary
 from app.internal.auth.authentication import AnyAuth, DetailedUser
 from app.internal.models import GroupEnum
@@ -109,7 +109,10 @@ async def test_abs_connection(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
-    abs_config.raise_if_invalid(session)
+    try:
+        abs_config.raise_if_invalid(session)
+    except AudiobookshelfMisconfigured as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     libraries = await abs_get_libraries(session, client_session)
     if not libraries:
         raise HTTPException(
