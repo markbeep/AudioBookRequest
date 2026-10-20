@@ -28,20 +28,40 @@ from app.util.db import get_session
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 
 
+def parse_seed_asins(seed_asins: list[str] | None) -> list[str] | None:
+    """Accept both repeated `seed_asins` params and one comma-separated value."""
+    if seed_asins is None:
+        return None
+    return [
+        asin.strip()
+        for value in seed_asins
+        for asin in value.split(",")
+        if asin.strip()
+    ]
+
+
 @router.get("/user", response_model=UserSimsRecommendation)
 async def get_user_recommendations(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(AnyAuth())],
-    seed_asins: Annotated[list[str] | None, Query(alias="seed_asins")] = None,
-    limit: int = 20,
-    offset: int = 0,
+    seed_asins: Annotated[
+        list[str] | None,
+        Query(
+            alias="seed_asins",
+            description="ASINs to seed recommendations with. Repeat the parameter or pass a comma-separated list.",
+        ),
+    ] = None,
+    limit: Annotated[
+        int, Query(description="Maximum number of recommendations to return.")
+    ] = 20,
+    offset: Annotated[int, Query(description="Number of recommendations to skip.")] = 0,
 ) -> UserSimsRecommendation:
     recommendations = await get_user_sims_recommendations(
         session=session,
         client_session=client_session,
         user=user,
-        seed_asins=seed_asins,
+        seed_asins=parse_seed_asins(seed_asins),
         limit=limit,
         offset=offset,
     )

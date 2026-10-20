@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from aiohttp import ClientSession
-from fastapi import APIRouter, Depends, Form, HTTPException, Response, Security
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Security
 from pydantic import BaseModel
 from sqlmodel import Session
 
@@ -17,6 +17,7 @@ from app.internal.models import GroupEnum
 from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.log import logger
+from app.util.request import form_or_json_openapi, model_from_request
 
 router = APIRouter(prefix="/audiobookshelf")
 
@@ -53,47 +54,83 @@ async def read_abs(
     )
 
 
-@router.put("/base-url")
-def update_abs_base_url(
-    base_url: Annotated[str, Form()],
+class UpdateABSBaseUrl(BaseModel):
+    base_url: str
+
+
+@router.put(
+    "/base-url",
+    status_code=204,
+    openapi_extra=form_or_json_openapi(UpdateABSBaseUrl),
+)
+async def update_abs_base_url(
+    request: Request,
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     _ = admin_user
-    abs_config.set_base_url(session, base_url)
+    body = await model_from_request(request, UpdateABSBaseUrl)
+    abs_config.set_base_url(session, body.base_url)
     return Response(status_code=204)
 
 
-@router.put("/api-token")
-def update_abs_api_token(
-    api_token: Annotated[str, Form(alias="api_token")],
+class UpdateABSApiToken(BaseModel):
+    api_token: str
+
+
+@router.put(
+    "/api-token",
+    status_code=204,
+    openapi_extra=form_or_json_openapi(UpdateABSApiToken),
+)
+async def update_abs_api_token(
+    request: Request,
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     _ = admin_user
-    abs_config.set_api_token(session, api_token)
+    body = await model_from_request(request, UpdateABSApiToken)
+    abs_config.set_api_token(session, body.api_token)
     return Response(status_code=204)
 
 
-@router.put("/library")
-def update_abs_library(
-    library_id: Annotated[str, Form(alias="library_id")],
+class UpdateABSLibrary(BaseModel):
+    library_id: str
+
+
+@router.put(
+    "/library",
+    status_code=204,
+    openapi_extra=form_or_json_openapi(UpdateABSLibrary),
+)
+async def update_abs_library(
+    request: Request,
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     _ = admin_user
-    abs_config.set_library_id(session, library_id)
+    body = await model_from_request(request, UpdateABSLibrary)
+    abs_config.set_library_id(session, body.library_id)
     return Response(status_code=204)
 
 
-@router.put("/check-downloaded")
-def update_abs_check_downloaded(
+class UpdateABSCheckDownloaded(BaseModel):
+    check_downloaded: bool = False
+
+
+@router.put(
+    "/check-downloaded",
+    status_code=204,
+    openapi_extra=form_or_json_openapi(UpdateABSCheckDownloaded),
+)
+async def update_abs_check_downloaded(
+    request: Request,
     session: Annotated[Session, Depends(get_session)],
     admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
-    check_downloaded: Annotated[bool, Form()] = False,
 ):
     _ = admin_user
-    abs_config.set_check_downloaded(session, check_downloaded)
+    body = await model_from_request(request, UpdateABSCheckDownloaded)
+    abs_config.set_check_downloaded(session, body.check_downloaded)
     return Response(status_code=204)
 
 

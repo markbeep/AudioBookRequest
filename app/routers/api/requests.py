@@ -7,6 +7,7 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     HTTPException,
+    Query,
     Response,
     Security,
 )
@@ -97,7 +98,10 @@ async def create_request(
     user: Annotated[DetailedUser, Security(AnyAuth())],
     background_task: BackgroundTasks,
     asin_or_uuid: str,
-    region: audible_region_type | None = None,
+    region: Annotated[
+        audible_region_type | None,
+        Query(description="Audible region. Defaults to the configured region."),
+    ] = None,
 ) -> AudiobookWithRequests:
     if region is None:
         region = get_region_from_settings()
@@ -173,14 +177,17 @@ async def create_request(
 async def list_requests(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(AnyAuth())],
-    filter: Literal["all", "downloaded", "not_downloaded"] = "all",
+    filter: Annotated[
+        Literal["all", "downloaded", "not_downloaded"],
+        Query(description="Filter by download status."),
+    ] = "all",
 ):
     username = None if user.is_admin() else user.username
     results = get_wishlist_results(session, username, filter)
     return results
 
 
-@router.delete("/{asin_or_uuid}")
+@router.delete("/{asin_or_uuid}", status_code=204)
 async def delete_request(
     asin_or_uuid: str,
     session: Annotated[Session, Depends(get_session)],
@@ -201,7 +208,7 @@ async def delete_request(
     return Response(status_code=204)
 
 
-@router.patch("/{asin_or_uuid}/downloaded")
+@router.patch("/{asin_or_uuid}/downloaded", status_code=204)
 async def mark_downloaded(
     asin_or_uuid: str,
     session: Annotated[Session, Depends(get_session)],
@@ -264,7 +271,7 @@ async def update_manual_request(
     return Response(status_code=204)
 
 
-@router.patch("/manual/{id}/downloaded")
+@router.patch("/manual/{id}/downloaded", status_code=204)
 async def mark_manual_downloaded(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
@@ -286,7 +293,7 @@ async def mark_manual_downloaded(
     raise HTTPException(status_code=404, detail="Request not found")
 
 
-@router.delete("/manual/{id}")
+@router.delete("/manual/{id}", status_code=204)
 async def delete_manual_request(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
@@ -302,6 +309,7 @@ async def delete_manual_request(
 
 @router.post(
     "/{asin_or_uuid}/refresh",
+    status_code=202,
     description="Refresh the sources from prowlarr for a book",
 )
 async def refresh_source(
@@ -309,7 +317,9 @@ async def refresh_source(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(AnyAuth())],
-    force_refresh: bool = False,
+    force_refresh: Annotated[
+        bool, Query(description="Ignore cached sources and query Prowlarr again.")
+    ] = False,
 ):
     _ = user
     # causes the sources to be placed into cache once they're done
@@ -328,7 +338,9 @@ async def list_sources(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     admin_user: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
-    only_cached: bool = False,
+    only_cached: Annotated[
+        bool, Query(description="Return cached sources without querying Prowlarr.")
+    ] = False,
 ):
     _ = admin_user
     try:
@@ -345,7 +357,7 @@ async def list_sources(
     return result
 
 
-@router.post("/{asin_or_uuid}/download")
+@router.post("/{asin_or_uuid}/download", status_code=204)
 async def download_book(
     asin_or_uuid: str,
     background_task: BackgroundTasks,
@@ -374,7 +386,7 @@ async def download_book(
     return Response(status_code=204)
 
 
-@router.post("/{asin_or_uuid}/auto-download")
+@router.post("/{asin_or_uuid}/auto-download", status_code=204)
 async def start_auto_download_endpoint(
     asin_or_uuid: str,
     session: Annotated[Session, Depends(get_session)],

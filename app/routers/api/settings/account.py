@@ -68,7 +68,7 @@ def create_new_api_key(
     return CreateAPIKeyResponse(name=name, key=private_key)
 
 
-@router.delete("/api-keys/{id}")
+@router.delete("/api-keys/{id}", status_code=204)
 def delete_api_key(
     id: str,
     session: Annotated[Session, Depends(get_session)],
@@ -93,7 +93,7 @@ def delete_api_key(
     return Response(status_code=204)
 
 
-@router.patch("/api-keys/{id}/toggle")
+@router.patch("/api-keys/{id}/toggle", status_code=204)
 def toggle_api_key(
     id: str,
     session: Annotated[Session, Depends(get_session)],
@@ -119,7 +119,7 @@ def toggle_api_key(
     return Response(status_code=204)
 
 
-@router.put("/password")
+@router.put("/password", status_code=204)
 def change_password(
     body: ChangePasswordRequest,
     session: Annotated[Session, Depends(get_session)],

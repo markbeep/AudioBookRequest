@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
 from fastapi.testclient import TestClient
 
+from app.internal.recommendations.user_recommendations import UserSimsRecommendation
 from tests.constants import ASIN, DOWNLOADED_ASIN, MANUAL_ID
 from tests.http import as_dict, as_list, json_list, json_object
 from tests.mock_services import MockServer
@@ -206,6 +208,46 @@ def test_audiobookshelf(admin_client: TestClient, abs_service: MockServer) -> No
         admin_client.put(
             "/api/settings/audiobookshelf/check-downloaded",
             data={"check_downloaded": "true"},
+        ).status_code
+        == 204
+    )
+
+    # The same endpoints accept JSON bodies
+    assert (
+        admin_client.put(
+            "/api/settings/audiobookshelf/base-url",
+            json={"base_url": f"{abs_service.base_url}/abs"},
+        ).status_code
+        == 204
+    )
+    assert (
+        admin_client.put(
+            "/api/settings/audiobookshelf/api-token", json={"api_token": "mock-token"}
+        ).status_code
+        == 204
+    )
+    assert (
+        admin_client.put(
+            "/api/settings/audiobookshelf/library", json={"library_id": "lib-1"}
+        ).status_code
+        == 204
+    )
+    assert (
+        admin_client.put(
+            "/api/settings/audiobookshelf/check-downloaded",
+            json={"check_downloaded": False},
+        ).status_code
+        == 204
+    )
+    got = json_object(admin_client.get("/api/settings/audiobookshelf"))
+    assert got["abs_base_url"] == f"{abs_service.base_url}/abs"
+    assert got["abs_api_token"] == "mock-token"
+    assert got["abs_library_id"] == "lib-1"
+    assert got["abs_check_downloaded"] is False
+    assert (
+        admin_client.put(
+            "/api/settings/audiobookshelf/check-downloaded",
+            json={"check_downloaded": True},
         ).status_code
         == 204
     )
@@ -512,6 +554,69 @@ def test_search_abs_marking(admin_client: TestClient, abs_service: MockServer) -
     assert abs_service.requests_to("/abs/api/libraries/lib-1/search")
 
 
+# -- openapi ---------------------------------------------------------------
+def _get(value: object, *keys: str) -> object:
+    for key in keys:
+        value = as_dict(value)[key]
+    return value
+
+
+def test_openapi_spec(admin_client: TestClient) -> None:
+    spec = json_object(admin_client.get("/openapi.json"))
+    paths = as_dict(spec["paths"])
+
+    # Manually parsed bodies are still documented.
+    indexer = as_dict(_get(paths, "/api/indexers/{indexer}", "patch"))
+    assert "requestBody" in indexer
+    assert "204" in as_dict(indexer["responses"])
+
+    for endpoint in ("base-url", "api-token", "library", "check-downloaded"):
+        body = as_dict(
+            _get(
+                paths,
+                f"/api/settings/audiobookshelf/{endpoint}",
+                "put",
+                "requestBody",
+            )
+        )
+        content = as_dict(body["content"])
+        assert set(content) == {
+            "application/json",
+            "application/x-www-form-urlencoded",
+        }
+        for media in content.values():
+            assert as_dict(as_dict(media)["schema"])["properties"]
+
+    event_type = as_dict(
+        _get(
+            spec,
+            "components",
+            "schemas",
+            "NotificationRequest",
+            "properties",
+            "event_type",
+        )
+    )
+    assert event_type["enum"] == [
+        "onNewRequest",
+        "onSuccessfulDownload",
+        "onFailedDownload",
+    ]
+
+    # Response codes match what the handlers return.
+    assert "204" in as_dict(
+        _get(paths, "/api/requests/{asin_or_uuid}", "delete", "responses")
+    )
+    assert "202" in as_dict(
+        _get(paths, "/api/requests/{asin_or_uuid}/refresh", "post", "responses")
+    )
+
+    # Comma-separated seed ASINs are documented.
+    params = as_list(_get(paths, "/api/recommendations/user", "get", "parameters"))
+    seed = next(p for p in params if as_dict(p)["name"] == "seed_asins")
+    assert "comma-separated" in str(as_dict(seed)["description"])
+
+
 # -- recommendations -------------------------------------------------------
 def test_recommendations_local(admin_client: TestClient) -> None:
     assert admin_client.get("/api/recommendations/popular").status_code == 200
@@ -522,6 +627,28 @@ def test_recommendations_user(admin_client: TestClient) -> None:
     response = admin_client.get("/api/recommendations/user")
     assert response.status_code == 200, response.text
     assert "recommendations" in json_object(response)
+
+
+def test_recommendations_user_seed_asins(
+    admin_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: list[list[str] | None] = []
+
+    async def fake(
+        *, seed_asins: list[str] | None = None, **_: object
+    ) -> UserSimsRecommendation:
+        captured.append(seed_asins)
+        return UserSimsRecommendation(recommendations=[], total=0)
+
+    monkeypatch.setattr(
+        "app.routers.api.recommendations.get_user_sims_recommendations", fake
+    )
+
+    comma = admin_client.get("/api/recommendations/user?seed_asins=A,B")
+    assert comma.status_code == 200, comma.text
+    repeated = admin_client.get("/api/recommendations/user?seed_asins=A&seed_asins=B")
+    assert repeated.status_code == 200, repeated.text
+    assert captured == [["A", "B"], ["A", "B"]]
 
 
 def test_recommendations_fallback(admin_client: TestClient) -> None:
