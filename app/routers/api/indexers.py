@@ -18,7 +18,24 @@ from app.util.db import get_session
 router = APIRouter(prefix="/indexers", tags=["Indexers"])
 
 
-@router.patch("/{indexer}")
+@router.patch(
+    "/{indexer}",
+    status_code=204,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "description": "Key-value mapping of indexer configuration values to update.",
+                        "additionalProperties": True,
+                    }
+                }
+            },
+        }
+    },
+)
 async def update_indexer(
     indexer: Annotated[
         str, Path(description="The indexer name (case-sensitive) to update")

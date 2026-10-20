@@ -50,6 +50,7 @@ It is not intended as a full replacement for Readarr/Chaptarr, but instead inten
 
 - AudioBookRequest does **not** handle moving, renaming, nor editing metadata after downloads. Instead, ABR supports multiple REST API endpoints that allow for easy interoptability with scripts and other apps.
   - Combinations:
+    - [ABR MCP Server](https://github.com/spaghetgaming/audiobookrequest-mcp): Allowing AI assistants to search for audiobooks, manage requests, track downloads, get recommendations, and administer your audiobook library.
     - _Know of or have an app or script that works with ABR? Open an issue and I'll add it here or to the docs._
   - Alternatives:
     - [Listenarr](https://github.com/Listenarrs/Listenarr): A more all-in-one approach with built-in file organization.

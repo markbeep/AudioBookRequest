@@ -23,7 +23,9 @@ class NotificationRequest(BaseModel):
     id: uuid.UUID | None = None
     name: str = Field(min_length=1)
     url: str = Field(min_length=1)
-    event_type: str
+    event_type: str = Field(
+        json_schema_extra={"enum": [event.value for event in EventEnum]}
+    )
     body: str
     body_type: NotificationBodyTypeEnum
     headers: str = "{}"
@@ -127,7 +129,7 @@ def create_notification(
     )
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", status_code=204)
 def delete_notification(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],

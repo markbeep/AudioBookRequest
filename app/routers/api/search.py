@@ -24,10 +24,16 @@ async def search_books(
     session: Annotated[Session, Depends(get_session)],
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(AnyAuth())],
-    query: Annotated[str | None, Query(alias="q")] = None,
-    num_results: int = 20,
-    page: int = 0,
-    region: audible_region_type | None = None,
+    query: Annotated[
+        str | None,
+        Query(alias="q", description="Search term (title, author, narrator)."),
+    ] = None,
+    num_results: Annotated[int, Query(description="Number of results to return.")] = 20,
+    page: Annotated[int, Query(description="Page number, starting at 0.")] = 0,
+    region: Annotated[
+        audible_region_type | None,
+        Query(description="Audible region. Defaults to the configured region."),
+    ] = None,
 ):
     if region is None:
         region = get_region_from_settings()
@@ -64,9 +70,12 @@ async def search_books(
 
 @router.get("/suggestions", response_model=list[str])
 async def search_suggestions(
-    query: Annotated[str, Query(alias="q")],
+    query: Annotated[str, Query(alias="q", description="Search term.")],
     _: Annotated[DetailedUser, Security(AnyAuth())],
-    region: audible_region_type | None = None,
+    region: Annotated[
+        audible_region_type | None,
+        Query(description="Audible region. Defaults to the configured region."),
+    ] = None,
 ):
     if region is None:
         region = get_region_from_settings()
