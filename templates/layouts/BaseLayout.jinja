@@ -2,6 +2,7 @@
     user: DetailedUser | None = None,
     title="AudiobookRequest",
     hide_navbar=False,
+    full_height: bool = False,
 #}
 
 <!DOCTYPE html>
@@ -78,7 +79,9 @@
         <js.Toast />
 
     </head>
-    <body class="w-screen min-h-screen overflow-x-hidden" hx-ext="preload">
+    <body class="w-screen flex flex-col overflow-x-hidden {% if full_height %}overflow-hidden{% else %}min-h-screen{% endif %}"
+          {% if full_height %}style="height: 100vh; height: 100dvh; overflow: hidden"{% endif %}
+          hx-ext="preload">
 
         <ToastBlock init />
 
