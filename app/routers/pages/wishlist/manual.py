@@ -10,7 +10,7 @@ from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.db_queries import get_all_manual_requests, get_wishlist_counts
 from app.internal.download_backend import get_download_backend
 from app.internal.models import GroupEnum
-from app.routers.api.requests import delete_manual_request, mark_manual_downloaded
+from app.routers.api.requests import delete_manual_request, mark_manual_fulfilled
 from app.util.db import get_session
 from app.util.templates import catalog_response
 
@@ -34,13 +34,13 @@ async def manual(
 
 
 @router.patch("/hx-add/{id}")
-async def downloaded_manual(
+async def fulfilled_manual(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
 ):
-    await mark_manual_downloaded(id, session, background_task, admin_user)
+    await mark_manual_fulfilled(id, session, background_task, admin_user)
 
     results = get_all_manual_requests(session, admin_user)
     counts = get_wishlist_counts(session, admin_user)

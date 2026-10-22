@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Annotated, Literal, cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 from sqlmodel import JSON, Column, DateTime, Field, SQLModel, func
 from sqlmodel._compat import SQLModelConfig
 from sqlmodel.main import Relationship
@@ -37,7 +37,7 @@ class User(BaseSQLModel, table=True):
 
     """
     untrusted: Requests need to be manually reviewed
-    trusted: Requests are automatically downloaded if possible
+    trusted: Requests are automatically fulfilled if possible
     admin: Can approve or deny requests, change settings, etc.
     """
 
@@ -79,7 +79,13 @@ class Audiobook(BaseSQLModel, table=True):
             nullable=False,
         ),
     )
-    downloaded: bool = False
+    fulfilled: bool = False
+
+    @computed_field
+    @property
+    def downloaded(self) -> bool:
+        """Deprecated API alias for `fulfilled`."""
+        return self.fulfilled
 
     requests: list[AudiobookRequest] = Relationship(back_populates="audiobook")  # pyright: ignore[reportAny]
 
@@ -165,7 +171,13 @@ class ManualBookRequest(BaseSQLModel, table=True):
             nullable=False,
         ),
     )
-    downloaded: bool = False
+    fulfilled: bool = False
+
+    @computed_field
+    @property
+    def downloaded(self) -> bool:
+        """Deprecated API alias for `fulfilled`."""
+        return self.fulfilled
 
     model_config: SQLModelConfig = cast(
         SQLModelConfig, cast(object, ConfigDict(arbitrary_types_allowed=True))
@@ -231,8 +243,8 @@ class Config(BaseSQLModel, table=True):
 
 class EventEnum(str, Enum):
     on_new_request = "onNewRequest"
-    on_successful_download = "onSuccessfulDownload"
-    on_failed_download = "onFailedDownload"
+    on_fulfilled = "onFulfilled"
+    on_failed_fulfillment = "onFailedFulfillment"
 
 
 class NotificationBodyTypeEnum(str, Enum):

@@ -55,7 +55,7 @@ async def get_user_sims_recommendations(
 
     Filters:
     - Exclude already requested by the user
-    - Exclude already downloaded/owned (if detectable)
+    - Exclude already fulfilled/owned (if detectable)
     - Exclude duplicates
     """
 
@@ -142,7 +142,7 @@ async def get_user_sims_recommendations(
     # Build candidate score list
     candidate_scores: list[_BookScore] = []
     for sim in similar_books:
-        if sim.book.downloaded:
+        if sim.book.fulfilled:
             continue
 
         avg_pos = sum(positions[sim.book.asin]) / max(1, len(positions[sim.book.asin]))
