@@ -2,6 +2,7 @@
     results: list[ManualBookRequest],
     user: DetailedUser,
     counts: WishlistCounts,
+    show_sources: bool,
     update_tablist = False, # performs oob replacement for the tablist
 #}
 
@@ -78,13 +79,15 @@
                     {{ book.user_username }}
                 </td>
                 <td class="grid grid-cols-2 min-w-32 gap-1 w-fit ml-auto">
-                    <a preload
-                       title="Torrent Sources"
-                       href="{{ base_url }}/wishlist/sources/{{ book.id }}"
-                       {% if not user.is_admin() %}disabled{% endif %}
-                       class="btn btn-square">
-                        <icons.List />
-                    </a>
+                    {% if show_sources %}
+                        <a preload
+                           title="Torrent Sources"
+                           href="{{ base_url }}/wishlist/sources/{{ book.id }}"
+                           {% if not user.is_admin() %}disabled{% endif %}
+                           class="btn btn-square">
+                            <icons.List />
+                        </a>
+                    {% endif %}
                     <a class="btn btn-square"
                        href="{{ base_url }}/search/manual?id={{ book.id }}"
                        title="Edit">

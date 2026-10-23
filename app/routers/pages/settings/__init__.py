@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from . import (
     account,
     audiobookshelf,
+    chaptarr,
     download,
     indexers,
     notification,
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/settings")
 
 router.include_router(account.router)
 router.include_router(audiobookshelf.router)
+router.include_router(chaptarr.router)
 router.include_router(download.router)
 router.include_router(indexers.router)
 router.include_router(notification.router)

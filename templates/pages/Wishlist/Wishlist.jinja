@@ -3,6 +3,7 @@
     user: DetailedUser,
     page: str,
     counts: WishlistCounts,
+    show_sources: bool,
     update_tablist = False, # performs oob replacement for the tablist
 #}
 
@@ -146,13 +147,15 @@
                             </td>
 
                             <td class="grid grid-cols-2 min-w-32 gap-1 w-fit ml-auto">
-                                <a preload
-                                   title="Torrent Sources"
-                                   href="{{ base_url }}/wishlist/sources/{{ book.asin }}"
-                                   {% if not user.is_admin() %}disabled{% endif %}
-                                   class="btn btn-square">
-                                    <icons.List />
-                                </a>
+                                {% if show_sources %}
+                                    <a preload
+                                       title="Torrent Sources"
+                                       href="{{ base_url }}/wishlist/sources/{{ book.asin }}"
+                                       {% if not user.is_admin() %}disabled{% endif %}
+                                       class="btn btn-square">
+                                        <icons.List />
+                                    </a>
+                                {% endif %}
                                 <button {% if book.downloaded %}title="Downloaded"class="btn btn-square btn-ghost bg-success text-neutral/20" {% else %} title="Automatic Download" class="btn btn-square" {% endif %}
                                         {% if not user.can_download() or book.downloaded %}disabled{% endif %}
                                         hx-post="{{ base_url }}/wishlist/hx-auto-download/{{ book.asin }}"

@@ -90,7 +90,7 @@ async def redirect_to_invalid_oidc(request: Request, exc: InvalidOIDCConfigurati
 @app.exception_handler(ProwlarrMisconfigured)
 async def redirect_to_invalid_prowlarr(request: Request, exc: ProwlarrMisconfigured):
     _ = exc
-    path = "/settings/invalid?prowlarr_misconfigured=true"
+    path = "/settings/prowlarr?prowlarr_misconfigured=1"
     if request.headers.get("HX-Request"):
         return Response(status_code=400, headers={"HX-Redirect": path})
     return BaseUrlRedirectResponse(path)
