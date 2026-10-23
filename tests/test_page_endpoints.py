@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.models import APIKey
+from app.util.log import logger
 from tests.constants import ASIN, MANUAL_ID
 from tests.http import as_dict, json_list
 from tests.mock_services import MockServer
@@ -370,6 +371,40 @@ def test_users_page(admin_client: TestClient) -> None:
 
     deleted = admin_client.delete("/settings/users/hx-delete/ui-user")
     assert deleted.status_code == 200, deleted.text
+
+
+# -- settings: logs --------------------------------------------------------
+def test_logs_page(admin_client: TestClient) -> None:
+    logger.info("ui-logs-marker")
+    logger.error("ui-logs-<b>marker</b>")
+
+    response = admin_client.get("/settings/logs")
+    assert response.status_code == 200
+    assert "ui-logs-marker" in response.text
+    assert "ui-logs-&lt;b&gt;marker&lt;/b&gt;" in response.text
+    assert response.text.count('aria-pressed="true"') == 4
+
+    filtered = admin_client.get("/settings/logs?level=error")
+    assert "ui-logs-&lt;b&gt;marker&lt;/b&gt;" in filtered.text
+    assert "ui-logs-marker" not in filtered.text
+
+    for i in range(260):
+        logger.error(f"log-page-marker-{i}")
+
+    newest = admin_client.get("/settings/logs?level=error")
+    assert "log-page-marker-259" in newest.text
+    assert "log-page-marker-0" not in newest.text
+    assert "Load more (older logs)" in newest.text
+
+    older = admin_client.get("/settings/logs?level=error&offset=250")
+    assert "log-page-marker-0" in older.text
+    assert "log-page-marker-259" not in older.text
+    assert "Show newer logs" in older.text
+    assert "Top of the 10,000 log history reached" in older.text
+    assert older.text.index('id="log-lines"') < older.text.index(
+        "Top of the 10,000 log history reached"
+    )
+    assert "Load more (older logs)" not in older.text
 
 
 # -- static ----------------------------------------------------------------

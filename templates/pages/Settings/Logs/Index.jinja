@@ -1,0 +1,60 @@
+{#def
+    user: DetailedUser,
+    logs: list[LogEntry],
+    log_levels: list[str],
+    selected_levels: list[str],
+    toggle_urls: dict[str, str],
+    older_url: str | None,
+    newer_url: str | None,
+#}
+
+{% set level_colors = {"debug": "text-base-content/50", "info": "text-info", "warning": "text-warning", "error": "text-error"} %}
+
+<SettingsLayout user={{ user }} page="logs" title="Settings - Logs" fill>
+
+<div class="flex flex-1 min-h-0 flex-col gap-2"
+     style="flex: 1 1 0%;
+            min-height: 0">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-col">
+            <h2 class="text-lg">
+                Logs
+            </h2>
+            <p class="text-xs opacity-60">
+                Logs since the last restart.
+            </p>
+        </div>
+        <div class="join">
+            {% for level in log_levels %}
+                <a href="{{ toggle_urls[level] }}"
+                   class="btn btn-sm join-item {% if level in selected_levels %}btn-active{% else %}btn-ghost opacity-60{% endif %}"
+                   aria-pressed="{{ 'true' if level in selected_levels else 'false' }}">
+                    {{ level | upper }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="flex flex-1 min-h-0 flex-col overflow-hidden rounded-box bg-base-200"
+         style="flex: 1 1 0%;
+                min-height: 0">
+        {% if older_url %}
+            <a href="{{ older_url }}"
+               class="shrink-0 border-b border-base-300 py-1 text-center text-xs hover:bg-base-300">
+                Load more (older logs)
+            </a>
+        {% endif %}
+        <pre id="log-lines" class="flex-1 min-h-0 overflow-auto p-4 text-xs font-mono whitespace-pre-wrap" style="flex: 1 1 0%; min-height: 0">{% if logs %}{% if not older_url %}<span class="block text-center opacity-60">Top of the 10,000 log history reached</span>
+{% endif %}{% for entry in logs %}<span class="block {{ level_colors.get(entry.level, '') }}">{{ entry.message | e }}</span>
+{% endfor %}{% else %}<span class="opacity-60">No logs.</span>{% endif %}</pre>
+        {% if newer_url %}
+            <a href="{{ newer_url }}"
+               class="shrink-0 border-t border-base-300 py-1 text-center text-xs hover:bg-base-300">
+                Show newer logs
+            </a>
+        {% endif %}
+    </div>
+</div>
+<script>
+    document.getElementById("log-lines").scrollTop = document.getElementById("log-lines").scrollHeight;
+</script>
+</SettingsLayout>
