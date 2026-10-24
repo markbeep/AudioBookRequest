@@ -98,7 +98,7 @@ Auto-downloading enables requests by `Trusted` and `Admin` users to directly sta
 Audiobookshelf (ABS) integration lets ABR:
 
 - Check if a book already exists in your ABS library and mark it as downloaded in search results to avoid duplicate requests.
-- Trigger a library scan in ABS when a request is marked as downloaded in ABR (manual or automatic), so the new item appears quickly.
+- Trigger a library scan in ABS when a request is marked as fulfilled in ABR (manual or automatic), so the new item appears quickly.
 
 Setup steps:
 
@@ -113,7 +113,7 @@ Setup steps:
 Notes:
 
 - ABR searches ABS by ASIN and by “title + first author” to detect existing books; this is a best-effort match and may not catch every case depending on your metadata.
-- ABS is automatically asked to scan after successful downloads are marked in ABR. ABS typically auto-detects updates, but this helps pick up changes sooner.
+- ABS is automatically asked to scan after requests are fulfilled in ABR. ABS typically auto-detects updates, but this helps pick up changes sooner.
 
 ### Chaptarr Integration
 
@@ -129,7 +129,7 @@ Notes:
 
 - ABR uses only the selected backend. Selecting `Chaptarr` hides the Prowlarr settings, and Prowlarr is then not used by ABR.
 - The torrent sources view is Prowlarr-only, so it is hidden while `Chaptarr` is selected. Manual requests can still be created, but they need the Prowlarr backend to look up and download sources.
-- ABR looks the book up with `GET /api/v1/book/lookup?term=az:<ASIN>&mediaType=audiobook`, adds it with an automatic search enabled, and marks the request as downloaded once Chaptarr accepts the add.
+- ABR looks the book up with `GET /api/v1/book/lookup?term=az:<ASIN>&mediaType=audiobook`, adds it with an automatic search enabled, and marks the request as fulfilled once Chaptarr accepts the add.
 - The audiobook root folder and quality/metadata profiles are taken from Chaptarr's effective audiobook defaults, so ABR needs no further configuration.
 - Only Audible ASIN requests are handed off to Chaptarr.
 

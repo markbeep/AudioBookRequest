@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.internal.recommendations.user_recommendations import UserSimsRecommendation
-from tests.constants import ASIN, DOWNLOADED_ASIN, MANUAL_ID
+from tests.constants import ASIN, FULFILLED_ASIN, MANUAL_ID
 from tests.http import as_dict, as_list, json_list, json_object
 from tests.mock_services import MockServer
 
@@ -400,6 +400,26 @@ def test_notifications_validation(admin_client: TestClient) -> None:
     assert invalid_body.status_code == 422
 
 
+def test_notification_legacy_event_alias(admin_client: TestClient) -> None:
+    cases = {
+        "onSuccessfulDownload": "onFulfilled",
+        "onFailedDownload": "onFailedFulfillment",
+    }
+    for legacy, current in cases.items():
+        response = admin_client.post(
+            "/api/settings/notifications",
+            json={
+                "name": legacy,
+                "url": "http://example.com/notify",
+                "event_type": legacy,
+                "body": "hello",
+                "body_type": "text",
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert json_object(response)["event"] == current
+
+
 # -- indexers --------------------------------------------------------------
 def test_indexer_configurations(admin_client: TestClient) -> None:
     got = admin_client.get("/api/indexers/configurations")
@@ -424,9 +444,19 @@ def test_update_indexer(admin_client: TestClient) -> None:
 # -- requests --------------------------------------------------------------
 def test_requests_list(admin_client: TestClient, trusted_client: TestClient) -> None:
     assert admin_client.get("/api/requests").status_code == 200
+    assert admin_client.get("/api/requests?filter=fulfilled").status_code == 200
+    assert admin_client.get("/api/requests?filter=not_fulfilled").status_code == 200
+    # Deprecated aliases keep working.
     assert admin_client.get("/api/requests?filter=downloaded").status_code == 200
     assert admin_client.get("/api/requests?filter=not_downloaded").status_code == 200
     assert trusted_client.get("/api/requests").status_code == 200
+
+    requests = [as_dict(item) for item in json_list(admin_client.get("/api/requests"))]
+    book = as_dict(
+        next(item for item in requests if as_dict(item["book"])["asin"] == ASIN)["book"]
+    )
+    assert book["fulfilled"] is False
+    assert book["downloaded"] is False
 
 
 def test_create_request(admin_client: TestClient) -> None:
@@ -462,8 +492,8 @@ def test_manual_requests(admin_client: TestClient) -> None:
     )
     assert updated.status_code == 204
 
-    downloaded = admin_client.patch(f"/api/requests/manual/{MANUAL_ID}/downloaded")
-    assert downloaded.status_code == 204
+    fulfilled = admin_client.patch(f"/api/requests/manual/{MANUAL_ID}/fulfilled")
+    assert fulfilled.status_code == 204
 
     deleted = admin_client.delete(f"/api/requests/manual/{MANUAL_ID}")
     assert deleted.status_code == 204
@@ -526,19 +556,24 @@ def test_auto_download(
     )
 
 
-def test_mark_downloaded(admin_client: TestClient, trusted_client: TestClient) -> None:
-    response = admin_client.patch(f"/api/requests/{ASIN}/downloaded")
+def test_mark_fulfilled(admin_client: TestClient, trusted_client: TestClient) -> None:
+    response = admin_client.patch(f"/api/requests/{ASIN}/fulfilled")
     assert response.status_code == 204
-    assert admin_client.patch("/api/requests/missing/downloaded").status_code == 404
+    assert admin_client.patch("/api/requests/missing/fulfilled").status_code == 404
     assert (
-        trusted_client.patch(f"/api/requests/{DOWNLOADED_ASIN}/downloaded").status_code
+        trusted_client.patch(f"/api/requests/{FULFILLED_ASIN}/fulfilled").status_code
         == 403
     )
+
+    # Deprecated alias.
+    legacy = admin_client.patch(f"/api/requests/{FULFILLED_ASIN}/downloaded")
+    assert legacy.status_code == 204
+    assert legacy.headers["deprecation"] == "true"
 
 
 def test_delete_request(admin_client: TestClient, trusted_client: TestClient) -> None:
     assert trusted_client.delete(f"/api/requests/{ASIN}").status_code == 204
-    assert admin_client.delete(f"/api/requests/{DOWNLOADED_ASIN}").status_code == 204
+    assert admin_client.delete(f"/api/requests/{FULFILLED_ASIN}").status_code == 204
 
 
 # -- search ----------------------------------------------------------------
@@ -579,7 +614,12 @@ def test_openapi_spec(admin_client: TestClient) -> None:
     assert "requestBody" in indexer
     assert "204" in as_dict(indexer["responses"])
 
-    for endpoint in ("base-url", "api-token", "library", "check-downloaded"):
+    for endpoint in (
+        "base-url",
+        "api-token",
+        "library",
+        "check-downloaded",
+    ):
         body = as_dict(
             _get(
                 paths,
@@ -608,8 +648,8 @@ def test_openapi_spec(admin_client: TestClient) -> None:
     )
     assert event_type["enum"] == [
         "onNewRequest",
-        "onSuccessfulDownload",
-        "onFailedDownload",
+        "onFulfilled",
+        "onFailedFulfillment",
     ]
 
     # Response codes match what the handlers return.
@@ -624,6 +664,30 @@ def test_openapi_spec(admin_client: TestClient) -> None:
     params = as_list(_get(paths, "/api/recommendations/user", "get", "parameters"))
     seed = next(p for p in params if as_dict(p)["name"] == "seed_asins")
     assert "comma-separated" in str(as_dict(seed)["description"])
+
+    # Legacy state names remain, marked deprecated alongside the new ones.
+    assert as_dict(_get(paths, "/api/requests/{asin_or_uuid}/downloaded", "patch"))[
+        "deprecated"
+    ]
+    assert "deprecated" not in as_dict(
+        _get(paths, "/api/requests/{asin_or_uuid}/fulfilled", "patch")
+    )
+    assert "deprecated" not in as_dict(
+        _get(paths, "/api/settings/audiobookshelf/check-downloaded", "put")
+    )
+    filter_param = next(
+        p
+        for p in as_list(_get(paths, "/api/requests", "get", "parameters"))
+        if as_dict(p)["name"] == "filter"
+    )
+    assert "deprecated" in str(as_dict(filter_param)["description"]).lower()
+    recommendation_params = as_list(
+        _get(paths, "/api/recommendations/popular", "get", "parameters")
+    )
+    legacy = next(
+        p for p in recommendation_params if as_dict(p)["name"] == "exclude_downloaded"
+    )
+    assert as_dict(legacy)["deprecated"]
 
 
 # -- recommendations -------------------------------------------------------

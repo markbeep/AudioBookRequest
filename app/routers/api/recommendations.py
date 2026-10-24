@@ -28,6 +28,12 @@ from app.util.db import get_session
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 
 
+def _resolve_exclude_fulfilled(
+    exclude_fulfilled: bool, exclude_downloaded: bool | None
+) -> bool:
+    return exclude_fulfilled if exclude_downloaded is None else exclude_downloaded
+
+
 def parse_seed_asins(seed_asins: list[str] | None) -> list[str] | None:
     """Accept both repeated `seed_asins` params and one comma-separated value."""
     if seed_asins is None:
@@ -74,13 +80,24 @@ async def get_popular_recommendations(
     user: Annotated[DetailedUser, Security(AnyAuth())],
     min_requests: int = 1,
     limit: int = 10,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: Annotated[
+        bool, Query(description="Exclude requests that are already fulfilled.")
+    ] = True,
+    exclude_downloaded: Annotated[
+        bool | None,
+        Query(
+            description="Deprecated: use `exclude_fulfilled`.",
+            deprecated=True,
+        ),
+    ] = None,
 ) -> list[AudiobookPopularity]:
     return get_popular_books(
         session=session,
         limit=limit,
         min_requests=min_requests,
-        exclude_downloaded=exclude_downloaded,
+        exclude_fulfilled=_resolve_exclude_fulfilled(
+            exclude_fulfilled, exclude_downloaded
+        ),
         exclude_requested_username=user.username,
     )
 
@@ -91,13 +108,24 @@ async def get_recently_requested_recommendations(
     user: Annotated[DetailedUser, Security(AnyAuth())],
     limit: int = 10,
     days_back: int = 30,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: Annotated[
+        bool, Query(description="Exclude requests that are already fulfilled.")
+    ] = True,
+    exclude_downloaded: Annotated[
+        bool | None,
+        Query(
+            description="Deprecated: use `exclude_fulfilled`.",
+            deprecated=True,
+        ),
+    ] = None,
 ) -> Sequence[AudiobookWithRequests]:
     return get_recently_requested_books(
         session=session,
         limit=limit,
         days_back=days_back,
-        exclude_downloaded=exclude_downloaded,
+        exclude_fulfilled=_resolve_exclude_fulfilled(
+            exclude_fulfilled, exclude_downloaded
+        ),
         exclude_requested_username=user.username,
     )
 
@@ -161,7 +189,16 @@ async def get_popular_authors_recommendations(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(AnyAuth())],
     limit: int = 10,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: Annotated[
+        bool, Query(description="Exclude requests that are already fulfilled.")
+    ] = True,
+    exclude_downloaded: Annotated[
+        bool | None,
+        Query(
+            description="Deprecated: use `exclude_fulfilled`.",
+            deprecated=True,
+        ),
+    ] = None,
     audible_region: audible_region_type | None = None,
     personal_favorites: bool = True,
 ) -> list[AudiobookWithRequests]:
@@ -171,7 +208,9 @@ async def get_popular_authors_recommendations(
     author_narrators = get_most_popular_authors(
         session=session,
         limit=limit,
-        exclude_downloaded=exclude_downloaded,
+        exclude_fulfilled=_resolve_exclude_fulfilled(
+            exclude_fulfilled, exclude_downloaded
+        ),
         username=user.username if personal_favorites else None,
     )
     return await list_combined_audible_books(
@@ -189,7 +228,16 @@ async def get_popular_narrators_recommendations(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(AnyAuth())],
     limit: int = 10,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: Annotated[
+        bool, Query(description="Exclude requests that are already fulfilled.")
+    ] = True,
+    exclude_downloaded: Annotated[
+        bool | None,
+        Query(
+            description="Deprecated: use `exclude_fulfilled`.",
+            deprecated=True,
+        ),
+    ] = None,
     audible_region: audible_region_type | None = None,
     personal_favorites: bool = True,
 ) -> list[AudiobookWithRequests]:
@@ -199,7 +247,9 @@ async def get_popular_narrators_recommendations(
     author_narrators = get_most_popular_authors(
         session=session,
         limit=limit,
-        exclude_downloaded=exclude_downloaded,
+        exclude_fulfilled=_resolve_exclude_fulfilled(
+            exclude_fulfilled, exclude_downloaded
+        ),
         username=user.username if personal_favorites else None,
     )
     return await list_combined_audible_books(

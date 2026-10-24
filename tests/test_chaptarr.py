@@ -67,13 +67,13 @@ def test_auto_download_hands_off_to_chaptarr(
     db.expire_all()
     book = db.get(Audiobook, ASIN)
     assert book is not None
-    assert book.downloaded is True
+    assert book.fulfilled is True
 
     # Chaptarr owns the download; Prowlarr must not be queried.
     assert not chaptarr.requests_to("/chaptarr/api/v1/search")
 
 
-def test_chaptarr_lookup_miss_keeps_book_undownloaded(
+def test_chaptarr_lookup_miss_keeps_book_unfulfilled(
     admin_client: TestClient,
     chaptarr: mock_services.MockServer,
     db: Session,
@@ -89,7 +89,7 @@ def test_chaptarr_lookup_miss_keeps_book_undownloaded(
     db.expire_all()
     book = db.get(Audiobook, ASIN)
     assert book is not None
-    assert book.downloaded is False
+    assert book.fulfilled is False
 
 
 def test_auto_download_uses_prowlarr_when_selected(
@@ -115,7 +115,7 @@ def test_auto_download_uses_prowlarr_when_selected(
     db.expire_all()
     book = db.get(Audiobook, ASIN)
     assert book is not None
-    assert book.downloaded is True
+    assert book.fulfilled is True
 
     assert chaptarr.state["chaptarr_added"] == []
     assert not chaptarr.requests_to("/chaptarr/api/v1/book/lookup")
@@ -132,7 +132,7 @@ async def test_chaptarr_transport_error_is_wrapped(db: Session) -> None:
         with pytest.raises(ChaptarrError):
             await start_chaptarr_download(db, client_session, book)
 
-    assert book.downloaded is False
+    assert book.fulfilled is False
 
 
 def test_chaptarr_credential_forms(
@@ -166,9 +166,9 @@ def test_chaptarr_hides_sources(
     assert manual.status_code == 200
     assert "/wishlist/sources/" not in manual.text
 
-    downloaded = admin_client.get("/wishlist/downloaded")
-    assert downloaded.status_code == 200
-    assert "/wishlist/sources/" not in downloaded.text
+    fulfilled = admin_client.get("/wishlist/fulfilled")
+    assert fulfilled.status_code == 200
+    assert "/wishlist/sources/" not in fulfilled.text
 
     redirect = admin_client.get(f"/wishlist/sources/{ASIN}", follow_redirects=False)
     assert redirect.status_code == 302
@@ -208,9 +208,9 @@ def test_prowlarr_shows_sources(
     assert manual.status_code == 200
     assert "/wishlist/sources/" in manual.text
 
-    downloaded = admin_client.get("/wishlist/downloaded")
-    assert downloaded.status_code == 200
-    assert "/wishlist/sources/" in downloaded.text
+    fulfilled = admin_client.get("/wishlist/fulfilled")
+    assert fulfilled.status_code == 200
+    assert "/wishlist/sources/" in fulfilled.text
 
 
 def test_chaptarr_settings_page(
@@ -246,4 +246,4 @@ async def test_background_chaptarr_failure_is_logged_not_raised(
     db.expire_all()
     book = db.get(Audiobook, ASIN)
     assert book is not None
-    assert book.downloaded is False
+    assert book.fulfilled is False
