@@ -48,7 +48,6 @@ app = FastAPI(
         Middleware(DynamicSessionMiddleware, auth_secret, middleware_linker),
         Middleware(GZipMiddleware),
     ],
-    root_path=Settings().app.base_url.rstrip("/"),
     redirect_slashes=False,
 )
 

@@ -50,4 +50,4 @@ ENV ABR_APP__PORT=8000
 ARG VERSION
 ENV ABR_APP__VERSION=$VERSION
 
-CMD /app/.venv/bin/alembic upgrade heads && /app/.venv/bin/fastapi run --port $ABR_APP__PORT --proxy-headers --forwarded-allow-ips="${ABR_APP__FORWARDED_ALLOW_IPS:-127.0.0.1}"
+CMD /app/.venv/bin/alembic upgrade heads && /app/.venv/bin/fastapi run --port $ABR_APP__PORT --root-path "${ABR_APP__BASE_URL%/}" --proxy-headers --forwarded-allow-ips="${ABR_APP__FORWARDED_ALLOW_IPS:-127.0.0.1}"
