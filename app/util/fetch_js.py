@@ -2,6 +2,7 @@
 To fetch javascript files for local development
 """
 
+import re
 from pathlib import Path
 
 import requests
@@ -13,6 +14,10 @@ files = {
     "toastify.js": "https://cdn.jsdelivr.net/npm/toastify-js",
     "toastify.css": "https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css",
 }
+
+# jsDelivr rewrites sourceMappingURL to /sm/<hash>.map, which only exists on
+# their CDN. Served locally that URL 404s, so drop the reference.
+source_map_reference = re.compile(r"\n?//# sourceMappingURL=\S*\s*$")
 
 
 def fetch_scripts(debug: bool) -> None:
@@ -28,8 +33,9 @@ def fetch_scripts(debug: bool) -> None:
                 raise RuntimeError(
                     f"Failed to fetch {file_name} from {url}. Status code: {response.status_code}"
                 )
+            content = source_map_reference.sub("", response.text)
             with open(root / file_name, "w") as f:
-                f.write(response.text)
+                f.write(content)
 
     else:
         for file_name in files:
