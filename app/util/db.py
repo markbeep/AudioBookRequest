@@ -1,3 +1,5 @@
+import sqlite3
+
 from sqlalchemy import create_engine
 from sqlmodel import Session, text
 
@@ -17,4 +19,14 @@ def get_session():
     with Session(engine) as session:
         if not Settings().db.use_postgres:
             session.execute(text("PRAGMA foreign_keys=ON"))
+            # WAL lets readers proceed while a write is in flight; the busy
+            # timeout makes concurrent writers wait instead of failing with
+            # "database is locked".
+            session.execute(text("PRAGMA busy_timeout=30000"))
+            try:
+                session.execute(text("PRAGMA journal_mode=WAL"))
+            except sqlite3.OperationalError:
+                # Some network filesystems do not support WAL; the busy timeout
+                # still serializes writers there.
+                pass
         yield session

@@ -54,6 +54,7 @@ async def search_books(
     merged: list[Audiobook] = []
     for res in results:
         merged.append(session.merge(res))
+    session.commit()
 
     # Check ABS for existing books and mark as downloaded if found
     await abs_mark_downloaded_flags(session, client_session, merged)

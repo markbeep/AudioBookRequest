@@ -48,6 +48,9 @@ async def list_similar_audible_books(
     if cache_result and time.time() - cache_result.timestamp < REFETCH_TTL:
         # Merge cached ORM instances into the current session to avoid cross-session attachment errors
         merged = [session.merge(book) for book in cache_result.value]
+        # Commit immediately so the SQLite write lock is not held for the
+        # remainder of the request.
+        session.commit()
         logger.debug("Using cached popular books", region=audible_region)
         return merged
 

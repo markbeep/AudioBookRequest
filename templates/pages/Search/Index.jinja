@@ -12,11 +12,9 @@
 <BaseLayout title="Search" user={{ user }}>
 <script>
     const onSearch = () => {
-        const search_term = document.querySelector("input").value;
         document.getElementById("search").disabled = true;
         document.getElementById("search-text").style.display = "none";
         document.getElementById("search-spinner").style.display = "inline-block";
-        window.location.href = `/search?q=${encodeURIComponent(search_term)}`;
     };
     const onPageChange = page => {
         const url = new URL(window.location);
@@ -38,7 +36,9 @@
         </a>
     </div>
     <div class="flex flex-col gap-4 justify-start items-center">
-        <form class="flex items-start w-full join" onsubmit="onSearch();">
+        <form class="flex items-start w-full join"
+              method="get"
+              onsubmit="onSearch();">
             <input name="q"
                    class="input join-item focus:z-10"
                    placeholder="Book name..."
