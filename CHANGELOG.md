@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.11.0](https://github.com/markbeep/AudioBookRequest/compare/v1.10.8...v1.11.0) (2026-10-27)
+
+
+### Features
+
+* add chaptarr support ([a083844](https://github.com/markbeep/AudioBookRequest/commit/a0838443a86cf742d0b0b50e4e6d09da1ebcb7fd))
+* add logs page on settings page. Closes [#18](https://github.com/markbeep/AudioBookRequest/issues/18) ([418b40c](https://github.com/markbeep/AudioBookRequest/commit/418b40cd3a01f9062e906b40489d7da42aaeb403))
+
+
+### Bug Fixes
+
+* **api:** fix API endpoints to all support JSON and have correct OpenAPI documentation ([c7d1006](https://github.com/markbeep/AudioBookRequest/commit/c7d10062c60efb1bf08762fd304cfd7e83825da9))
+* fix two requests being sent concurrently when searching causing a database lockup. Closes [#219](https://github.com/markbeep/AudioBookRequest/issues/219) ([1c27600](https://github.com/markbeep/AudioBookRequest/commit/1c276004900a52c5c511872a70e2204ef7d60683))
+* remove toastify.js trying to fetch source-map from /sm/e1ebbf…617.map ([71a5b79](https://github.com/markbeep/AudioBookRequest/commit/71a5b790dca28a4f1903616009f16ee8b4bd7c4b))
+
+
+### Dependencies
+
+* move root path to server configuration ([624bac9](https://github.com/markbeep/AudioBookRequest/commit/624bac95d00102b169aa8279312bfd755cb0cd54))
+* update dependencies ([16535f8](https://github.com/markbeep/AudioBookRequest/commit/16535f8f5579cdabf55691ad5c5dba0098e4c98c))
+
+
+### Documentation
+
+* add ABR MCP server to README. Closes [#238](https://github.com/markbeep/AudioBookRequest/issues/238) ([0432285](https://github.com/markbeep/AudioBookRequest/commit/0432285d47646604f6f89b64d85894679cae6784))
+* update AI-use in contribution document ([5ba76f1](https://github.com/markbeep/AudioBookRequest/commit/5ba76f1da3905d88b48dbb6d6692b9502b57c0ba))
+
+
+### Tests
+
+* add local docker-compose testing setup ([a083844](https://github.com/markbeep/AudioBookRequest/commit/a0838443a86cf742d0b0b50e4e6d09da1ebcb7fd))
+
 ## [1.10.8](https://github.com/markbeep/AudioBookRequest/compare/v1.10.7...v1.10.8) (2026-10-19)
 
 
