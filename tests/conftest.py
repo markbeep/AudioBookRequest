@@ -57,7 +57,7 @@ from app.internal.prowlarr.util import (
 )
 from app.internal.ranking.quality import quality_config
 from app.util.db import engine
-from tests.constants import ASIN, DOWNLOADED_ASIN, MANUAL_ID
+from tests.constants import ASIN, FULFILLED_ASIN, MANUAL_ID
 
 # app.main performs DB work at import time, so the schema must exist first.
 models.BaseSQLModel.metadata.create_all(engine)
@@ -100,20 +100,20 @@ def _seed() -> None:
                 cover_image=None,
                 release_date=datetime(2020, 1, 1, tzinfo=UTC),
                 runtime_length_min=600,
-                downloaded=False,
+                fulfilled=False,
             )
         )
         session.add(
             Audiobook(
-                asin=DOWNLOADED_ASIN,
-                title="Downloaded Book",
+                asin=FULFILLED_ASIN,
+                title="Fulfilled Book",
                 subtitle=None,
                 authors=["Mock Author"],
                 narrators=["Mock Narrator"],
                 cover_image=None,
                 release_date=datetime(2020, 1, 1, tzinfo=UTC),
                 runtime_length_min=300,
-                downloaded=True,
+                fulfilled=True,
             )
         )
         session.add(
@@ -123,13 +123,13 @@ def _seed() -> None:
                 title="Manual Book",
                 authors=["Manual Author"],
                 narrators=[],
-                downloaded=False,
+                fulfilled=False,
             )
         )
         session.commit()
 
         session.add(AudiobookRequest(asin=ASIN, user_username="trusted"))
-        session.add(AudiobookRequest(asin=DOWNLOADED_ASIN, user_username="trusted"))
+        session.add(AudiobookRequest(asin=FULFILLED_ASIN, user_username="trusted"))
         session.commit()
 
         auth_config.set_login_type(session, LoginTypeEnum.basic)

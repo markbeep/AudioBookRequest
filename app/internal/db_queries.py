@@ -17,7 +17,7 @@ from app.internal.models import (
 
 class WishlistCounts(BaseModel):
     requests: int
-    downloaded: int
+    fulfilled: int
     manual: int
 
 
@@ -29,17 +29,17 @@ def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistC
     username = None if user is None or user.is_admin() else user.username
 
     rows = session.exec(
-        select(Audiobook.downloaded, func.count("*"))
+        select(Audiobook.fulfilled, func.count("*"))
         .where(not username or AudiobookRequest.user_username == username)
         .select_from(Audiobook)
         .join(AudiobookRequest)
-        .group_by(col(Audiobook.downloaded))
+        .group_by(col(Audiobook.fulfilled))
     ).all()
     requests = 0
-    downloaded = 0
-    for downloaded_status, count in rows:
-        if downloaded_status:
-            downloaded = count
+    fulfilled = 0
+    for fulfilled_status, count in rows:
+        if fulfilled_status:
+            fulfilled = count
         else:
             requests = count
 
@@ -54,7 +54,7 @@ def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistC
 
     return WishlistCounts(
         requests=requests,
-        downloaded=downloaded,
+        fulfilled=fulfilled,
         manual=manual,
     )
 
@@ -62,17 +62,17 @@ def get_wishlist_counts(session: Session, user: User | None = None) -> WishlistC
 def get_wishlist_results(
     session: Session,
     username: str | None = None,
-    response_type: Literal["all", "downloaded", "not_downloaded"] = "all",
+    response_type: Literal["all", "fulfilled", "not_fulfilled"] = "all",
 ) -> list[AudiobookWishlistResult]:
     """
     Gets the books that have been requested. If a username is given only the books requested by that
     user are returned. If no username is given, all book requests are returned.
     """
     match response_type:
-        case "downloaded":
-            clause = Audiobook.downloaded
-        case "not_downloaded":
-            clause = not_(Audiobook.downloaded)
+        case "fulfilled":
+            clause = Audiobook.fulfilled
+        case "not_fulfilled":
+            clause = not_(Audiobook.fulfilled)
         case _:
             clause = True
 
@@ -114,5 +114,5 @@ def get_all_manual_requests(
             user.is_admin() or ManualBookRequest.user_username == user.username,
             col(ManualBookRequest.user_username).is_not(None),
         )
-        .order_by(asc(ManualBookRequest.downloaded))
+        .order_by(asc(ManualBookRequest.fulfilled))
     ).all()

@@ -57,10 +57,10 @@ def test_popular_hidden_when_user_is_sole_requester(
     assert "/hx-popular" not in response.text
 
 
-def test_popular_hidden_when_other_requests_are_downloaded(
+def test_popular_hidden_when_other_requests_are_fulfilled(
     admin_client: TestClient,
 ) -> None:
-    assert admin_client.patch("/api/requests/B00TEST01/downloaded").status_code == 204
+    assert admin_client.patch("/api/requests/B00TEST01/fulfilled").status_code == 204
     response = admin_client.get("/")
     assert response.status_code == 200
     assert "/hx-popular" not in response.text

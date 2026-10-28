@@ -50,7 +50,7 @@
                     No books on your wishlist. Add some
                     books by heading to the
                     <a preload class="link" href="{{ base_url }}/search">search</a> tab {%
-                    elif page.__eq__("downloaded") %} No books have been downloaded yet. {%
+                    elif page.__eq__("fulfilled") %} No requests have been fulfilled yet. {%
                         endif %}
                     </span>
                     </div>
@@ -156,8 +156,8 @@
                                         <icons.List />
                                     </a>
                                 {% endif %}
-                                <button {% if book.downloaded %}title="Downloaded"class="btn btn-square btn-ghost bg-success text-neutral/20" {% else %} title="Automatic Download" class="btn btn-square" {% endif %}
-                                        {% if not user.can_download() or book.downloaded %}disabled{% endif %}
+                                <button {% if book.fulfilled %}title="Fulfilled"class="btn btn-square btn-ghost bg-success text-neutral/20" {% else %} title="Automatic Download" class="btn btn-square" {% endif %}
+                                        {% if not user.can_download() or book.fulfilled %}disabled{% endif %}
                                         hx-post="{{ base_url }}/wishlist/hx-auto-download/{{ book.asin }}"
                                         hx-swap="outerHTML"
                                         hx-target="#book-table-body"
@@ -166,22 +166,22 @@
                                 </button>
                                 <button title="Remove"
                                         class="btn btn-square"
-                                        hx-delete="{{ base_url }}/wishlist/hx-delete/{{ book.asin }}{%- if page.__eq__('downloaded') -%}?downloaded=true{%- endif -%}"
+                                        hx-delete="{{ base_url }}/wishlist/hx-delete/{{ book.asin }}{%- if page.__eq__('fulfilled') -%}?fulfilled=true{%- endif -%}"
                                         hx-swap="outerHTML"
                                         hx-target="#book-table-body"
                                         hx-disabled-elt="this">
                                     <icons.Ban />
                                 </button>
-                                {% if book.downloaded %}
+                                {% if book.fulfilled %}
                                     <button class="btn btn-square btn-ghost bg-success text-neutral/20"
                                             disabled
-                                            title="Set as downloaded">
+                                            title="Set as fulfilled">
                                         <icons.Checkmark />
                                     </button>
                                 {% else %}
                                     <button class="btn btn-square"
-                                            title="Set as downloaded"
-                                            hx-patch="{{ base_url }}/wishlist/downloaded/hx-add/{{ book.asin }}"
+                                            title="Set as fulfilled"
+                                            hx-patch="{{ base_url }}/wishlist/fulfilled/hx-add/{{ book.asin }}"
                                             {% if not user.is_admin() %}disabled{% endif %}
                                             hx-swap="outerHTML"
                                             hx-target="#book-table-body"
