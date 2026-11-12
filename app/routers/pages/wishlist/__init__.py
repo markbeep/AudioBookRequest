@@ -1,15 +1,21 @@
 from typing import Annotated
 
 from aiohttp import ClientSession
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, Depends, Form, Security
 from sqlmodel import Session
 
 from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.db_queries import get_wishlist_counts, get_wishlist_results
 from app.internal.download_backend import get_download_backend
 from app.internal.models import GroupEnum
-from app.routers.api.requests import delete_request as api_delete_request
-from app.routers.api.requests import start_auto_download_endpoint
+from app.routers.api.requests import (
+    AdminNote,
+    start_auto_download_endpoint,
+    update_request_note,
+)
+from app.routers.api.requests import (
+    delete_request as api_delete_request,
+)
 from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.templates import catalog_response
@@ -55,6 +61,29 @@ async def start_auto_download(
     return catalog_response(
         "Wishlist.Wishlist",
         user=user,
+        results=results,
+        page="wishlist",
+        counts=counts,
+        show_sources=get_download_backend(session) == "prowlarr",
+        update_tablist=True,
+    )
+
+
+@router.put("/hx-note/{asin}")
+async def update_note(
+    asin: str,
+    session: Annotated[Session, Depends(get_session)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    note: Annotated[str, Form()] = "",
+):
+    await update_request_note(asin, AdminNote(note=note), session, admin_user)
+
+    results = get_wishlist_results(session, None, "not_fulfilled")
+    counts = get_wishlist_counts(session, admin_user)
+
+    return catalog_response(
+        "Wishlist.Wishlist",
+        user=admin_user,
         results=results,
         page="wishlist",
         counts=counts,

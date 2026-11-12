@@ -114,6 +114,31 @@ def test_wishlist_pages(admin_client: TestClient) -> None:
     assert admin_client.get("/wishlist/manual").status_code == 200
 
 
+def test_wishlist_note_actions(
+    admin_client: TestClient, trusted_client: TestClient
+) -> None:
+    forbidden = trusted_client.put(
+        f"/wishlist/hx-note/{ASIN}", data={"note": "not allowed"}
+    )
+    assert forbidden.status_code == 403
+
+    saved = admin_client.put(
+        f"/wishlist/hx-note/{ASIN}", data={"note": "Cannot find a source"}
+    )
+    assert saved.status_code == 200, saved.text
+    assert "Cannot find a source" in saved.text
+
+    visible = trusted_client.get("/wishlist")
+    assert visible.status_code == 200
+    assert "Cannot find a source" in visible.text
+
+    manual = admin_client.put(
+        f"/wishlist/manual/hx-note/{MANUAL_ID}", data={"note": "Waiting for upload"}
+    )
+    assert manual.status_code == 200, manual.text
+    assert "Waiting for upload" in manual.text
+
+
 def test_wishlist_source_pages(admin_client: TestClient, prowlarr: MockServer) -> None:
     assert prowlarr.base_url
     response = admin_client.get(f"/wishlist/sources/{ASIN}")

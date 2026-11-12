@@ -79,6 +79,7 @@ class Audiobook(BaseSQLModel, table=True):
             nullable=False,
         ),
     )
+    admin_note: str | None = None
     fulfilled: bool = False
 
     @computed_field
@@ -171,6 +172,7 @@ class ManualBookRequest(BaseSQLModel, table=True):
             nullable=False,
         ),
     )
+    admin_note: str | None = None
     fulfilled: bool = False
 
     @computed_field

@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Security
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, Security
 from sqlmodel import Session
 
 from app.internal.audiobookshelf.client import background_abs_trigger_scan
@@ -10,7 +10,12 @@ from app.internal.auth.authentication import ABRAuth, DetailedUser
 from app.internal.db_queries import get_all_manual_requests, get_wishlist_counts
 from app.internal.download_backend import get_download_backend
 from app.internal.models import GroupEnum
-from app.routers.api.requests import delete_manual_request, mark_manual_fulfilled
+from app.routers.api.requests import (
+    AdminNote,
+    delete_manual_request,
+    mark_manual_fulfilled,
+    update_manual_request_note,
+)
 from app.util.db import get_session
 from app.util.templates import catalog_response
 
@@ -55,6 +60,29 @@ async def fulfilled_manual(
         counts=counts,
         show_sources=get_download_backend(session) == "prowlarr",
         update_tablist=True,
+    )
+
+
+@router.put("/hx-note/{id}")
+async def note_manual(
+    id: uuid.UUID,
+    session: Annotated[Session, Depends(get_session)],
+    admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
+    note: Annotated[str, Form()] = "",
+):
+    await update_manual_request_note(
+        id, AdminNote(note=note), session, admin_user
+    )
+
+    results = get_all_manual_requests(session, admin_user)
+    counts = get_wishlist_counts(session, admin_user)
+
+    return catalog_response(
+        "Wishlist.ManualWishlist",
+        user=admin_user,
+        results=results,
+        counts=counts,
+        show_sources=get_download_backend(session) == "prowlarr",
     )
 
 

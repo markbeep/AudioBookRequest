@@ -11,7 +11,7 @@ from fastapi import (
     Response,
     Security,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlmodel import Session, asc, col, delete, select
 
 from app.internal.audible.single import get_single_book
@@ -82,6 +82,10 @@ class ManualRequest(BaseModel):
     subtitle: str | None = None
     publish_date: str | None = None
     info: str | None = None
+
+
+class AdminNote(BaseModel):
+    note: str = Field(default="", max_length=2000)
 
 
 # Must be declared before /{asin_or_uuid}, otherwise "manual" is parsed as an ASIN.
@@ -281,6 +285,22 @@ async def mark_downloaded(
     return response
 
 
+@router.put("/{asin_or_uuid}/note", status_code=204)
+async def update_request_note(
+    asin_or_uuid: str,
+    body: AdminNote,
+    session: Annotated[Session, Depends(get_session)],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
+):
+    book = session.get(Audiobook, asin_or_uuid)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    book.admin_note = body.note.strip() or None
+    session.add(book)
+    session.commit()
+    return Response(status_code=204)
+
+
 @router.get("/manual", response_model=list[ManualBookRequest])
 async def list_manual_requests(
     session: Annotated[Session, Depends(get_session)],
@@ -317,6 +337,22 @@ async def update_manual_request(
     book_request.publish_date = body.publish_date
     book_request.additional_info = body.info
 
+    session.add(book_request)
+    session.commit()
+    return Response(status_code=204)
+
+
+@router.put("/manual/{id}/note", status_code=204)
+async def update_manual_request_note(
+    id: uuid.UUID,
+    body: AdminNote,
+    session: Annotated[Session, Depends(get_session)],
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
+):
+    book_request = session.get(ManualBookRequest, id)
+    if not book_request:
+        raise HTTPException(status_code=404, detail="Book request not found")
+    book_request.admin_note = body.note.strip() or None
     session.add(book_request)
     session.commit()
     return Response(status_code=204)

@@ -96,6 +96,11 @@
                                     {% if book.subtitle %}
                                         <span class="font-semibold line-clamp-4" title="{{ book.subtitle }}">{{ book.subtitle }}</span>
                                     {% endif %}
+                                    {% if book.admin_note %}
+                                        <div class="mt-1 text-xs font-normal text-warning whitespace-pre-line">
+                                            Note: {{ book.admin_note }}
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </td>
                             <td>
@@ -188,6 +193,47 @@
                                             hx-disabled-elt="this">
                                         <icons.Checkmark />
                                     </button>
+                                {% endif %}
+                                {% if user.is_admin() and page.__eq__("wishlist") %}
+                                    <button title="{% if book.admin_note %}Edit note{% else %}Add note{% endif %}"
+                                            class="btn btn-square"
+                                            onclick="noteModal{{ book.asin }}.showModal()">
+                                        <icons.Pencil />
+                                    </button>
+                                    <dialog id="noteModal{{ book.asin }}"
+                                            class="modal"
+                                            aria-labelledby="note-title-{{ book.asin }}">
+                                        <div class="modal-box max-w-2xl">
+                                            <h3 id="note-title-{{ book.asin }}" class="text-lg font-bold break-words">
+                                                Admin note for <span class="italic">{{ book.title }}</span>
+                                            </h3>
+                                            <form class="mt-4"
+                                                  hx-put="{{ base_url }}/wishlist/hx-note/{{ book.asin }}"
+                                                  hx-target="#book-table-body"
+                                                  hx-swap="outerHTML"
+                                                  hx-disabled-elt="find button[type='submit']">
+                                                <label for="note-{{ book.asin }}" class="flex flex-col gap-2">
+                                                    <span class="text-sm font-semibold">Note</span>
+                                                    <textarea id="note-{{ book.asin }}"
+                                                              name="note"
+                                                              class="textarea w-full h-32 resize-y leading-relaxed"
+                                                              maxlength="2000"
+                                                              placeholder="Why can't this request be fulfilled right now?">{{ book.admin_note or "" }}</textarea>
+                                                </label>
+                                                <div class="modal-action">
+                                                    <button type="button" class="btn" onclick="this.closest('dialog').close()">
+                                                        Cancel
+                                                    </button>
+                                                    <button type="submit" class="btn btn-primary">
+                                                        Save note
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <form method="dialog" class="modal-backdrop">
+                                            <button>close</button>
+                                        </form>
+                                    </dialog>
                                 {% endif %}
                             </td>
                         </tr>

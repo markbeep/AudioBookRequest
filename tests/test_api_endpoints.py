@@ -459,6 +459,75 @@ def test_requests_list(admin_client: TestClient, trusted_client: TestClient) -> 
     assert book["downloaded"] is False
 
 
+def test_request_notes(admin_client: TestClient, trusted_client: TestClient) -> None:
+    assert (
+        trusted_client.put(
+            f"/api/requests/{ASIN}/note", json={"note": "not allowed"}
+        ).status_code
+        == 403
+    )
+    assert (
+        admin_client.put("/api/requests/missing/note", json={"note": "x"}).status_code
+        == 404
+    )
+    assert (
+        admin_client.put(
+            f"/api/requests/{ASIN}/note", json={"note": "x" * 2001}
+        ).status_code
+        == 422
+    )
+
+    saved = admin_client.put(
+        f"/api/requests/{ASIN}/note", json={"note": "  Cannot find a source  "}
+    )
+    assert saved.status_code == 204
+
+    requests = [as_dict(item) for item in json_list(admin_client.get("/api/requests"))]
+    book = next(
+        as_dict(item["book"])
+        for item in requests
+        if as_dict(item["book"])["asin"] == ASIN
+    )
+    assert book["admin_note"] == "Cannot find a source"
+
+    assert (
+        admin_client.put(f"/api/requests/{ASIN}/note", json={"note": ""}).status_code
+        == 204
+    )
+    requests = [as_dict(item) for item in json_list(admin_client.get("/api/requests"))]
+    book = next(
+        as_dict(item["book"])
+        for item in requests
+        if as_dict(item["book"])["asin"] == ASIN
+    )
+    assert book["admin_note"] is None
+
+    assert (
+        trusted_client.put(
+            f"/api/requests/manual/{MANUAL_ID}/note", json={"note": "not allowed"}
+        ).status_code
+        == 403
+    )
+    assert (
+        admin_client.put(
+            "/api/requests/manual/00000000-0000-0000-0000-000000000000/note",
+            json={"note": "x"},
+        ).status_code
+        == 404
+    )
+    assert (
+        admin_client.put(
+            f"/api/requests/manual/{MANUAL_ID}/note",
+            json={"note": "Waiting for upload"},
+        ).status_code
+        == 204
+    )
+    manual = [as_dict(item) for item in json_list(admin_client.get("/api/requests/manual"))]
+    assert next(item for item in manual if item["id"] == str(MANUAL_ID))[
+        "admin_note"
+    ] == "Waiting for upload"
+
+
 def test_create_request(admin_client: TestClient) -> None:
     created = admin_client.post(f"/api/requests/{ASIN}")
     assert created.status_code == 200, created.text
