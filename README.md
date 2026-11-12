@@ -67,7 +67,7 @@ AudioBookRequest is intended to be deployed using Docker or Kubernetes. For "bar
 Run the image directly:
 
 ```bash
-docker run -p 8000:8000 -v $(pwd)/config:/config markbeep/audiobookrequest:1
+docker run -p 8000:8000 -v $(pwd)/config:/config markbeep/audiobookrequest:2
 ```
 
 Then head to http://localhost:8000.
