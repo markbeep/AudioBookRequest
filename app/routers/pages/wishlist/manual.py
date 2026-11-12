@@ -70,9 +70,7 @@ async def note_manual(
     admin_user: Annotated[DetailedUser, Security(ABRAuth(GroupEnum.admin))],
     note: Annotated[str, Form()] = "",
 ):
-    await update_manual_request_note(
-        id, AdminNote(note=note), session, admin_user
-    )
+    await update_manual_request_note(id, AdminNote(note=note), session, admin_user)
 
     results = get_all_manual_requests(session, admin_user)
     counts = get_wishlist_counts(session, admin_user)

@@ -7,7 +7,8 @@
     update_tablist = False, # performs oob replacement for the tablist
 #}
 
-<table id="book-table-body" class="table table-pin-rows min-w-240">
+<table id="book-table-body"
+       class="wishlist-table has-cover table table-pin-rows min-w-240">
     {% if update_tablist %}
         <Wishlist.Tablist page={{ page }} counts={{ counts }} />
     {% endif %}
@@ -59,10 +60,10 @@
                     {% for result in results %}
                         {% set book = result.book %}
                         <tr class="text-xs lg:text-sm" id="{{ book.asin }}">
-                            <th>
+                            <th class="w-index">
                                 {{ loop.index }}
                             </th>
-                            <td>
+                            <td class="w-cover">
                                 <div class="size-16 lg:size-24">
                                     {% if book.cover_image %}
                                         <img class="object-cover w-full h-full cursor-pointer"
@@ -87,7 +88,7 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            <td>
+                            <td class="w-title">
                                 <div class="flex flex-col">
                                     <a preload
                                        href="{{ base_url }}/search?q={{ book.title+' ' +(book.authors|join(",") ) }}"
@@ -103,25 +104,30 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            <td>
-                                {{ book.authors|join(", ") }}
+                            <td class="w-author">
+                                {% if book.authors %}
+                                    <span class="lg:hidden opacity-70">by </span>{{ book.authors|join(", ") }}
+                                {% endif %}
                             </td>
-                            <td>
-                                {{ book.narrators|join(", ") }}
+                            <td class="w-narrator">
+                                {% if book.narrators %}
+                                    <span class="lg:hidden opacity-70">narrated by </span>{{ book.narrators|join(", ") }}
+                                {% endif %}
                             </td>
                             <td class="hidden lg:table-cell">
                                 {{ book.release_date.strftime("%B %Y") }}
                             </td>
-                            <td class="lg:hidden">
+                            <td class="lg:hidden w-year">
                                 {{ book.release_date.strftime("%Y") }}
                             </td>
-                            <td>
-                                {{ book.runtime_length_hrs }}
+                            <td class="w-length">
+                                {{ book.runtime_length_hrs }}<span class="lg:hidden opacity-70"> hrs</span>
                             </td>
 
-                            <td title="{{ result.amount_requested }}">
+                            <td class="w-requested" title="{{ result.amount_requested }}">
                                 {% if user.is_admin() %}
                                     <button class="btn px-1 text-sm"
+                                            title="View requesters"
                                             onclick="requesters{{ loop.index }}.showModal()">
                                         {{ result.amount_requested }}
                                         <icons.Users />
@@ -147,11 +153,11 @@
                                         </form>
                                     </dialog>
                                 {% else %}
-                                    {{ result.amount_requested }}
+                                    {{ result.amount_requested }}<span class="lg:hidden" title="Requested"><icons.Users /></span>
                                 {% endif %}
                             </td>
 
-                            <td class="grid grid-cols-2 min-w-32 gap-1 w-fit ml-auto">
+                            <td class="w-actions grid grid-cols-2 min-w-32 gap-1 w-fit ml-auto">
                                 {% if show_sources %}
                                     <a preload
                                        title="Torrent Sources"

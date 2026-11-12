@@ -5,11 +5,11 @@
 {% set book_id = result.book.id if result.book.id is defined else result.book.asin %}
 {% set is_manual = result.book.id is defined %}
 
-<div class="w-screen p-2 md:p-4 lg:p-8 flex flex-col gap-2" id="sources">
+<div class="w-full p-3 md:p-4 lg:p-8 flex flex-col gap-3" id="sources">
     <a preload
        href="{{ base_url }}/wishlist{% if is_manual %}/manual{% endif %}#{{ book_id }}"
        class="w-fit btn btn-ghost">&lt; Back to wishlist</a>
-    <h1 class="text-3xl font-bold">
+    <h1 class="text-2xl sm:text-3xl font-bold break-words">
         Sources for {{ result.book.title }}
     </h1>
     {% if result.ok and not result.sources %}
@@ -36,8 +36,8 @@
             </span>
         </div>
     {% endif %}
-    <div class="overflow-x-auto">
-        <table class="table table-zebra table-pin-rows min-w-240">
+    <div class="lg:overflow-x-auto">
+        <table class="wishlist-table is-sources table table-zebra table-pin-rows min-w-240">
             <thead>
                 <tr>
                     <th>
@@ -73,48 +73,48 @@
             <tbody>
                 {% for source in (result.sources or []) %}
                     <tr class="text-xs lg:text-sm {% if loop.index==1 %}bg-success dark:text-gray-700{% endif %}">
-                        <th>
+                        <th class="w-index">
                             {{ loop.index }}
                         </th>
-                        <td>
+                        <td class="w-title">
                             {% if source.info_url %}
                                 <a href="{{ source.info_url }}" class="link">{{ source.title }}</a>
                             {% else %}
                                 {{ source.title }}
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="w-authors">
                             {% if source.book_metadata.authors %}
                                 {{ source.book_metadata.authors|join(", ") }}
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="w-narrators">
                             {% if source.book_metadata.narrators %}
                                 {{ source.book_metadata.narrators|join(", ") }}
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="w-indexer">
                             {{ source.indexer }}
                         </td>
-                        <td>
+                        <td class="w-flags">
                             {{ source.indexer_flags|join(", ") }}
                         </td>
                         {% if source.protocol == "torrent" %}
-                            <td>
-                                {{ source.seeders }} / {{ source.leechers }}
+                            <td class="w-stats">
+                                <span class="lg:hidden opacity-70">seeds/leech </span>{{ source.seeders }} / {{ source.leechers }}
                             </td>
                         {% else %}
-                            <td>
-                                {{ source.grabs }} grabs
+                            <td class="w-stats">
+                                <span class="lg:hidden opacity-70">grabs </span>{{ source.grabs }}
                             </td>
                         {% endif %}
-                        <td>
-                            {{ source.size_MB }}
+                        <td class="w-size">
+                            <span class="lg:hidden opacity-70">size </span>{{ source.size_MB }} MB
                         </td>
-                        <td>
+                        <td class="w-date">
                             {{ source.publish_date.strftime("%d. %b %Y") }}
                         </td>
-                        <td>
+                        <td class="w-control">
                             <label id="form-{{ loop.index }}"
                                    class="swap swap-flip"
                                    title="Send to download client">

@@ -29,15 +29,9 @@ upgrade-deps:
 format_html:
     uv run djlint templates --extension=jinja --reformat
 
-types:
-    uv run basedpyright
-
 test:
-    uv run pytest tests
-
-test_format:
+    uv run basedpyright
     uv run djlint templates --extension=jinja --check
     uv run ruff format --check app
-
-test_jinja:
     uv run app/util/test_jinjax.py templates/ -g content base_url json_regexp audible_regions version changelog getattr -f toJSstring
+    uv run pytest tests

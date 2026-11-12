@@ -91,6 +91,227 @@
   @apply underline;
 }
 
+/* Wishlist tables become stacked cards below the lg breakpoint. */
+@media (max-width: 63.9375rem) {
+  .wishlist-table,
+  .wishlist-table tbody {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .wishlist-table thead {
+    display: none;
+  }
+
+  .wishlist-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title title"
+      "author author"
+      "narrator narrator"
+      "info info"
+      "date requester"
+      "actions actions";
+    column-gap: 0.75rem;
+    row-gap: 0.125rem;
+    padding: 0.875rem 0.75rem 0.625rem;
+    border-bottom: 1px solid var(--color-base-300);
+    align-items: start;
+    font-size: 0.875rem;
+    line-height: 1.35;
+  }
+
+  .wishlist-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .wishlist-table tbody td,
+  .wishlist-table tbody th {
+    display: block;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .wishlist-table .w-index {
+    display: none;
+  }
+
+  /* Keep columns the template hides below lg (e.g. the full release date) out of the card. */
+  .wishlist-table tbody td.hidden,
+  .wishlist-table tbody th.hidden {
+    display: none;
+  }
+
+  /* Main wishlist rows */
+  .wishlist-table.has-cover tbody tr {
+    grid-template-columns: 4.25rem auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "cover title title title"
+      "cover author author author"
+      "cover narrator narrator narrator"
+      "cover year length requested"
+      "actions actions actions actions";
+  }
+
+  .wishlist-table .w-cover {
+    grid-area: cover;
+    padding-right: 0.5rem;
+  }
+
+  .wishlist-table .w-cover > div {
+    width: 3.75rem;
+    height: 5.25rem;
+    border-radius: var(--radius-box, 0.5rem);
+  }
+
+  .wishlist-table .w-title {
+    grid-area: title;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .wishlist-table .w-title a {
+    font-size: 0.875rem;
+    line-height: 1.2;
+  }
+
+  .wishlist-table .w-author {
+    grid-area: author;
+  }
+
+  .wishlist-table .w-narrator {
+    grid-area: narrator;
+  }
+
+  .wishlist-table .w-year {
+    grid-area: year;
+    opacity: 0.75;
+  }
+
+  .wishlist-table .w-length {
+    grid-area: length;
+    justify-self: end;
+    white-space: nowrap;
+    opacity: 0.75;
+  }
+
+  .wishlist-table .w-requested {
+    grid-area: requested;
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+    font-size: 0.75rem;
+  }
+
+  .wishlist-table .w-requested .btn {
+    height: 1.75rem;
+    min-height: 0;
+    padding-inline: 0.375rem;
+    font-size: 0.75rem;
+  }
+
+  .wishlist-table .w-requested svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* Manual requests rows */
+  .wishlist-table.is-manual tbody tr {
+    grid-template-areas:
+      "title title"
+      "author author"
+      "narrator narrator"
+      "info info"
+      "date requester"
+      "actions actions";
+  }
+
+  .wishlist-table .w-date {
+    grid-area: date;
+    opacity: 0.75;
+  }
+
+  .wishlist-table .w-info {
+    grid-area: info;
+    opacity: 0.85;
+  }
+
+  .wishlist-table .w-requester {
+    grid-area: requester;
+    justify-self: end;
+    text-align: right;
+  }
+
+  /* Torrent sources rows */
+  .wishlist-table.is-sources tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title control"
+      "indexer flags"
+      "stats stats"
+      "size date";
+    row-gap: 0.25rem;
+  }
+
+  .wishlist-table .w-authors,
+  .wishlist-table .w-narrators {
+    display: none;
+  }
+
+  .wishlist-table .w-indexer {
+    grid-area: indexer;
+  }
+
+  .wishlist-table .w-flags {
+    grid-area: flags;
+    justify-self: end;
+    opacity: 0.75;
+  }
+
+  .wishlist-table .w-stats {
+    grid-area: stats;
+  }
+
+  .wishlist-table .w-size {
+    grid-area: size;
+    opacity: 0.75;
+  }
+
+  .wishlist-table .w-control {
+    grid-area: control;
+    justify-self: end;
+  }
+
+  /* Shared action row */
+  .wishlist-table .w-actions {
+    grid-area: actions;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    width: auto;
+    min-width: 0;
+    margin: 0.5rem 0 0;
+  }
+
+  .wishlist-table .w-actions .btn {
+    height: 2.75rem;
+    width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  /* On a card, greyed-out controls that the user cannot use are just noise. */
+  .wishlist-table .w-actions .btn:disabled,
+  .wishlist-table .w-actions .btn[disabled] {
+    display: none;
+  }
+}
+
 .book-cover-modal .modal-box {
   width: auto;
   max-width: min(90vw, 40rem);
