@@ -28,7 +28,7 @@ def get_popular_books(
     session: Session,
     limit: int = 10,
     min_requests: int = 1,  # Lower default minimum
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: bool = True,
     exclude_requested_username: str | None = None,
 ) -> list[AudiobookPopularity]:
     """Get the most popular books based on how many users have requested them."""
@@ -53,8 +53,8 @@ def get_popular_books(
         .limit(limit)
     )
 
-    if exclude_downloaded:
-        query = query.where(~col(Audiobook.downloaded))
+    if exclude_fulfilled:
+        query = query.where(~col(Audiobook.fulfilled))
     if exclude_requested_username:  # removes all books requested by the excluded user
         query = query.where(
             col(Audiobook.asin).not_in(
@@ -89,7 +89,7 @@ def get_recently_requested_books(
     session: Session,
     limit: int = 10,
     days_back: int = 30,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: bool = True,
     exclude_requested_username: str | None = None,
 ) -> Sequence[AudiobookWithRequests]:
     """Get recently requested books within the specified time frame."""
@@ -119,8 +119,8 @@ def get_recently_requested_books(
         )
     )
 
-    if exclude_downloaded:
-        query = query.where(~col(Audiobook.downloaded))
+    if exclude_fulfilled:
+        query = query.where(~col(Audiobook.fulfilled))
 
     results = session.exec(query).all()
     logger.debug(f"Recently requested books query returned {len(results)} results")
@@ -143,7 +143,7 @@ class AuthorNarrators(BaseModel):
 def get_most_popular_authors(
     session: Session,
     limit: int = 10,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: bool = True,
     username: str | None = None,
 ) -> AuthorNarrators:
     """Get the most popular authors based on how many users have requested their books."""
@@ -154,8 +154,8 @@ def get_most_popular_authors(
             AudiobookRequest.user_username == username
         )
     query = select(Audiobook).where(col(Audiobook.asin).in_(requested_asins))
-    if exclude_downloaded:
-        query = query.where(~col(Audiobook.downloaded))
+    if exclude_fulfilled:
+        query = query.where(~col(Audiobook.fulfilled))
     audiobooks = session.exec(query).all()
     author_counter = Counter[str]()
     narrator_counter = Counter[str]()

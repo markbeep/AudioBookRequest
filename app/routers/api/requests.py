@@ -49,6 +49,26 @@ from app.util.log import logger
 
 router = APIRouter(prefix="/requests", tags=["Requests"])
 
+WishlistFilter = Literal[
+    "all", "fulfilled", "not_fulfilled", "downloaded", "not_downloaded"
+]
+
+
+def _resolve_filter(
+    filter: WishlistFilter,
+) -> Literal["all", "fulfilled", "not_fulfilled"]:
+    match filter:
+        case "downloaded":
+            return "fulfilled"
+        case "not_downloaded":
+            return "not_fulfilled"
+        case "fulfilled":
+            return "fulfilled"
+        case "not_fulfilled":
+            return "not_fulfilled"
+        case _:
+            return "all"
+
 
 class DownloadSourceBody(BaseModel):
     guid: str
@@ -179,12 +199,17 @@ async def list_requests(
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(AnyAuth())],
     filter: Annotated[
-        Literal["all", "downloaded", "not_downloaded"],
-        Query(description="Filter by download status."),
+        WishlistFilter,
+        Query(
+            description=(
+                "Filter by request state. `downloaded` and `not_downloaded` are "
+                "deprecated aliases for `fulfilled` and `not_fulfilled`."
+            )
+        ),
     ] = "all",
 ):
     username = None if user.is_admin() else user.username
-    results = get_wishlist_results(session, username, filter)
+    results = get_wishlist_results(session, username, _resolve_filter(filter))
     return results
 
 
@@ -209,26 +234,51 @@ async def delete_request(
     return Response(status_code=204)
 
 
-@router.patch("/{asin_or_uuid}/downloaded", status_code=204)
+async def _mark_fulfilled(
+    asin_or_uuid: str,
+    session: Session,
+    background_task: BackgroundTasks,
+) -> Response:
+    book = session.exec(select(Audiobook).where(Audiobook.asin == asin_or_uuid)).first()
+    if book:
+        book.fulfilled = True
+        session.add(book)
+        session.commit()
+
+        background_task.add_task(
+            send_all_notifications,
+            event_type=EventEnum.on_fulfilled,
+            book_asin=asin_or_uuid,
+        )
+        return Response(status_code=204)
+    raise HTTPException(status_code=404, detail="Book not found")
+
+
+@router.patch("/{asin_or_uuid}/fulfilled", status_code=204)
+async def mark_fulfilled(
+    asin_or_uuid: str,
+    session: Annotated[Session, Depends(get_session)],
+    background_task: BackgroundTasks,
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
+):
+    return await _mark_fulfilled(asin_or_uuid, session, background_task)
+
+
+@router.patch(
+    "/{asin_or_uuid}/downloaded",
+    status_code=204,
+    deprecated=True,
+    summary="Deprecated: use /{asin_or_uuid}/fulfilled",
+)
 async def mark_downloaded(
     asin_or_uuid: str,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
     _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
-    book = session.exec(select(Audiobook).where(Audiobook.asin == asin_or_uuid)).first()
-    if book:
-        book.downloaded = True
-        session.add(book)
-        session.commit()
-
-        background_task.add_task(
-            send_all_notifications,
-            event_type=EventEnum.on_successful_download,
-            book_asin=asin_or_uuid,
-        )
-        return Response(status_code=204)
-    raise HTTPException(status_code=404, detail="Book not found")
+    response = await _mark_fulfilled(asin_or_uuid, session, background_task)
+    response.headers["Deprecation"] = "true"
+    return response
 
 
 @router.get("/manual", response_model=list[ManualBookRequest])
@@ -242,7 +292,7 @@ async def list_manual_requests(
             user.is_admin() or ManualBookRequest.user_username == user.username,
             col(ManualBookRequest.user_username).is_not(None),
         )
-        .order_by(asc(ManualBookRequest.downloaded))
+        .order_by(asc(ManualBookRequest.fulfilled))
     ).all()
 
 
@@ -272,26 +322,51 @@ async def update_manual_request(
     return Response(status_code=204)
 
 
-@router.patch("/manual/{id}/downloaded", status_code=204)
+async def _mark_manual_fulfilled(
+    id: uuid.UUID,
+    session: Session,
+    background_task: BackgroundTasks,
+) -> Response:
+    book_request = session.get(ManualBookRequest, id)
+    if book_request:
+        book_request.fulfilled = True
+        session.add(book_request)
+        session.commit()
+
+        background_task.add_task(
+            send_all_manual_notifications,
+            event_type=EventEnum.on_fulfilled,
+            book_request=ManualBookRequest.model_validate(book_request),
+        )
+        return Response(status_code=204)
+    raise HTTPException(status_code=404, detail="Request not found")
+
+
+@router.patch("/manual/{id}/fulfilled", status_code=204)
+async def mark_manual_fulfilled(
+    id: uuid.UUID,
+    session: Annotated[Session, Depends(get_session)],
+    background_task: BackgroundTasks,
+    _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
+):
+    return await _mark_manual_fulfilled(id, session, background_task)
+
+
+@router.patch(
+    "/manual/{id}/downloaded",
+    status_code=204,
+    deprecated=True,
+    summary="Deprecated: use /manual/{id}/fulfilled",
+)
 async def mark_manual_downloaded(
     id: uuid.UUID,
     session: Annotated[Session, Depends(get_session)],
     background_task: BackgroundTasks,
     _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
-    book_request = session.get(ManualBookRequest, id)
-    if book_request:
-        book_request.downloaded = True
-        session.add(book_request)
-        session.commit()
-
-        background_task.add_task(
-            send_all_manual_notifications,
-            event_type=EventEnum.on_successful_download,
-            book_request=ManualBookRequest.model_validate(book_request),
-        )
-        return Response(status_code=204)
-    raise HTTPException(status_code=404, detail="Request not found")
+    response = await _mark_manual_fulfilled(id, session, background_task)
+    response.headers["Deprecation"] = "true"
+    return response
 
 
 @router.delete("/manual/{id}", status_code=204)

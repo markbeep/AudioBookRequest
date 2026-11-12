@@ -230,7 +230,7 @@ async def start_chaptarr_download(
         logger.error("Chaptarr: failed to add book", asin=book.asin, error=e.message)
         try:
             await send_all_notifications(
-                EventEnum.on_failed_download,
+                EventEnum.on_failed_fulfillment,
                 book.asin,
                 {
                     "errorStatus": str(e.status) if e.status else "chaptarr",
@@ -238,14 +238,14 @@ async def start_chaptarr_download(
                 },
             )
         except Exception:
-            logger.error("Chaptarr: failed to send download failure notification")
+            logger.error("Chaptarr: failed to send fulfillment failure notification")
         raise e from exc
 
-    book.downloaded = True
+    book.fulfilled = True
     session.add(book)
     session.commit()
     await send_all_notifications(
-        EventEnum.on_successful_download,
+        EventEnum.on_fulfilled,
         book.asin,
         {"indexerName": "Chaptarr"},
     )

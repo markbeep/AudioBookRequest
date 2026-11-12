@@ -30,15 +30,15 @@
             <icons.PhotoOff />
         {% endif %}
         <!-- Request Button -->
-        <button class="absolute top-0 right-0 rounded-none rounded-bl-md btn-sm btn btn-square items-center justify-center flex {% if book.downloaded or already_requested %}btn-ghost bg-success text-neutral/20{% else %}btn-info{% endif %}"
+        <button class="absolute top-0 right-0 rounded-none rounded-bl-md btn-sm btn btn-square items-center justify-center flex {% if book.fulfilled or already_requested %}btn-ghost bg-success text-neutral/20{% else %}btn-info{% endif %}"
                 hx-post="{{ base_url }}/request/hx-add/{{ book.asin }}"
                 hx-vals='{"region": "{{ region }}"}'
                 hx-disabled-elt="this"
                 hx-target="closest .book-card"
                 hx-swap="outerHTML"
                 hx-on:click="this.disabled = true;"
-                {% if book.downloaded or already_requested %}disabled{% endif %}>
-            {% if book.downloaded or already_requested %}
+                {% if book.fulfilled or already_requested %}disabled{% endif %}>
+            {% if book.fulfilled or already_requested %}
                 <span>
                     <icons.Checkmark />
                 </span>

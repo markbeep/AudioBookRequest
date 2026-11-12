@@ -95,14 +95,14 @@ async def get_popular_recommendations(
     user: Annotated[DetailedUser, Security(ABRAuth())],
     min_requests: int = 1,
     limit: int = 10,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: bool = True,
 ):
     result = await api_get_popular_recommendations(
         session=session,
         user=user,
         min_requests=min_requests,
         limit=limit,
-        exclude_downloaded=exclude_downloaded,
+        exclude_fulfilled=exclude_fulfilled,
     )
 
     return catalog_response(
@@ -161,14 +161,14 @@ async def get_recently_requested_recommendations(
     user: Annotated[DetailedUser, Security(ABRAuth())],
     limit: int = 10,
     days_back: int = 30,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: bool = True,
 ):
     result = await api_get_recently_requested_recommendations(
         session=session,
         user=user,
         limit=limit,
         days_back=days_back,
-        exclude_downloaded=exclude_downloaded,
+        exclude_fulfilled=exclude_fulfilled,
     )
 
     reasons = [
@@ -231,7 +231,7 @@ async def get_popular_authors_recommendations(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(ABRAuth())],
     limit: int = 10,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: bool = True,
     audible_region: audible_region_type | None = None,
     personal_favorites: bool = True,
 ):
@@ -240,7 +240,7 @@ async def get_popular_authors_recommendations(
         client_session=client_session,
         user=user,
         limit=limit,
-        exclude_downloaded=exclude_downloaded,
+        exclude_fulfilled=exclude_fulfilled,
         audible_region=audible_region,
         personal_favorites=personal_favorites,
     )
@@ -269,7 +269,7 @@ async def get_popular_narrators_recommendations(
     client_session: Annotated[ClientSession, Depends(get_connection)],
     user: Annotated[DetailedUser, Security(ABRAuth())],
     limit: int = 10,
-    exclude_downloaded: bool = True,
+    exclude_fulfilled: bool = True,
     audible_region: audible_region_type | None = None,
     personal_favorites: bool = True,
 ):
@@ -278,7 +278,7 @@ async def get_popular_narrators_recommendations(
         client_session=client_session,
         user=user,
         limit=limit,
-        exclude_downloaded=exclude_downloaded,
+        exclude_fulfilled=exclude_fulfilled,
         audible_region=audible_region,
         personal_favorites=personal_favorites,
     )

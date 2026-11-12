@@ -186,7 +186,7 @@ async def abs_list_library_items(
                 cover_image=cover_image,
                 release_date=release_date,
                 runtime_length_min=runtime_length_min,
-                downloaded=True,
+                fulfilled=True,
             )
             books.append(book)
         except Exception as e:
@@ -294,8 +294,8 @@ async def abs_mark_downloaded_flags(
 ) -> None:
     if not abs_config.get_check_downloaded(session):
         return
-    # Only check books not already marked downloaded
-    to_check = [b for b in books if not b.downloaded]
+    # Only check books not already marked fulfilled
+    to_check = [b for b in books if not b.fulfilled]
     # Limit to avoid flooding ABS
     to_check = to_check[:25]
 
@@ -304,7 +304,7 @@ async def abs_mark_downloaded_flags(
             exists = await abs_book_exists(session, client_session, b)
             logger.debug("ABS: exist check", asin=b.asin, exists=exists)
             if exists:
-                b.downloaded = True
+                b.fulfilled = True
                 session.add(b)
         except Exception as e:
             logger.debug("ABS: failed exist check", asin=b.asin, error=str(e))

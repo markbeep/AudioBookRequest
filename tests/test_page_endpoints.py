@@ -110,7 +110,7 @@ def test_add_manual_page(admin_client: TestClient) -> None:
 # -- wishlist --------------------------------------------------------------
 def test_wishlist_pages(admin_client: TestClient) -> None:
     assert admin_client.get("/wishlist").status_code == 200
-    assert admin_client.get("/wishlist/downloaded").status_code == 200
+    assert admin_client.get("/wishlist/fulfilled").status_code == 200
     assert admin_client.get("/wishlist/manual").status_code == 200
 
 
@@ -133,7 +133,7 @@ def test_wishlist_actions(admin_client: TestClient, prowlarr: MockServer) -> Non
     auto = admin_client.post(f"/wishlist/hx-auto-download/{ASIN}")
     assert auto.status_code == 200, auto.text
 
-    marked = admin_client.patch(f"/wishlist/downloaded/hx-add/{ASIN}")
+    marked = admin_client.patch(f"/wishlist/fulfilled/hx-add/{ASIN}")
     assert marked.status_code == 200, marked.text
 
     deleted = admin_client.delete(f"/wishlist/hx-delete/{ASIN}")

@@ -53,7 +53,7 @@
     <tbody>
         {% for book in results %}
             <tr id="{{ book.id }}"
-                class="text-xs lg:text-sm {% if book.downloaded %}bg-success/30{% endif %}">
+                class="text-xs lg:text-sm {% if book.fulfilled %}bg-success/30{% endif %}">
                 <th>
                     {{ loop.index }}
                 </th>
@@ -102,15 +102,15 @@
                             hx-disabled-elt="this">
                         <icons.Ban />
                     </button>
-                    {% if book.downloaded %}
+                    {% if book.fulfilled %}
                         <button class="btn btn-square btn-ghost bg-success text-neutral/20"
                                 disabled
-                                title="Set as downloaded">
+                                title="Set as fulfilled">
                             <icons.Checkmark />
                         </button>
                     {% else %}
                         <button class="btn btn-square"
-                                title="Set as downloaded"
+                                title="Set as fulfilled"
                                 {% if not user.is_admin() %}disabled{% endif %}
                                 hx-patch="{{ base_url }}/wishlist/manual/hx-add/{{ book.id }}"
                                 hx-swap="outerHTML"

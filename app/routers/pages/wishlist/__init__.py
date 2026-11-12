@@ -14,11 +14,11 @@ from app.util.connection import get_connection
 from app.util.db import get_session
 from app.util.templates import catalog_response
 
-from . import downloaded, manual, sources
+from . import fulfilled, manual, sources
 
 router = APIRouter(prefix="/wishlist")
 
-router.include_router(downloaded.router)
+router.include_router(fulfilled.router)
 router.include_router(manual.router)
 router.include_router(sources.router)
 
@@ -29,7 +29,7 @@ async def wishlist(
     user: Annotated[DetailedUser, Security(ABRAuth())],
 ):
     username = None if user.is_admin() else user.username
-    results = get_wishlist_results(session, username, "not_downloaded")
+    results = get_wishlist_results(session, username, "not_fulfilled")
     counts = get_wishlist_counts(session, user)
     return catalog_response(
         "Wishlist.Index",
@@ -49,7 +49,7 @@ async def start_auto_download(
 ):
     await start_auto_download_endpoint(asin, session, client_session, user)
     username = None if user.is_admin() else user.username
-    results = get_wishlist_results(session, username, "not_downloaded")
+    results = get_wishlist_results(session, username, "not_fulfilled")
     counts = get_wishlist_counts(session, user)
 
     return catalog_response(
@@ -68,23 +68,23 @@ async def delete_request(
     asin: str,
     session: Annotated[Session, Depends(get_session)],
     user: Annotated[DetailedUser, Security(ABRAuth())],
-    downloaded: bool | None = None,
+    fulfilled: bool | None = None,
 ):
     await api_delete_request(asin, session, user)
 
     counts = get_wishlist_counts(session, user)
 
-    if downloaded:  # download page
+    if fulfilled:  # fulfilled page
         results = get_wishlist_results(
             session,
             None if user.is_admin() else user.username,
-            "downloaded",
+            "fulfilled",
         )
         return catalog_response(
             "Wishlist.Wishlist",
             user=user,
             results=results,
-            page="downloaded",
+            page="fulfilled",
             counts=counts,
             show_sources=get_download_backend(session) == "prowlarr",
             update_tablist=True,
@@ -93,7 +93,7 @@ async def delete_request(
         results = get_wishlist_results(
             session,
             None if user.is_admin() else user.username,
-            "not_downloaded",
+            "not_fulfilled",
         )
         return catalog_response(
             "Wishlist.Wishlist",

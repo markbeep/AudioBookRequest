@@ -19,7 +19,7 @@ def _grab(admin_client: TestClient) -> Response:
     )
 
 
-def test_issue_232_downloaded_on_grab_not_completion(
+def test_issue_232_fulfilled_on_grab_not_completion(
     admin_client: TestClient, prowlarr: MockServer, db: Session
 ) -> None:
     assert prowlarr.base_url
@@ -27,8 +27,13 @@ def test_issue_232_downloaded_on_grab_not_completion(
     db.expire_all()
     book = db.get(Audiobook, ASIN)
     assert book is not None
-    # Prowlarr merely accepted the grab; ABR already marks it downloaded.
-    assert book.downloaded is True
+    # Prowlarr merely accepted the grab; ABR already marks the request fulfilled.
+    assert book.fulfilled is True
+
+
+def test_deprecated_exclude_downloaded_param(admin_client: TestClient) -> None:
+    response = admin_client.get("/api/recommendations/popular?exclude_downloaded=false")
+    assert response.status_code == 200
 
 
 def test_issue_237_recommendations_api_has_data(admin_client: TestClient) -> None:

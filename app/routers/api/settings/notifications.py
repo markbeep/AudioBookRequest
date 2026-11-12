@@ -24,7 +24,11 @@ class NotificationRequest(BaseModel):
     name: str = Field(min_length=1)
     url: str = Field(min_length=1)
     event_type: str = Field(
-        json_schema_extra={"enum": [event.value for event in EventEnum]}
+        json_schema_extra={"enum": [event.value for event in EventEnum]},
+        description=(
+            "Legacy values `onSuccessfulDownload` and `onFailedDownload` are "
+            "accepted but deprecated."
+        ),
     )
     body: str
     body_type: NotificationBodyTypeEnum
@@ -37,6 +41,21 @@ def list_notifications(
     _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     return session.exec(select(Notification)).all()
+
+
+_LEGACY_EVENT_TYPES = {
+    "onSuccessfulDownload": EventEnum.on_fulfilled,
+    "onFailedDownload": EventEnum.on_failed_fulfillment,
+}
+
+
+def _parse_event_type(event_type: str) -> EventEnum:
+    if legacy := _LEGACY_EVENT_TYPES.get(event_type):
+        return legacy
+    try:
+        return EventEnum(event_type)
+    except ValueError:
+        raise HTTPException(400, "Invalid event type")
 
 
 def _validate_headers(headers: str) -> dict[str, str]:
@@ -73,10 +92,7 @@ def _upsert_notification(
     except json.JSONDecodeError, ValueError:
         raise HTTPException(422, "Body is invalid JSON")
 
-    try:
-        event_enum = EventEnum(event_type)
-    except ValueError:
-        raise HTTPException(400, "Invalid event type")
+    event_enum = _parse_event_type(event_type)
 
     try:
         body_enum = NotificationBodyTypeEnum(body_type)
@@ -186,10 +202,7 @@ async def test_notification(
     _: Annotated[DetailedUser, Security(AnyAuth(GroupEnum.admin))],
 ):
     headers_json = _validate_headers(body.headers)
-    try:
-        event_enum = EventEnum(body.event_type)
-    except ValueError:
-        raise HTTPException(400, "Invalid event type")
+    event_enum = _parse_event_type(body.event_type)
     try:
         await send_notification(
             session,

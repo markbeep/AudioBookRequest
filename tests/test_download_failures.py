@@ -68,7 +68,7 @@ def test_issue_229_notification_failure_does_not_mask_error(
         Notification(
             name="failing",
             url=f"{prowlarr.base_url}/notify/failing",
-            event=EventEnum.on_failed_download,
+            event=EventEnum.on_failed_fulfillment,
             body_type=NotificationBodyTypeEnum.text,
             body="failed",
             enabled=True,

@@ -147,19 +147,19 @@ async def start_download(
             try:
                 if manual_book_request:
                     await send_all_manual_notifications(
-                        EventEnum.on_failed_download,
+                        EventEnum.on_failed_fulfillment,
                         manual_book_request,
                         replacements,
                     )
                 else:
                     await send_all_notifications(
-                        EventEnum.on_failed_download,
+                        EventEnum.on_failed_fulfillment,
                         asin_or_uuid,
                         replacements,
                     )
             except Exception as e:
                 logger.error(
-                    "Failed to send download failure notification",
+                    "Failed to send fulfillment failure notification",
                     guid=guid,
                     error=str(e),
                 )
@@ -192,11 +192,11 @@ async def start_download(
 
         logger.debug("Download successfully started", guid=guid)
         if manual_book_request:
-            manual_book_request.downloaded = True
+            manual_book_request.fulfilled = True
             session.add(manual_book_request)
             session.commit()
             await send_all_manual_notifications(
-                EventEnum.on_successful_download,
+                EventEnum.on_fulfilled,
                 manual_book_request,
                 additional_replacements,
             )
@@ -205,12 +205,12 @@ async def start_download(
                 select(Audiobook).where(Audiobook.asin == asin_or_uuid)
             ).all()
             for b in same_books:
-                b.downloaded = True
+                b.fulfilled = True
                 session.add(b)
             session.commit()
 
             await send_all_notifications(
-                EventEnum.on_successful_download,
+                EventEnum.on_fulfilled,
                 asin_or_uuid,
                 additional_replacements,
             )

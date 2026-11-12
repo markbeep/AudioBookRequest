@@ -79,7 +79,7 @@ async def query_sources(
         # Chaptarr owns download, import and file organization when selected.
         if (
             start_auto_download
-            and not book.downloaded
+            and not book.fulfilled
             and isinstance(book, Audiobook)
             and get_download_backend(session) == "chaptarr"
         ):
@@ -125,7 +125,7 @@ async def query_sources(
         ranked = await rank_sources(session, client_session, sources, book, is_manual)
 
         # start download if requested
-        if start_auto_download and not book.downloaded and len(ranked) > 0:
+        if start_auto_download and not book.fulfilled and len(ranked) > 0:
             try:
                 await start_download(
                     session=session,
