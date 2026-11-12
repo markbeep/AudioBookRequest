@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/markbeep/AudioBookRequest/compare/v2.0.0...v2.0.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* fix wishlists caching bringing back already fulfilled books ([4c1fb97](https://github.com/markbeep/AudioBookRequest/commit/4c1fb97ebdd1188021682d463753cd8c3d023073))
+
 ## [2.0.0](https://github.com/markbeep/AudioBookRequest/compare/v1.11.0...v2.0.0) (2026-11-12)
 
 
