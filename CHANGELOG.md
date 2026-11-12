@@ -1,5 +1,41 @@
 # Changelog
 
+## [2.0.0](https://github.com/markbeep/AudioBookRequest/compare/v1.11.0...v2.0.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename terminology of request "downloaded" to "fulfilled" for more clarity
+* notification event values are now `onFulfilled` and `onFailedFulfillment` (API responses and `{eventType}` expansion; before: `onSuccessfulDownload`/`onFailedDownload`)
+
+### Features
+
+* add 'Add Note' button for admins to indicate why a request can't be fulfilled ([c4af05d](https://github.com/markbeep/AudioBookRequest/commit/c4af05dbb6c9946e09b753a67321aba0beb5b4fb))
+
+
+### Documentation
+
+* update readme docker-install instruction to use the v2 image ([046d9ea](https://github.com/markbeep/AudioBookRequest/commit/046d9eabb81273ed7cd1d1356de42896018d5b18))
+
+
+### Styles
+
+* optimize wishlist/request pages for mobile use ([d4b2744](https://github.com/markbeep/AudioBookRequest/commit/d4b27449d53c71ce19ff225744d510dab68ae026))
+
+
+### Miscellaneous Chores
+
+* deprecate `/api/requests?filter=downloaded|not_downloaded`, use `/api/requests?filter=fulfilled|not_fulfilled` ([45c3c86](https://github.com/markbeep/AudioBookRequest/commit/45c3c86f21b2cc74aeb6513ab36cf500d8c2a9ff))
+* deprecate `/api/requests/{asin}/downloaded`, use `/api/requests/{asin}/fulfilled` ([45c3c86](https://github.com/markbeep/AudioBookRequest/commit/45c3c86f21b2cc74aeb6513ab36cf500d8c2a9ff))
+* deprecate `/api/requests/manual/{id}/downloaded`, use `/api/requests/manual/{id}/fulfilled` ([45c3c86](https://github.com/markbeep/AudioBookRequest/commit/45c3c86f21b2cc74aeb6513ab36cf500d8c2a9ff))
+* deprecate `exclude_downloaded` on `/api/recommendations/*`, use `exclude_fulfilled` ([45c3c86](https://github.com/markbeep/AudioBookRequest/commit/45c3c86f21b2cc74aeb6513ab36cf500d8c2a9ff))
+* keep `downloaded` in API responses as a deprecated alias for `fulfilled` ([45c3c86](https://github.com/markbeep/AudioBookRequest/commit/45c3c86f21b2cc74aeb6513ab36cf500d8c2a9ff))
+
+
+### Code Refactoring
+
+* rename terminology of request "downloaded" to "fulfilled" for more clarity ([45c3c86](https://github.com/markbeep/AudioBookRequest/commit/45c3c86f21b2cc74aeb6513ab36cf500d8c2a9ff))
+
 ## [1.11.0](https://github.com/markbeep/AudioBookRequest/compare/v1.10.8...v1.11.0) (2026-10-27)
 
 
