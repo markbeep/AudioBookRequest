@@ -4,7 +4,11 @@ from aiohttp import ClientSession
 from fastapi import APIRouter, Depends, HTTPException, Query, Security
 from sqlmodel import Session
 
-from app.internal.audible.search import get_search_suggestions, search_audible_books
+from app.internal.audible.search import (
+    get_search_suggestions,
+    search_audible_books,
+    upsert_books,
+)
 from app.internal.audible.types import (
     audible_region_type,
     audible_regions,
@@ -12,7 +16,7 @@ from app.internal.audible.types import (
 )
 from app.internal.audiobookshelf.client import abs_mark_downloaded_flags
 from app.internal.auth.authentication import AnyAuth, DetailedUser
-from app.internal.models import Audiobook, AudiobookWithRequests
+from app.internal.models import AudiobookWithRequests
 from app.util.connection import get_connection
 from app.util.db import get_session
 
@@ -50,11 +54,8 @@ async def search_books(
     else:
         results = []
 
-    # refreshes the "requests"
-    merged: list[Audiobook] = []
-    for res in results:
-        merged.append(session.merge(res))
-    session.commit()
+    # refreshes the "requests" without overwriting fulfilled/admin_note
+    merged = upsert_books(session, results)
 
     # Check ABS for existing books and mark as fulfilled if found
     await abs_mark_downloaded_flags(session, client_session, merged)

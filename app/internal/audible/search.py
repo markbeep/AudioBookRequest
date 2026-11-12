@@ -210,47 +210,34 @@ async def search_audible_books(
     return books
 
 
-def get_existing_books(session: Session, asins: set[str]) -> dict[str, Audiobook]:
-    books = session.exec(select(Audiobook).where(col(Audiobook.asin).in_(asins))).all()
-    ok_books: list[Audiobook] = []
-    for b in books:
-        if b.updated_at.timestamp() + REFETCH_TTL < time.time():
+def upsert_books(session: Session, books: list[Audiobook]) -> list[Audiobook]:
+    """Store catalog metadata while keeping request state (fulfilled, admin_note).
+
+    Merging transient search results over existing rows would reset those fields
+    to their defaults.
+    """
+    if not books:
+        return []
+    existing = {
+        book.asin: book
+        for book in session.exec(
+            select(Audiobook).where(col(Audiobook.asin).in_({b.asin for b in books}))
+        ).all()
+    }
+    stored: list[Audiobook] = []
+    for book in books:
+        cached = existing.get(book.asin)
+        if cached is None:
+            session.add(book)
+            stored.append(book)
             continue
-        ok_books.append(b)
-
-    return {b.asin: b for b in ok_books}
-
-
-# def upsert_new_books(session: Session, books: list[Audiobook]):
-#     asins = {b.asin: b for b in books}
-
-#     existing = list(
-#         session.exec(
-#             select(Audiobook).where(col(Audiobook.asin).in_(asins.keys()))
-#         ).all()
-#     )
-
-#     to_update: list[Audiobook] = []
-#     for b in existing:
-#         new_book = asins[b.asin]
-#         b.title = new_book.title
-#         b.subtitle = new_book.subtitle
-#         b.authors = new_book.authors
-#         b.narrators = new_book.narrators
-#         b.cover_image = new_book.cover_image
-#         b.release_date = new_book.release_date
-#         b.runtime_length_min = new_book.runtime_length_min
-#         to_update.append(b)
-
-#     existing_asins = {b.asin for b in existing}
-#     to_add = [b for b in books if b.asin not in existing_asins]
-
-#     logger.info(
-#         "Storing new search results in BookRequest cache/db",
-#         to_add_count=len(to_add),
-#         to_update_count=len(to_update),
-#         existing_count=len(existing),
-#     )
-
-#     session.add_all(to_add + existing)
-#     session.commit()
+        cached.title = book.title
+        cached.subtitle = book.subtitle
+        cached.authors = book.authors
+        cached.narrators = book.narrators
+        cached.cover_image = book.cover_image
+        cached.release_date = book.release_date
+        cached.runtime_length_min = book.runtime_length_min
+        stored.append(cached)
+    session.commit()
+    return stored

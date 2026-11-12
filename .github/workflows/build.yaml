@@ -48,11 +48,14 @@ jobs:
 
       - run: uv sync --all-extras
 
-      - name: Run Type and format checks
-        run: just types
+      - name: Generate static files
+        run: |
+          just install_daisy
+          tailwindcss -i static/tw.css -o static/globals.css --minify
+          uv run app/util/fetch_js.py
 
-      - name: Check if Jinjax parameters are defined
-        run: just test_jinja
+      - name: Run Type and format checks
+        run: just test
 
       - run: echo "$PWD/.venv/bin" >> $GITHUB_PATH
 

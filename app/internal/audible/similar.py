@@ -4,7 +4,7 @@ from aiohttp import ClientSession
 from pydantic import BaseModel
 from sqlmodel import Session
 
-from app.internal.audible.search import CacheResult, search_audible_books
+from app.internal.audible.search import CacheResult, search_audible_books, upsert_books
 from app.internal.audible.single import get_single_book
 from app.internal.audible.types import (
     REFETCH_TTL,
@@ -46,13 +46,8 @@ async def list_similar_audible_books(
     cache_key = _SimsCacheKey(region=audible_region, num_results=num_results, asin=asin)
     cache_result = sims_cache.get(cache_key)
     if cache_result and time.time() - cache_result.timestamp < REFETCH_TTL:
-        # Merge cached ORM instances into the current session to avoid cross-session attachment errors
-        merged = [session.merge(book) for book in cache_result.value]
-        # Commit immediately so the SQLite write lock is not held for the
-        # remainder of the request.
-        session.commit()
         logger.debug("Using cached popular books", region=audible_region)
-        return merged
+        return upsert_books(session, cache_result.value)
 
     base_url = f"https://api.audible{audible_regions[audible_region]}/1.0/catalog/products/{asin}/sims"
     params = {

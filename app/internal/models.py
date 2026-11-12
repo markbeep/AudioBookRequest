@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Annotated, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, computed_field
-from sqlmodel import JSON, Column, DateTime, Field, SQLModel, func
+from sqlmodel import JSON, Column, DateTime, Field, SQLModel, Text, func
 from sqlmodel._compat import SQLModelConfig
 from sqlmodel.main import Relationship
 
@@ -79,7 +79,7 @@ class Audiobook(BaseSQLModel, table=True):
             nullable=False,
         ),
     )
-    admin_note: str | None = None
+    admin_note: str | None = Field(default=None, sa_column=Column(Text))
     fulfilled: bool = False
 
     @computed_field
@@ -172,7 +172,7 @@ class ManualBookRequest(BaseSQLModel, table=True):
             nullable=False,
         ),
     )
-    admin_note: str | None = None
+    admin_note: str | None = Field(default=None, sa_column=Column(Text))
     fulfilled: bool = False
 
     @computed_field
