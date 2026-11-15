@@ -8,6 +8,7 @@ from typing import Literal, cast
 from urllib.parse import parse_qs, urlencode, urlparse
 
 from aiohttp import ClientResponse, ClientSession, NonHttpUrlRedirectClientError
+from markupsafe import Markup
 from pydantic import BaseModel, TypeAdapter
 from sqlmodel import Session, select
 from torf import BdecodeError, MetainfoError, ReadError, Torrent
@@ -392,10 +393,12 @@ class IndexerResponse(BaseModel):
     error: str | None = None
 
     @property
-    def json_string(self) -> str:
-        return html.escape(
-            json.dumps(
-                {id: indexer.model_dump() for id, indexer in self.indexers.items()}
+    def json_string(self) -> Markup:
+        return Markup(
+            html.escape(
+                json.dumps(
+                    {id: indexer.model_dump() for id, indexer in self.indexers.items()}
+                )
             )
         )
 

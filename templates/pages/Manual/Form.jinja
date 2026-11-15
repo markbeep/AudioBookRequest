@@ -70,8 +70,7 @@
     <textarea id="info"
               name="info"
               class="textarea w-full"
-              value="{{ book.additional_info if book else '' }}"
-              placeholder="The book about the ring"></textarea>
+              placeholder="The book about the ring">{{ book.additional_info if book else "" }}</textarea>
     <button id="submit-button" class="btn btn-primary" type="submit">
         {% if book %}
             Update

@@ -9,7 +9,7 @@
             Redirecting...
         </h1>
         <script>
-            window.location.href = "{{ redirect_uri }}";
+            window.location.href = {{ redirect_uri | tojson }};
         </script>
         <a class="btn" href="{{ redirect_uri }}">Redirect now</a>
     </div>

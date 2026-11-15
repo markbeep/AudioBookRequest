@@ -1,4 +1,4 @@
-"""Download failure handling (issues #220 and #229)."""
+"""Download failure handling."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def _grab(admin_client: TestClient) -> Response:
     )
 
 
-def test_issue_229_indexer_error_message_is_surfaced(
+def test_indexer_error_message_is_surfaced(
     admin_client: TestClient, prowlarr: MockServer
 ) -> None:
     prowlarr.state["grab_status"] = 409
@@ -36,7 +36,7 @@ def test_issue_229_indexer_error_message_is_surfaced(
     assert "VIP" in response.text
 
 
-def test_issue_229_page_surfaces_indexer_error(
+def test_page_surfaces_indexer_error(
     admin_client: TestClient, prowlarr: MockServer
 ) -> None:
     prowlarr.state["grab_status"] = 409
@@ -51,7 +51,7 @@ def test_issue_229_page_surfaces_indexer_error(
     assert "VIP" in response.text
 
 
-def test_issue_220_magnet_redirect_does_not_fail_download(
+def test_magnet_redirect_does_not_fail_download(
     admin_client: TestClient, prowlarr: MockServer
 ) -> None:
     prowlarr.state["torrent_redirect"] = (
@@ -61,7 +61,7 @@ def test_issue_220_magnet_redirect_does_not_fail_download(
     assert response.status_code == 204
 
 
-def test_issue_229_notification_failure_does_not_mask_error(
+def test_notification_failure_does_not_mask_error(
     admin_client: TestClient, prowlarr: MockServer, db: Session
 ) -> None:
     db.add(

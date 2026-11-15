@@ -12,6 +12,7 @@ from jinja2_fragments.fastapi import Jinja2Blocks
 from jinja2_htmlmin import minify_loader
 from jinjax import Catalog
 from jinjax.jinjax import JinjaX
+from markupsafe import Markup
 from starlette.background import BackgroundTask
 
 from app.internal.audible.types import audible_regions
@@ -19,19 +20,23 @@ from app.internal.env_settings import Settings
 
 templates = Jinja2Blocks(
     env=Environment(
+        autoescape=True,
         loader=minify_loader(
             FileSystemLoader("templates"),
             remove_comments=True,  # pyrefly: ignore[bad-argument-type]
             remove_empty_space=True,  # pyrefly: ignore[bad-argument-type]
             remove_all_empty_space=True,  # pyrefly: ignore[bad-argument-type]
             reduce_boolean_attributes=True,  # pyrefly: ignore[bad-argument-type]
-        )
+        ),
     )
 )
 
 
-def _to_js_string(val: str | float) -> str:
-    return html.escape(f"'{str(val).replace("'", "\\'").replace('\n', '\\n')}'")
+def _to_js_string(val: str | float) -> Markup:
+    # JSON literal, HTML-escaped for use inside a double-quoted attribute. Markup
+    # keeps autoescape from escaping it a second time, which browsers would show
+    # verbatim to Alpine.
+    return Markup(html.escape(json.dumps(val)))
 
 
 # filters

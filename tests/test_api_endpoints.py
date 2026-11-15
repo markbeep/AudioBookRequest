@@ -6,7 +6,9 @@ import uuid
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlmodel import Session
 
+from app.internal.models import Audiobook
 from app.internal.recommendations.user_recommendations import UserSimsRecommendation
 from tests.constants import ASIN, FULFILLED_ASIN, MANUAL_ID
 from tests.http import as_dict, as_list, json_list, json_object
@@ -601,7 +603,10 @@ def test_sources_missing_book(admin_client: TestClient, prowlarr: MockServer) ->
 
 
 def test_download(
-    admin_client: TestClient, prowlarr: MockServer, mock_server: MockServer
+    admin_client: TestClient,
+    prowlarr: MockServer,
+    mock_server: MockServer,
+    db: Session,
 ) -> None:
     assert prowlarr.base_url
     response = admin_client.post(
@@ -611,6 +616,11 @@ def test_download(
     assert response.status_code == 204, response.text
     grabs = mock_server.requests_to("/prowlarr/api/v1/search")
     assert any(request["method"] == "POST" for request in grabs)
+    db.expire_all()
+    book = db.get(Audiobook, ASIN)
+    assert book is not None
+    # A successful grab fulfils the request even if Prowlarr's download fails.
+    assert book.fulfilled is True
 
 
 def test_auto_download(

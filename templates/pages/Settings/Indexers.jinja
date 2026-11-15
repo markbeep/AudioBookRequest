@@ -12,7 +12,7 @@
           class="flex flex-col gap-2"
           hx-post="{{ base_url }}/settings/indexers/hx-save"
           hx-target="this"
-          x-data="{ selected: '{{ indexers[0].indexer.name }}' }">
+          x-data="{ selected: {{ indexers[0].indexer.name|toJSstring }} }">
         <h2 class="text-lg">
             Indexer Settings
         </h2>
@@ -42,7 +42,7 @@
                    type="checkbox"
                    class="checkbox"
                    {% if ctxt.enabled %}checked{% endif %} />
-            <template x-if="selected === '{{ ctxt.indexer.name }}'">
+            <template x-if="selected === {{ ctxt.indexer.name|toJSstring }}">
                 <div class="contents">
                     {% for key, config in ctxt.configuration.items() %}
                         <div>

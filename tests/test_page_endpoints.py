@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import base64
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
+import app.main
 from app.internal.auth.config import auth_config
 from app.internal.auth.login_types import LoginTypeEnum
 from app.internal.models import APIKey
@@ -173,6 +176,26 @@ def test_wishlist_manual_actions(admin_client: TestClient) -> None:
     assert deleted.status_code == 200, deleted.text
 
 
+def test_manual_request_fields_are_escaped(admin_client: TestClient) -> None:
+    payload = '<img src=x onerror="document.title=1">'
+    auth = base64.b64encode(b"untrusted:untrustedpass").decode()
+    with TestClient(
+        app.main.app,
+        headers={"Authorization": f"Basic {auth}"},
+        raise_server_exceptions=False,
+    ) as untrusted_client:
+        added = untrusted_client.post(
+            "/search/manual/hx-add",
+            data={"title": payload, "author": payload, "info": payload},
+        )
+        assert added.status_code == 200, added.text
+
+    page = admin_client.get("/wishlist/manual")
+    assert page.status_code == 200
+    assert payload not in page.text
+    assert "&lt;img src=x onerror=&#34;document.title=1&#34;&gt;" in page.text
+
+
 # -- settings: account -----------------------------------------------------
 def test_account_page(admin_client: TestClient, db: Session) -> None:
     assert admin_client.get("/settings/account").status_code == 200
@@ -299,10 +322,15 @@ def test_notifications_page(admin_client: TestClient, mock_server: MockServer) -
             "event_type": "onNewRequest",
             "body_type": "text",
             "body": "hello",
-            "headers": "{}",
+            "headers": '{"X-Test": "yes"}',
         },
     )
     assert created.status_code == 200, created.text
+    page = admin_client.get("/settings/notifications")
+    assert page.status_code == 200
+    # Edit form JSON must survive once-escaped; double escaping breaks Alpine.
+    assert "\\&quot;X-Test\\&quot;: \\&quot;yes\\&quot;" in page.text
+    assert "&amp;quot;" not in page.text
 
     listed = json_list(admin_client.get("/api/settings/notifications"))
     notif_id = as_dict(listed[0])["id"]
@@ -359,6 +387,11 @@ def test_prowlarr_page(admin_client: TestClient, prowlarr: MockServer) -> None:
         ).status_code
         == 200
     )
+    page = admin_client.get("/settings/prowlarr")
+    assert page.status_code == 200
+    # Indexer data feeds an x-data literal; it must not be escaped twice.
+    assert "&quot;MockIndexer&quot;" in page.text
+    assert "&amp;quot;" not in page.text
 
 
 # -- settings: security ----------------------------------------------------
