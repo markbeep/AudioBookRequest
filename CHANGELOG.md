@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.2](https://github.com/markbeep/AudioBookRequest/compare/v2.0.1...v2.0.2) (2026-11-17)
+
+
+### Bug Fixes
+
+* escape template output to prevent stored XSS. Closes [#248](https://github.com/markbeep/AudioBookRequest/issues/248) ([9dd37c4](https://github.com/markbeep/AudioBookRequest/commit/9dd37c4b3c3171fd222c1bf28186860b8a62bee0))
+* fix manual edit form's additional-info textarea not being rendered correctly ([9dd37c4](https://github.com/markbeep/AudioBookRequest/commit/9dd37c4b3c3171fd222c1bf28186860b8a62bee0))
+
+
+### Tests
+
+* rename issue-specific tests into behavior-named tests ([9dd37c4](https://github.com/markbeep/AudioBookRequest/commit/9dd37c4b3c3171fd222c1bf28186860b8a62bee0))
+
 ## [2.0.1](https://github.com/markbeep/AudioBookRequest/compare/v2.0.0...v2.0.1) (2026-11-12)
 
 
