@@ -38,6 +38,12 @@ def run_migrations() -> None:
     pathlib.Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
     with engine.connect() as connection:
+        if connection.dialect.name == "sqlite":
+            # Batch mode drops and recreates tables; with FKs on, dropping a
+            # parent cascades and wipes child rows (#252). Must be set outside
+            # a transaction. NullPool closes this connection afterwards.
+            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            connection.commit()
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
