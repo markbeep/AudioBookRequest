@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/markbeep/AudioBookRequest/compare/v2.0.2...v2.0.3) (2026-11-27)
+
+
+### Bug Fixes
+
+* fix sqlite DB migrations from deleting audiobook requests. Closes [#252](https://github.com/markbeep/AudioBookRequest/issues/252) ([113685e](https://github.com/markbeep/AudioBookRequest/commit/113685ef931f04e38f0bc080094c264bc483c615))
+
 ## [2.0.2](https://github.com/markbeep/AudioBookRequest/compare/v2.0.1...v2.0.2) (2026-11-25)
 
 
